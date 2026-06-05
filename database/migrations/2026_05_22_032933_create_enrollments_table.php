@@ -10,14 +10,14 @@ return new class extends Migration
     {
         Schema::create('enrollments', function (Blueprint $table) {
             $table->id();
-            
-            // Relasi ke User dan Course
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('course_id')->constrained('courses')->cascadeOnDelete();
             
-            $table->timestamp('enrolled_at')->useCurrent(); // Tanggal daftar
-            $table->string('status')->default('active'); // active, completed, dropped
-            $table->integer('progress_percentage')->default(0); // Buat tracking progress belajar
+            $table->dateTime('tanggal_daftar');
+            $table->enum('status', ['active', 'completed', 'dropped'])->default('active');
+            $table->decimal('progress_persen', 5, 2)->default(0); // 0.00 sampai 100.00
+            $table->boolean('is_completed')->default(false);
+            $table->dateTime('tanggal_selesai')->nullable();
             
             $table->timestamps();
         });

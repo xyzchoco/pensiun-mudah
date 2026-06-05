@@ -17,4 +17,9 @@ class CourseCategory extends Model
     {
         return $this->hasMany(Course::class, 'category_id');
     }
+
+    public function hasCourses(): bool
+    {
+        return $this->courses()->exists();
+    }
 }

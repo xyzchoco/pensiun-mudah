@@ -8,11 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Enrollment extends Model
 {
     protected $fillable = [
-        'user_id',
-        'course_id',
-        'enrolled_at',
-        'status',
-        'progress_percentage',
+        'user_id', 'course_id', 'tanggal_daftar', 'status', 
+        'progress_persen', 'is_completed', 'tanggal_selesai'
     ];
 
     // Relasi ke User

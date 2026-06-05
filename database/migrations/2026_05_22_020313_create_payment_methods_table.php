@@ -13,7 +13,11 @@ return new class extends Migration
     {
         Schema::create('payment_methods', function (Blueprint $table) {
             $table->id();
-            $table->string('method_name');
+            $table->string('nama'); // Contoh: BCA Virtual Account, GoPay
+            $table->string('tipe'); // Contoh: VA, E-Wallet, QRIS
+            $table->string('logo')->nullable();
+            $table->text('instruksi')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }
