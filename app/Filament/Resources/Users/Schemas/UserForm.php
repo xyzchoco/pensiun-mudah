@@ -34,8 +34,8 @@ class UserForm
                     ->required(fn (string $operation): bool => $operation === 'create')
                     ->maxLength(255),
 
-                TextInput::make('phone')
-                    ->label('Nomor Telepon')
+                TextInput::make('whatsapp')
+                    ->label('Nomor WhatsApp')
                     ->tel()
                     ->maxLength(255),
 

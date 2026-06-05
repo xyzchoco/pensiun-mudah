@@ -20,7 +20,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'phone',
+        'whatsapp',
         'google_id',
         'is_verified',
         'role_id',

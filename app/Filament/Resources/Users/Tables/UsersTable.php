@@ -32,8 +32,8 @@ class UsersTable
                     ->color('info')
                     ->sortable(),
 
-                TextColumn::make('phone')
-                    ->label('Telepon')
+                TextColumn::make('whatsapp')
+                    ->label('WhatsApp')
                     ->searchable(),
 
                 IconColumn::make('is_verified')
