@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('course_id')->constrained('courses')->cascadeOnDelete();
             
             $table->string('title'); // Judul materi (misal: "Bab 1: Pengenalan Saham")
-            $table->string('slug')->unique();
+        $table->string('slug')->unique();
             $table->string('video_url')->nullable(); // Link video YouTube/Vimeo
             $table->longText('content')->nullable(); // Teks materi penjelasan
             $table->integer('order')->default(1); // Urutan materi (1, 2, 3, dst)
