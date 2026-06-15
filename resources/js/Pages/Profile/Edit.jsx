@@ -1,5 +1,5 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, Link } from '@inertiajs/react';
 import { useRef } from 'react';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
@@ -29,7 +29,6 @@ export default function Edit({ mustVerifyEmail, status }) {
         <DashboardLayout title="Profile" showSearch={false}>
             <Head title="Profile" />
 
-            {/* Menghapus pt-6 agar teks lebih naik mendekati header */}
             <div className="pb-10">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
                     <div>
@@ -114,9 +113,16 @@ export default function Edit({ mustVerifyEmail, status }) {
 
                     {/* Footer: Tombol Aksi */}
                     <div className="flex justify-between items-center py-4">
-                        <button className="text-[#EF4444] font-semibold border-2 border-[#EF4444] px-8 py-2.5 rounded-xl hover:bg-red-50 transition">
+                        
+                        {/* Tombol Keluar diubah menjadi komponen Link dari Inertia */}
+                        <Link 
+                            href={route('logout')} 
+                            method="post" 
+                            as="button" 
+                            className="text-[#EF4444] font-semibold border-2 border-[#EF4444] px-8 py-2.5 rounded-xl hover:bg-red-50 transition"
+                        >
                             Keluar
-                        </button>
+                        </Link>
                         
                         <div className="flex gap-4">
                             <button className="px-8 py-2.5 rounded-xl border border-[#0F6B31] text-[#0F6B31] font-semibold hover:bg-green-50 transition">

@@ -9,7 +9,7 @@ use Inertia\Inertia;
 
 Route::get('/', function () {
     return Inertia::render('Beranda');
-});
+})->name('beranda');
 
 Route::get('/api/home', [HomeController::class, 'index']);
 Route::get('/api/courses/{id}', [CourseController::class, 'show']);
