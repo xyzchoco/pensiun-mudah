@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->renameColumn('phone', 'whatsapp');
+            $table->date('tanggal_lahir')->nullable()->after('whatsapp');
+            $table->string('kategori_pensiun')->nullable()->after('tanggal_lahir');
         });
     }
 
@@ -22,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->renameColumn('whatsapp', 'phone');
-        }); 
+            $table->dropColumn(['tanggal_lahir', 'kategori_pensiun']);
+        });
     }
 };
