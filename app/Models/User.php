@@ -21,6 +21,8 @@ class User extends Authenticatable
         'email',
         'password',
         'whatsapp',
+        'tanggal_lahir',
+        'kategori_pensiun',
         'google_id',
         'is_verified',
         'role_id',

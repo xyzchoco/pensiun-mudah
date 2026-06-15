@@ -9,7 +9,7 @@ function getInitials(name) {
         .toUpperCase();
 }
 
-export default function DashboardHeader({ sidebarOpen, onToggleSidebar }) {
+export default function DashboardHeader({ sidebarOpen, onToggleSidebar, onToggleNotif, title = 'Dashboard', showSearch = true }) {
     const { auth } = usePage().props;
     const user = auth.user;
     const firstName = user.name.split(' ')[0];
@@ -35,31 +35,34 @@ export default function DashboardHeader({ sidebarOpen, onToggleSidebar }) {
                     )}
                 </button>
                 <h1 className="font-['Atkinson_Hyperlegible'] font-bold text-lg sm:text-xl text-[#1B1C1C] truncate">
-                    Dashboard
+                    {title}
                 </h1>
             </div>
 
             <div className="flex items-center gap-3 sm:gap-6 shrink-0">
-                <div className="relative w-48 sm:w-72 lg:w-96 max-w-[384px] hidden md:block">
-                    <svg
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#3D4A3E]/60"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                    >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <input
-                        type="text"
-                        placeholder="Cari kursus, konsultan, webinar..."
-                        className="w-full pl-10 pr-4 py-2 bg-[#F0EDED] rounded-lg text-sm font-['Atkinson_Hyperlegible'] text-[#6B7280] outline-none focus:ring-2 focus:ring-[#006B32]/30"
-                    />
-                </div>
+                {showSearch && (
+                    <div className="relative w-48 sm:w-72 lg:w-96 max-w-[384px] hidden md:block">
+                        <svg
+                            className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#3D4A3E]/60"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input
+                            type="text"
+                            placeholder="Cari kursus, konsultan, webinar..."
+                            className="w-full pl-10 pr-4 py-2 bg-[#F0EDED] rounded-lg text-sm font-['Atkinson_Hyperlegible'] text-[#6B7280] outline-none focus:ring-2 focus:ring-[#006B32]/30"
+                        />
+                    </div>
+                )}
 
                 <div className="flex items-center gap-2 sm:gap-4">
                     <button
                         type="button"
+                        onClick={onToggleNotif}
                         className="relative p-2 rounded-full hover:bg-[#F0EDED] transition-colors"
                         aria-label="Notifikasi"
                     >
