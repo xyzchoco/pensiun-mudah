@@ -55,6 +55,7 @@ class LandingPageResource extends Resource
                         FileUpload::make('hero_image_path')
                             ->label('Gambar/Background Hero')
                             ->image()
+                            ->disk('public')
                             ->directory('landing-pages')
                             ->columnSpanFull(),
                     ])->columns(2),
@@ -78,7 +79,7 @@ class LandingPageResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                //
+                
             ])
             ->actions([
                 EditAction::make(),
