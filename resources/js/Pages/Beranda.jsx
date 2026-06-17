@@ -2,10 +2,11 @@ import { useRef } from 'react';
 import MainLayout from '../Layouts/MainLayout';
 import { Link } from '@inertiajs/react';
 
-export default function Beranda() {
+// Pastikan props 'landing' masuk di sini
+export default function Beranda({ landing, events, categories }) {
     const eventScrollRef = useRef(null);
     const kategoriScrollRef = useRef(null);
-    const mppScrollRef = useRef(null); // Ref baru khusus buat banner MPP
+    const mppScrollRef = useRef(null);
 
     const scrollContainerBy = (containerRef, direction) => {
         const container = containerRef.current;
@@ -22,112 +23,50 @@ export default function Beranda() {
 
     return (
         <MainLayout>
-            {/* --- HERO SECTION --- */}
+            {/* --- HERO SECTION (Udah Disambungin ke Database) --- */}
             <section className="bg-white pt-14 pb-12 relative overflow-hidden flex justify-center">
                 <div className="max-w-[1200px] w-full px-6 md:px-10 flex flex-col md:flex-row items-center relative z-10">
-                    
+
                     <div className="flex flex-col gap-6 md:w-1/2 justify-center pt-10">
-                        <h1 className="font-['Public_Sans'] font-bold text-4xl md:text-5xl lg:text-[56px] leading-[1.1] text-[#1B1C1C] tracking-tight max-w-[550px]">
-                            Persiapkan Masa Pensiun Anda dengan <span className="text-[#008740]">PENSIUN</span> MUDAH
-                        </h1>
+                        {/* 1. HERO BADGE (Muncul kalau diisi di Admin) */}
+                        {landing?.hero_badge && (
+                            <span className="bg-[#E8F5E9] text-[#008740] text-sm font-bold px-4 py-1 rounded-full w-max border border-[#008740]/20">
+                                {landing.hero_badge}
+                            </span>
+                        )}
+
+                        {/* 2. HERO TITLE (Ambil dari DB, kalau kosong pakai default) */}
+                        <h1
+                            className="font-['Public_Sans'] font-bold text-4xl md:text-5xl lg:text-[56px] leading-[1.1] text-[#1B1C1C] tracking-tight max-w-[550px]"
+                            dangerouslySetInnerHTML={{
+                                __html: landing?.hero_title || 'Persiapkan Masa Pensiun Anda dengan <span class="text-[#008740]">PENSIUN</span> <span class="text-[#FF8928]">MUDAH</span>'
+                            }}
+                        />
+
+                        {/* 3. HERO SUBTITLE */}
                         <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-lg md:text-xl leading-[32px] max-w-[500px]">
-                            Memberdayakan profesional berpengalaman untuk transisi ke babak kehidupan berikutnya dengan percaya diri, stabilitas keuangan, dan tujuan yang bermakna.
+                            {landing?.hero_subtitle || 'Memberdayakan profesional berpengalaman untuk transisi ke babak kehidupan berikutnya dengan percaya diri, stabilitas keuangan, dan tujuan yang bermakna.'}
                         </p>
+
                         <div className="mt-4">
-                            <Link 
-                                href="/register" 
+                            {/* 4. BUTTON TEXT & URL */}
+                            <Link
+                                href={landing?.hero_button_url || '/register'}
                                 className="bg-[#FF8928] hover:bg-[#e67a22] text-white font-['Atkinson_Hyperlegible'] font-bold text-lg px-8 py-4 rounded-lg shadow-sm inline-block transition-all"
                             >
-                                Mulai Sekarang
+                                {landing?.hero_button_text || 'Mulai Sekarang'}
                             </Link>
                         </div>
                     </div>
 
                     <div className="md:w-1/2 relative mt-12 md:mt-0 flex justify-end">
                         <div className="w-full max-w-[500px] aspect-square rounded-[24px] overflow-hidden relative shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)]">
-                            <img src="/images/hero-image.png" alt="Hero Pensiun Mudah" className="w-full h-full object-cover bg-gray-200" />
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* --- SPESIAL KELAS MPP (SLIDER BANNER TEXT INSIDE BOX) --- */}
-            <section className="bg-[#FBF9F8] py-12">
-                <div className="max-w-[1200px] mx-auto px-6 md:px-10">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="font-['Public_Sans'] font-bold text-3xl text-[#1B1C1C]">Spesial Kelas MPP</h2>
-                        <div className="flex gap-2">
-                            <button 
-                                onClick={() => scrollContainerBy(mppScrollRef, -1)}
-                                className="w-10 h-10 rounded-full bg-white border border-[#E4E2E1] shadow-sm flex items-center justify-center hover:bg-gray-50 text-[#1B1C1C] transition-transform hover:scale-105"
-                            >
-                                <span className="font-bold text-lg">&lt;</span>
-                            </button>
-                            <button 
-                                onClick={() => scrollContainerBy(mppScrollRef, 1)}
-                                className="w-10 h-10 rounded-full bg-white border border-[#E4E2E1] shadow-sm flex items-center justify-center hover:bg-gray-50 text-[#1B1C1C] transition-transform hover:scale-105"
-                            >
-                                <span className="font-bold text-lg">&gt;</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div ref={mppScrollRef} className="flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        {/* BANNER 1 */}
-                        <div className="w-[300px] md:w-[800px] shrink-0 snap-center rounded-[24px] overflow-hidden relative h-[250px] md:h-[350px] shadow-md group">
-                            {/* Gambar Background */}
-                            <img src="/images/mpp-1.png" alt="MPP 1" className="absolute inset-0 w-full h-full object-cover bg-gray-300 group-hover:scale-105 transition-transform duration-700" />
-                            {/* Overlay Gelap Biar Teks Kebaca */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
-                            {/* Konten Teks di Atas Gambar */}
-                            <div className="absolute inset-0 p-8 md:p-12 flex flex-col justify-center">
-                                <span className="bg-[#FF8928] text-white text-xs font-bold px-3 py-1 rounded-full w-max mb-4">Eksklusif</span>
-                                <h3 className="font-['Public_Sans'] text-2xl md:text-4xl font-bold text-white mb-3 max-w-[500px] leading-tight">
-                                    Persiapan Finansial Menjelang Pensiun
-                                </h3>
-                                <p className="font-['Atkinson_Hyperlegible'] text-white/90 text-sm md:text-base max-w-[450px] mb-6 line-clamp-2 md:line-clamp-none">
-                                    Pelajari strategi mengelola pesangon dan investasi aman agar masa tua tetap produktif dan bebas finansial.
-                                </p>
-                                <Link href="#" className="w-max bg-[#008740] hover:bg-[#006B32] text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                                    Ikuti Kelas Ini
-                                </Link>
-                            </div>
-                        </div>
-
-                        {/* BANNER 2 */}
-                        <div className="w-[300px] md:w-[800px] shrink-0 snap-center rounded-[24px] overflow-hidden relative h-[250px] md:h-[350px] shadow-md group">
-                            <img src="/images/mpp-2.png" alt="MPP 2" className="absolute inset-0 w-full h-full object-cover bg-gray-300 group-hover:scale-105 transition-transform duration-700" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
-                            <div className="absolute inset-0 p-8 md:p-12 flex flex-col justify-center">
-                                <span className="bg-[#008740] text-white text-xs font-bold px-3 py-1 rounded-full w-max mb-4">Terbaru</span>
-                                <h3 className="font-['Public_Sans'] text-2xl md:text-4xl font-bold text-white mb-3 max-w-[500px] leading-tight">
-                                    Kewirausahaan: Dari Karyawan Jadi Bos
-                                </h3>
-                                <p className="font-['Atkinson_Hyperlegible'] text-white/90 text-sm md:text-base max-w-[450px] mb-6 line-clamp-2 md:line-clamp-none">
-                                    Punya ide bisnis tapi bingung mulai dari mana? Kelas ini akan memandu Anda step-by-step membangun usaha di masa pensiun.
-                                </p>
-                                <Link href="#" className="w-max bg-[#FF8928] hover:bg-[#e67a22] text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                                    Ikuti Kelas Ini
-                                </Link>
-                            </div>
-                        </div>
-
-                        {/* BANNER 3 */}
-                        <div className="w-[300px] md:w-[800px] shrink-0 snap-center rounded-[24px] overflow-hidden relative h-[250px] md:h-[350px] shadow-md group">
-                            <img src="/images/mpp-3.png" alt="MPP 3" className="absolute inset-0 w-full h-full object-cover bg-gray-300 group-hover:scale-105 transition-transform duration-700" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
-                            <div className="absolute inset-0 p-8 md:p-12 flex flex-col justify-center">
-                                <span className="bg-[#FA4C70] text-white text-xs font-bold px-3 py-1 rounded-full w-max mb-4">Populer</span>
-                                <h3 className="font-['Public_Sans'] text-2xl md:text-4xl font-bold text-white mb-3 max-w-[500px] leading-tight">
-                                    Mental & Psikologi Menghadapi Pensiun
-                                </h3>
-                                <p className="font-['Atkinson_Hyperlegible'] text-white/90 text-sm md:text-base max-w-[450px] mb-6 line-clamp-2 md:line-clamp-none">
-                                    Jangan biarkan *post-power syndrome* mengganggu. Temukan tujuan hidup baru dan nikmati masa tua dengan bahagia.
-                                </p>
-                                <Link href="#" className="w-max bg-white text-[#1B1C1C] hover:bg-gray-100 font-bold py-3 px-6 rounded-lg transition-colors">
-                                    Ikuti Kelas Ini
-                                </Link>
-                            </div>
+                            {/* 5. HERO IMAGE (Cek DB dulu, kalau gada panggil gambar default di public/images) */}
+                            <img
+                                src={landing?.hero_image_path ? `/storage/${landing.hero_image_path}` : "/images/hero-image.png"}
+                                alt="Hero Pensiun Mudah"
+                                className="w-full h-full object-cover bg-gray-200"
+                            />
                         </div>
                     </div>
                 </div>
@@ -181,7 +120,7 @@ export default function Beranda() {
                         MENGAPA PENSIUN MUDAH?
                     </p>
                     <h2 className="font-['Public_Sans'] font-bold text-3xl md:text-4xl text-[#1B1C1C] text-center mb-4">
-                        Semua yang Anda Butuhkan<br/>dalam Satu Platform
+                        Semua yang Anda Butuhkan<br />dalam Satu Platform
                     </h2>
                     <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-center max-w-[600px] mb-14">
                         Dari persiapan mental, kesehatan, keuangan, hingga kewirausahaan — kami hadir mendampingi perjalanan pensiun Anda.
@@ -211,9 +150,9 @@ export default function Beranda() {
             <section className="bg-white py-12">
                 <div className="max-w-[1200px] mx-auto px-6 md:px-10">
                     <h2 className="font-['Public_Sans'] font-bold text-3xl text-[#1B1C1C] mb-8">Event</h2>
-                    
+
                     <div className="relative group">
-                        <button 
+                        <button
                             onClick={() => scrollContainerBy(eventScrollRef, -1)}
                             className="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white border border-[#E4E2E1] shadow-lg flex items-center justify-center hover:bg-gray-50 text-[#1B1C1C] z-10 transition-transform hover:scale-105"
                         >
@@ -221,37 +160,54 @@ export default function Beranda() {
                         </button>
 
                         <div ref={eventScrollRef} className="flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                            {[1, 2, 3, 4, 5, 6].map((item) => (
-                                <div key={item} className="w-[280px] md:w-[320px] shrink-0 snap-start bg-white border border-[#E4E2E1] rounded-xl overflow-hidden flex flex-col">
-                                    <div className="h-40 bg-gray-200 relative shrink-0">
-                                        <img src={`/images/event-${item > 4 ? 1 : item}.png`} alt="Event" className="w-full h-full object-cover" />
-                                        <div className="absolute top-3 left-3 flex gap-2">
-                                            <span className="bg-[#5266EB] text-white text-[10px] font-bold px-2 py-1 rounded">Online</span>
-                                            <span className="bg-white text-[#1B1C1C] text-[10px] font-bold px-2 py-1 rounded">Kewirausahaan</span>
+
+                            {/* --- KODINGAN DINAMIS MULAI DARI SINI --- */}
+                            {events && events.length > 0 ? (
+                                events.map((event) => (
+                                    <div key={event.id} className="w-[280px] md:w-[320px] shrink-0 snap-start bg-white border border-[#E4E2E1] rounded-xl overflow-hidden flex flex-col">
+                                        <div className="h-40 bg-gray-200 relative shrink-0">
+                                            {/* Panggil gambar dari storage, kalau kosong pake default */}
+                                            <img
+                                                src={event.image_path ? `/storage/${event.image_path}` : "/images/event-1.png"}
+                                                alt={event.judul}
+                                                className="w-full h-full object-cover"
+                                            />
+                                            <div className="absolute top-3 left-3 flex gap-2">
+                                                <span className="bg-[#5266EB] text-white text-[10px] font-bold px-2 py-1 rounded">{event.jenis_event}</span>
+                                                <span className="bg-white text-[#1B1C1C] text-[10px] font-bold px-2 py-1 rounded">{event.kategori}</span>
+                                            </div>
+                                        </div>
+                                        <div className="p-5 flex flex-col flex-grow">
+                                            <h3 className="font-['Public_Sans'] font-bold text-base text-[#1B1C1C] mb-2 leading-tight">{event.judul}</h3>
+                                            <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-xs mb-4 line-clamp-2">{event.deskripsi}</p>
+
+                                            <div className="flex flex-col gap-2 text-xs text-[#3D4A3E] mb-6">
+                                                {/* Format tanggal biar cantik ala Indonesia */}
+                                                <div className="flex items-center gap-2"><span>📅</span> {new Date(event.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                                                <div className="flex items-center gap-2"><span>🎥</span> {event.lokasi_link}</div>
+                                                <div className="flex items-center gap-2"><span>👤</span> {event.narasumber}</div>
+                                            </div>
+
+                                            <div className="mt-auto">
+                                                <p className="text-xs text-center text-[#3D4A3E] mb-3">Kapasitas {event.kapasitas} | <span className="text-[#008740]">Sisa Kuota: {event.sisa_kuota}</span></p>
+                                                <button className="w-full bg-[#FF8928] hover:bg-[#e67a22] text-white font-bold py-2 rounded-lg text-sm transition-colors">
+                                                    Lihat Detail
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="p-5 flex flex-col flex-grow">
-                                        <h3 className="font-['Public_Sans'] font-bold text-base text-[#1B1C1C] mb-2 leading-tight">Bisnis Tanaman Hias: Dari Hobi Jadi Rezeki</h3>
-                                        <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-xs mb-4 line-clamp-2">Bagaimana mengubah kecintaan pada tanaman menjadi peluang bisnis yang menguntungkan...</p>
-                                        
-                                        <div className="flex flex-col gap-2 text-xs text-[#3D4A3E] mb-6">
-                                            <div className="flex items-center gap-2"><span>📅</span> 05 Juni 2024</div>
-                                            <div className="flex items-center gap-2"><span>🎥</span> Google Meet</div>
-                                            <div className="flex items-center gap-2"><span>👤</span> Andi Wijaya</div>
-                                        </div>
-                                        
-                                        <div className="mt-auto">
-                                            <p className="text-xs text-center text-[#3D4A3E] mb-3">Kapasitas 100 | <span className="text-[#008740]">Sisa Kuota: 82</span></p>
-                                            <button className="w-full bg-[#FF8928] hover:bg-[#e67a22] text-white font-bold py-2 rounded-lg text-sm transition-colors">
-                                                Lihat Detail
-                                            </button>
-                                        </div>
-                                    </div>
+                                ))
+                            ) : (
+                                // Muncul kalau data event di database lu masih kosong
+                                <div className="w-full text-center py-10">
+                                    <p className="text-gray-500 italic font-['Atkinson_Hyperlegible']">Belum ada event yang tersedia saat ini boss.</p>
                                 </div>
-                            ))}
+                            )}
+                            {/* --- KODINGAN DINAMIS SELESAI --- */}
+
                         </div>
 
-                        <button 
+                        <button
                             onClick={() => scrollContainerBy(eventScrollRef, 1)}
                             className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white border border-[#E4E2E1] shadow-lg flex items-center justify-center hover:bg-gray-50 text-[#1B1C1C] z-10 transition-transform hover:scale-105"
                         >
@@ -265,9 +221,10 @@ export default function Beranda() {
             <section className="bg-white py-12">
                 <div className="max-w-[1200px] mx-auto px-6 md:px-10">
                     <h2 className="font-['Public_Sans'] font-bold text-3xl text-[#1B1C1C] mb-8">Kategori Program</h2>
-                    
+
                     <div className="relative group">
-                        <button 
+                        {/* Tombol Panah Kiri */}
+                        <button
                             onClick={() => scrollContainerBy(kategoriScrollRef, -1)}
                             className="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white border border-[#E4E2E1] shadow-lg flex items-center justify-center hover:bg-gray-50 text-[#1B1C1C] z-10 transition-transform hover:scale-105"
                         >
@@ -275,89 +232,62 @@ export default function Beranda() {
                         </button>
 
                         <div ref={kategoriScrollRef} className="flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                            
-                            <div className="w-[260px] md:w-[280px] shrink-0 snap-start bg-white border border-[#E4E2E1] rounded-xl overflow-hidden p-4 flex flex-col">
-                                <div className="h-32 bg-gray-200 rounded-lg mb-4 relative overflow-hidden shrink-0">
-                                    <img src="/images/kat-1.png" className="w-full h-full object-cover" />
-                                    <div className="absolute top-2 left-2 bg-white text-xs font-bold px-2 py-1 rounded">Populer</div>
-                                </div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <h3 className="font-['Public_Sans'] font-bold text-base text-[#1B1C1C]">Psikologi Pensiun</h3>
-                                    <span className="text-xs font-bold text-[#008740]">⭐ 4.9</span>
-                                </div>
-                                <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-xs mb-4 flex-grow">Siapkan mental dan spiritual menghadapi transisi kehidupan</p>
-                                <p className="text-xs font-bold text-[#1B1C1C] mb-4">58 Kursus</p>
-                                <button className="w-full border border-[#008740] text-[#008740] hover:bg-[#008740] hover:text-white font-bold py-2 rounded-lg text-sm transition-colors">
-                                    Lihat Detail
-                                </button>
-                            </div>
 
-                            <div className="w-[260px] md:w-[280px] shrink-0 snap-start bg-white border border-[#E4E2E1] rounded-xl overflow-hidden p-4 flex flex-col">
-                                <div className="h-32 bg-gray-200 rounded-lg mb-4 relative overflow-hidden shrink-0">
-                                    <img src="/images/kat-2.png" className="w-full h-full object-cover" />
-                                    <div className="absolute top-2 left-2 bg-white text-xs font-bold px-2 py-1 rounded">Terbaru</div>
-                                </div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <h3 className="font-['Public_Sans'] font-bold text-base text-[#1B1C1C]">Financial Literacy</h3>
-                                    <span className="text-xs font-bold text-[#008740]">⭐ 4.8</span>
-                                </div>
-                                <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-xs mb-4 flex-grow">Kelola keuangan, investasi cerdas untuk masa tua</p>
-                                <p className="text-xs font-bold text-[#1B1C1C] mb-4">45 Kursus</p>
-                                <button className="w-full border border-[#008740] text-[#008740] hover:bg-[#008740] hover:text-white font-bold py-2 rounded-lg text-sm transition-colors">
-                                    Lihat Detail
-                                </button>
-                            </div>
+                            {/* --- KODINGAN KATEGORI DINAMIS MULAI DARI SINI --- */}
+                            {categories && categories.length > 0 ? (
+                                categories.map((kategori, index) => (
+                                    <div key={kategori.id} className="w-[260px] md:w-[280px] shrink-0 snap-start bg-white border border-[#E4E2E1] rounded-xl overflow-hidden p-4 flex flex-col shadow-sm hover:shadow-md transition-shadow">
+                                        <div className="h-32 bg-gray-200 rounded-lg mb-4 relative overflow-hidden shrink-0">
+                                            {/* Gambar sementara pakai bawaan template secara berurutan */}
+                                            <img src={kategori.gambar ? `/storage/${kategori.gambar}` : `/images/kat-${(index % 4) + 1}.png`} alt={kategori.nama} className="w-full h-full object-cover" />
 
-                            <div className="w-[260px] md:w-[280px] shrink-0 snap-start bg-white border border-[#E4E2E1] rounded-xl overflow-hidden p-4 flex flex-col">
-                                <div className="h-32 bg-gray-200 rounded-lg mb-4 relative overflow-hidden shrink-0">
-                                    <img src="/images/kat-3.png" className="w-full h-full object-cover" />
-                                    <div className="absolute top-2 left-2 bg-[#FFF0F4] text-[#FA4C70] text-xs font-bold px-2 py-1 rounded">Wellness</div>
-                                </div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <h3 className="font-['Public_Sans'] font-bold text-base text-[#1B1C1C]">Wellness & Kesehatan</h3>
-                                    <span className="text-xs font-bold text-[#008740]">⭐ 4.9</span>
-                                </div>
-                                <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-xs mb-4 flex-grow">Jaga kesehatan fisik dan mental di usia senja</p>
-                                <p className="text-xs font-bold text-[#1B1C1C] mb-4">32 Kursus</p>
-                                <button className="w-full border border-[#008740] text-[#008740] hover:bg-[#008740] hover:text-white font-bold py-2 rounded-lg text-sm transition-colors">
-                                    Lihat Detail
-                                </button>
-                            </div>
+                                            {/* Render Label/Badge Icon jika diisi di DB */}
+                                            {kategori.icon && (
+                                                <div
+                                                    className="absolute top-2 left-2 text-xs font-bold px-2 py-1 rounded"
+                                                    style={{
+                                                        backgroundColor: kategori.warna_bg_icon || '#FFF3E5',
+                                                        color: kategori.warna_teks_icon || '#FF8928'
+                                                    }}
+                                                >
+                                                    {kategori.icon}
+                                                </div>
+                                            )}
+                                        </div>
 
-                            <div className="w-[260px] md:w-[280px] shrink-0 snap-start bg-white border border-[#E4E2E1] rounded-xl overflow-hidden p-4 flex flex-col">
-                                <div className="h-32 bg-gray-200 rounded-lg mb-4 relative overflow-hidden shrink-0">
-                                    <img src="/images/kat-4.png" className="w-full h-full object-cover" />
-                                    <div className="absolute top-2 left-2 bg-[#008740] text-white text-xs font-bold px-2 py-1 rounded">Bisnis</div>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h3 className="font-['Public_Sans'] font-bold text-base text-[#1B1C1C] line-clamp-1" title={kategori.nama}>
+                                                {kategori.nama}
+                                            </h3>
+                                            {/* Rating hardcode sementara */}
+                                            <span className="text-xs font-bold text-[#008740]">⭐ 4.8</span>
+                                        </div>
+
+                                        <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-xs mb-4 flex-grow line-clamp-2">
+                                            {kategori.deskripsi || 'Deskripsi belum tersedia.'}
+                                        </p>
+
+                                        {/* Menggunakan courses_count hasil dari withCount() di backend */}
+                                        <p className="text-xs font-bold text-[#1B1C1C] mb-4">
+                                            {kategori.courses_count || 0} Kursus
+                                        </p>
+
+                                        <button className="w-full border border-[#008740] text-[#008740] hover:bg-[#008740] hover:text-white font-bold py-2 rounded-lg text-sm transition-colors">
+                                            Lihat Detail
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="w-full text-center py-10">
+                                    <p className="text-gray-500 italic font-['Atkinson_Hyperlegible']">Belum ada kategori yang tersedia saat ini boss.</p>
                                 </div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <h3 className="font-['Public_Sans'] font-bold text-base text-[#1B1C1C]">Kewirausahaan</h3>
-                                    <span className="text-xs font-bold text-[#008740]">⭐ 4.8</span>
-                                </div>
-                                <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-xs mb-4 flex-grow">Bangun bisnis produktif dan menguntungkan pasca pensiun</p>
-                                <p className="text-xs font-bold text-[#1B1C1C] mb-4">12 Jam Materi</p>
-                                <button className="w-full border border-[#008740] text-[#008740] hover:bg-[#008740] hover:text-white font-bold py-2 rounded-lg text-sm transition-colors">
-                                    Lihat Detail
-                                </button>
-                            </div>
-                            
-                            <div className="w-[260px] md:w-[280px] shrink-0 snap-start bg-white border border-[#E4E2E1] rounded-xl overflow-hidden p-4 flex flex-col">
-                                <div className="h-32 bg-gray-200 rounded-lg mb-4 relative overflow-hidden shrink-0">
-                                    <img src="/images/kat-1.png" className="w-full h-full object-cover" />
-                                    <div className="absolute top-2 left-2 bg-[#FFF3E5] text-[#FF8928] text-xs font-bold px-2 py-1 rounded">Teknologi</div>
-                                </div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <h3 className="font-['Public_Sans'] font-bold text-base text-[#1B1C1C]">Gaptek No More</h3>
-                                    <span className="text-xs font-bold text-[#008740]">⭐ 4.7</span>
-                                </div>
-                                <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-xs mb-4 flex-grow">Belajar gunakan smartphone dan internet secara aman</p>
-                                <p className="text-xs font-bold text-[#1B1C1C] mb-4">20 Kursus</p>
-                                <button className="w-full border border-[#008740] text-[#008740] hover:bg-[#008740] hover:text-white font-bold py-2 rounded-lg text-sm transition-colors">
-                                    Lihat Detail
-                                </button>
-                            </div>
+                            )}
+                            {/* --- KODINGAN KATEGORI DINAMIS SELESAI --- */}
+
                         </div>
 
-                        <button 
+                        {/* Tombol Panah Kanan */}
+                        <button
                             onClick={() => scrollContainerBy(kategoriScrollRef, 1)}
                             className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white border border-[#E4E2E1] shadow-lg flex items-center justify-center hover:bg-gray-50 text-[#1B1C1C] z-10 transition-transform hover:scale-105"
                         >

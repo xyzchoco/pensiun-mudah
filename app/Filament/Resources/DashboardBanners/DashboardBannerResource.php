@@ -19,8 +19,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Schemas\Components\Section;
 use Filament\Actions\EditAction; // v5 table action
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\BulkActionGroup;
 use BackedEnum;
 
 class DashboardBannerResource extends Resource
@@ -40,24 +40,26 @@ class DashboardBannerResource extends Resource
                     ->schema([
                         TextInput::make('promo_badge')
                             ->label('Badge Promo (Cth: PROMO SPESIAL)')
-                            ->maxLength(255),
+                            ->maxLength(50),
                         TextInput::make('title')
                             ->label('Judul Banner')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(50),
                         Textarea::make('description')
                             ->label('Deskripsi Pendek')
                             ->rows(3)
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->maxLength(100),
                         TextInput::make('button_text')
                             ->label('Teks Tombol (Cth: Gunakan Kode)')
-                            ->maxLength(255),
+                            ->maxLength(50),
                         TextInput::make('target_url')
                             ->label('URL Target Tombol')
-                            ->maxLength(255),
+                            ->maxLength(50),
                         FileUpload::make('image_path')
                             ->label('Gambar Latar Banner (Rekomendasi overlay transparan)')
                             ->image()
+                            ->disk('public')
                             ->directory('dashboard-banners')
                             ->columnSpanFull(),
                         Toggle::make('is_active')
@@ -72,7 +74,8 @@ class DashboardBannerResource extends Resource
         return $table
             ->columns([
                 ImageColumn::make('image_path')
-                    ->label('Gambar'),
+                    ->label('Gambar')
+                    ->disk('public'),
                 TextColumn::make('title')
                     ->label('Judul Banner')
                     ->searchable(),
@@ -90,10 +93,14 @@ class DashboardBannerResource extends Resource
                 //
             ])
             ->actions([
-                EditAction::make(),
+                EditAction::make()->icon('heroicon-o-pencil')
+                ->label('Edit'),
+                DeleteAction::make()->icon('heroicon-o-trash')
+                ->label('Hapus'),
             ])
             ->bulkActions([
-                DeleteBulkAction::make(),
+                DeleteBulkAction::make()->icon('heroicon-o-trash')
+                ->label('Hapus'),
             ]);
     }
 

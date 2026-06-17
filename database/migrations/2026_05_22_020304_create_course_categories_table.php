@@ -12,11 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('course_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('category_name');
+            $table->id(); // Otomatis jadi category_id (PK)
+            $table->string('nama'); // Sesuai diagram (sebelumnya category_name)
+            $table->text('deskripsi')->nullable();
+            $table->string('icon')->nullable();
+            $table->string('warna_bg_icon')->nullable();
+            $table->string('gambar')->nullable();
+            $table->string('warna_teks_icon')->nullable();
+            $table->integer('jumlah_kursus')->default(0); 
             $table->timestamps();
         });
     }
+
     /**
      * Reverse the migrations.
      */

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,11 +16,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // 1. Kita bikin Role-nya langsung di sini
+        $roleAdmin = Role::create([
+            'role_name' => 'Admin' 
+        ]);
 
+        // 2. Bikin User dan masukin ID dari role yang di atas
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'role_id' => $roleAdmin->id, 
         ]);
     }
 }

@@ -22,7 +22,7 @@ class CourseForm
                     ->required(),
                 
                 Select::make('category_id')
-                    ->relationship('category', 'category_name')
+                    ->relationship('category', 'nama')
                     ->label('Kategori Kursus')
                     ->required(),
 
@@ -30,7 +30,7 @@ class CourseForm
                 TextInput::make('title')
                     ->label('Judul Kursus')
                     ->required()
-                    ->maxLength(255)
+                    ->maxLength(100)
                     ->live(onBlur: true) // Otomatis bikin slug saat judul diketik
                     ->afterStateUpdated(fn (string $operation, $state, $set) => $operation === 'create' ? $set('slug', Str::slug($state)) : null),
 
@@ -47,6 +47,7 @@ class CourseForm
                 FileUpload::make('thumbnail')
                     ->label('Thumbnail Kursus')
                     ->image()
+                    ->disk('public')
                     ->directory('course-thumbnails'), // Nanti gambarnya tersimpan di folder ini
 
                 // Harga & Status
