@@ -13,13 +13,19 @@ class CourseController extends Controller
 {
     public function show(Request $request, $id)
     {
-        // Cari kursus beserta relasinya
+        // Cari kursus berdasarkan id atau slug, beserta relasinya
         $course = Course::with(['modules' => function ($query) {
             $query->orderBy('urutan', 'asc')
                   ->with(['materials' => function ($q) {
                       $q->orderBy('urutan', 'asc');
                   }, 'quizzes']);
-        }])->find($id);
+        }])->where(function ($query) use ($id) {
+            if (is_numeric($id)) {
+                $query->where('id', $id)->orWhere('slug', $id);
+            } else {
+                $query->where('slug', $id);
+            }
+        })->first();
 
         if (!$course) {
             if ($request->is('api/*')) {
@@ -38,7 +44,7 @@ class CourseController extends Controller
             ]);
         }
 
-        return Inertia::render('CourseDetail', [
+        return Inertia::render('DetailPelatihan', [
             'course' => $course
         ]);
     }

@@ -80,10 +80,10 @@ export default function BeliPelatihan({ banners, categories, courses }) {
                     {/* Tombol geser banner manual */}
                     {banners && banners.length > 1 && (
                         <>
-                            <button onClick={() => scrollContainerBy(bannerScrollRef, -1)} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => scrollContainerBy(bannerScrollRef, -1)} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
                                 &lt;
                             </button>
-                            <button onClick={() => scrollContainerBy(bannerScrollRef, 1)} className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => scrollContainerBy(bannerScrollRef, 1)} className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
                                 &gt;
                             </button>
                         </>
@@ -119,7 +119,7 @@ export default function BeliPelatihan({ banners, categories, courses }) {
                 <section className="relative group">
                     <button
                         onClick={() => scrollContainerBy(courseScrollRef, -1)}
-                        className="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white border border-[#E4E2E1] shadow-lg items-center justify-center hover:bg-gray-50 text-[#1B1C1C] z-10 transition-transform hover:scale-105 hidden md:flex"
+                        className="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white border border-[#E4E2E1] shadow-lg items-center justify-center hover:bg-gray-50 text-[#1B1C1C] z-10 transition-transform hover:scale-105 hidden md:flex pointer-events-auto"
                     >
                         <span className="font-bold text-xl">&lt;</span>
                     </button>
@@ -169,12 +169,18 @@ export default function BeliPelatihan({ banners, categories, courses }) {
                                         </div>
 
                                         <div className="flex flex-col gap-3">
-                                            <button className="w-full rounded-lg bg-[#FF8928] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#e67a22]">
+                                            <a
+                                                href={`/pelatihan/${course.slug || course.id}/pembelian`}
+                                                className="relative z-20 inline-flex w-full cursor-pointer items-center justify-center rounded-lg bg-[#FF8928] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#e67a22] focus:outline-none focus:ring-2 focus:ring-[#FF8928]/30 pointer-events-auto"
+                                            >
                                                 Beli Pelatihan
-                                            </button>
-                                            <button className="w-full rounded-lg border-2 border-[#006B32] px-4 py-2.5 text-sm font-bold text-[#006B32] transition hover:bg-[#F0FDF4]">
+                                            </a>
+                                            <Link
+                                                href={`/pelatihan/${course.slug || course.id}`}
+                                                className="relative z-20 inline-flex w-full cursor-pointer items-center justify-center rounded-lg border-2 border-[#006B32] px-4 py-2.5 text-sm font-bold text-[#006B32] transition hover:bg-[#F0FDF4] focus:outline-none focus:ring-2 focus:ring-[#006B32]/30 pointer-events-auto"
+                                            >
                                                 Lihat Detail
-                                            </button>
+                                            </Link>
                                         </div>
                                     </div>
                                 </article>
@@ -188,7 +194,7 @@ export default function BeliPelatihan({ banners, categories, courses }) {
 
                     <button
                         onClick={() => scrollContainerBy(courseScrollRef, 1)}
-                        className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white border border-[#E4E2E1] shadow-lg items-center justify-center hover:bg-gray-50 text-[#1B1C1C] z-10 transition-transform hover:scale-105 hidden md:flex"
+                        className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white border border-[#E4E2E1] shadow-lg items-center justify-center hover:bg-gray-50 text-[#1B1C1C] z-10 transition-transform hover:scale-105 hidden md:flex pointer-events-auto"
                     >
                         <span className="font-bold text-xl">&gt;</span>
                     </button>
