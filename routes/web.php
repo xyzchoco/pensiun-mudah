@@ -7,10 +7,13 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CourseController;
 use App\Models\LandingPage;
 use App\Models\Webinar;
+use App\Models\User;
 use Inertia\Inertia;
+use Laravel\Socialite\Facades\Socialite;
 use App\Models\CourseCategory;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PelatihanController;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     $landingData = LandingPage::first(); 
@@ -24,6 +27,35 @@ Route::get('/', function () {
         'categories' => $categories
     ]);
 })->name('beranda');
+
+Route::get('/auth/google/redirect', function () {
+    return Socialite::driver('google')->redirect();
+})->name('google.redirect');
+
+Route::get('/auth/google/callback', function () {
+    try {
+        $googleUser = Socialite::driver('google')->user();
+        
+        // Cek apakah emailnya udah ada di DB, kalau belum ada otomatis buat baru
+        $user = User::updateOrCreate([
+            'email' => $googleUser->email,
+        ], [
+            'name' => $googleUser->name,
+            'password' => bcrypt(str()->random(16)), 
+            'role_id' => 2 // <-- UDAH DIBUKA BIAR DATABASE NGGAK NOLAK
+        ]);
+
+        // Loginkan usernya ke dalam sistem Laravel
+        Auth::login($user);
+
+        // Lempar ke halaman dashboard utama
+        return redirect()->intended('/dashboard');
+
+    } catch (\Exception $e) {
+        // Nampilin error aslinya ke layar biar gampang di-debug
+        dd($e->getMessage());
+    }
+});
 
 Route::get('/api/home', [HomeController::class, 'index']);
 Route::get('/api/courses/{id}', [CourseController::class, 'show']);
