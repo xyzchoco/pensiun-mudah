@@ -1,22 +1,109 @@
-# Pensiun Mudah
+# 🚀 LMS Learning Management System
 
-Learning Management System (LMS) untuk membantu pengguna mempersiapkan masa pensiun melalui pelatihan, konsultasi, dan berbagai materi pembelajaran.
-
----
-
-## 🚀 Requirements
-
-Pastikan perangkat Anda telah terpasang:
-
-* PHP >= 8.2
-* Composer
-* Node.js >= 18
-* NPM
-* MySQL / MariaDB
+Sistem Learning Management System (LMS) modern yang dibangun untuk mendukung proses pembelajaran digital secara terstruktur, interaktif, dan efisien. Aplikasi ini menyediakan fitur manajemen kursus, pelacakan progres belajar otomatis, kuis, serta panel administrasi yang lengkap untuk mengelola seluruh konten pembelajaran.
 
 ---
 
-## 📦 Installation
+## 🛠 Tech Stack
+
+### Backend
+
+* Laravel 12
+* PHP 8.2+
+* Laravel Sanctum
+* Laravel Queue
+* Filament Admin Panel v5
+
+### Frontend
+
+* React.js
+* Inertia.js
+* Vite
+* Tailwind CSS
+
+### Database
+
+* PostgreSQL
+
+### Payment Gateway
+
+* Midtrans Sandbox
+
+### Deployment
+
+* Azure Cloud
+* Biznet Gio VPS
+* Nginx
+* Ubuntu Server
+
+---
+
+## ✨ Features
+
+### 📚 Course Management
+
+* Manajemen kursus, modul, dan materi pembelajaran.
+* Struktur pembelajaran berbasis modul.
+* Pengurutan materi yang fleksibel.
+
+### 📈 Learning Progress Tracking
+
+* Pelacakan progres belajar otomatis.
+* Perhitungan persentase penyelesaian kursus.
+* Riwayat pembelajaran pengguna.
+
+### 📝 Quiz & Assessment
+
+* Pembuatan kuis untuk setiap modul.
+* Penilaian otomatis.
+* Evaluasi hasil belajar peserta.
+
+### 🔒 Security & Access Control
+
+* Validasi kepemilikan kursus.
+* Proteksi akses materi pembelajaran.
+* Authentication menggunakan Laravel Sanctum.
+
+### 🎛 Admin Panel
+
+* Dashboard administrasi menggunakan Filament v5.
+* Manajemen pengguna.
+* Manajemen kursus dan materi.
+* Monitoring aktivitas pembelajaran.
+
+### 💳 Payment Integration
+
+* Integrasi Midtrans Sandbox.
+* Simulasi pembayaran kursus.
+* Verifikasi transaksi otomatis.
+
+---
+
+## 📂 Project Structure
+
+```text
+app/
+├── Filament/
+├── Http/
+│   ├── Controllers/
+│   └── Middleware/
+├── Models/
+├── Services/
+└── Providers/
+
+resources/
+├── js/
+│   ├── Pages/
+│   ├── Components/
+│   └── Layouts/
+└── views/
+
+routes/
+├── web.php
+└── api.php
+```
+
+## ⚙️ Installation
 
 ### 1. Clone Repository
 
@@ -27,80 +114,56 @@ cd pensiun-mudah
 
 ### 2. Install Dependencies
 
-Install dependency backend Laravel:
-
 ```bash
 composer install
-```
-
-Install dependency frontend:
-
-```bash
 npm install
 ```
 
-### 3. Setup Environment
-
-Salin file environment:
+### 3. Configure Environment
 
 ```bash
 cp .env.example .env
-```
-
-Generate application key:
-
-```bash
 php artisan key:generate
 ```
 
-### 4. Configure Database
-
-Buka file `.env` dan sesuaikan konfigurasi database:
+Sesuaikan konfigurasi database PostgreSQL pada file `.env`.
 
 ```env
-DB_CONNECTION=mysql
+DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
-DB_PORT=3306
+DB_PORT=5432
 DB_DATABASE=pensiun_mudah
-DB_USERNAME=root
-DB_PASSWORD=
+DB_USERNAME=postgres
+DB_PASSWORD=123
 ```
 
-### 5. Run Database Migration
+### 4. Run Migration
 
 ```bash
-php artisan migrate
+php artisan migrate --seed
 ```
 
-Jika tersedia seeder:
+### 5. Build Frontend Assets
 
 ```bash
-php artisan db:seed
+npm run build
 ```
 
----
+### 6. Run Development Server
 
-## ▶️ Running the Project
-
-Jalankan aplikasi menggunakan dua terminal.
-
-### Terminal 1 - Laravel Server
+Backend:
 
 ```bash
 php artisan serve
 ```
 
-### Terminal 2 - Vite Development Server
+Frontend:
 
 ```bash
 npm run dev
 ```
 
----
-
-## 🌐 Access Application
-
-Setelah kedua service berjalan, buka:
+Aplikasi dapat diakses melalui:
 
 ```text
 http://127.0.0.1:8000
@@ -108,25 +171,69 @@ http://127.0.0.1:8000
 
 ---
 
-## 🛠 Tech Stack
+## 🔌 API Example
 
-### Backend
+### Mark Learning Material as Completed
 
-* Laravel 13
-* Inertia.js
+**Endpoint**
 
-### Frontend
+```http
+POST /api/materials/mark-done
+```
 
-* React.js
-* Tailwind CSS
-* Vite
+**Request**
 
-### Database
+```json
+{
+    "material_id": 1
+}
+```
 
-* MySQL / MariaDB
+**Response**
+
+```json
+{
+    "success": true,
+    "message": "Progress berhasil diperbarui",
+    "progress": 75
+}
+```
+
+---
+
+## 🌿 Git Workflow
+
+### Branch Structure
+
+```text
+main        → Production
+dev         → Development
+backend     → Backend Development
+frontend    → Frontend Development
+```
+
+### Development Flow
+
+```bash
+git checkout dev
+git pull origin dev
+
+git checkout -b feature/nama-fitur
+
+git add .
+git commit -m "feat: add new feature"
+
+git push origin feature/nama-fitur
+```
+
+---
+
+## 👨‍💻 Development Team
+
+Developed as a modern Learning Management System platform using Laravel, React, PostgreSQL, and Filament Admin Panel.
 
 ---
 
 ## 📄 License
 
-This project is developed for JTCC
+This project is licensed under the MIT License.

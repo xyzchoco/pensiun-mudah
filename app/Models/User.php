@@ -2,46 +2,35 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
         'whatsapp',
+        'tanggal_lahir',
+        'kategori_pensiun',
         'google_id',
         'is_verified',
         'role_id',
         'membership_id',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -51,24 +40,23 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Relasi ke tabel roles
-     */
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
     }
 
-    /**
-     * Relasi ke tabel memberships
-     */
     public function membership(): BelongsTo
     {
         return $this->belongsTo(Membership::class);
     }
 
-    public function enrollments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function enrollments()
     {
         return $this->hasMany(Enrollment::class);
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->role?->role_name === 'Admin';
     }
 }

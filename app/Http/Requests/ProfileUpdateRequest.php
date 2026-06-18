@@ -26,6 +26,9 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            'whatsapp' => ['nullable', 'string', 'max:20'],
+            'tanggal_lahir' => ['nullable', 'date'],
+            'kategori_pensiun' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

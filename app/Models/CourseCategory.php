@@ -7,12 +7,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CourseCategory extends Model
 {
-    // Buka gerbang untuk kolom category_name
     protected $fillable = [
-        'category_name',
+    'nama', 
+    'deskripsi', 
+    'icon', 
+    'warna_bg_icon', 
+    'gambar',
+    'warna_teks_icon', 
+    'jumlah_kursus'
     ];
 
-    // Relasi: Satu Kategori punya banyak Kursus
     public function courses(): HasMany
     {
         return $this->hasMany(Course::class, 'category_id');

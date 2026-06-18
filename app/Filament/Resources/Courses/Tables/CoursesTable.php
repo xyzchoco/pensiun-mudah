@@ -26,7 +26,7 @@ class CoursesTable
                     ->sortable()
                     ->limit(30), // Dibatasi 30 huruf biar tabel gak kepanjangan
 
-                TextColumn::make('category.category_name')
+                TextColumn::make('category.nama')
                     ->label('Kategori')
                     ->sortable(),
 
