@@ -3,28 +3,35 @@ import PaymentHeader from "@/Components/Payment/PaymentHeader";
 import PaymentFooter from "@/Components/Payment/PaymentFooter";
 import SuccessCard from "@/Components/Payment/SuccessCard";
 
-export default function PembayaranBerhasil({ receipt }) {
-  const slug = receipt?.slug || receipt?.courseId || "manajemen-investasi-aman";
-  const backHref = receipt?.backHref || "/beli-pelatihan";
+export default function PembayaranBerhasil({ course, transaction }) {
+  // Ambil slug dinamis dari course, fallback ke default kalau kosong
+  const slug = course?.slug || course?.id || "manajemen-investasi-aman";
+  const backHref = "/beli-pelatihan";
 
-  // Data transaksi (anggap dari backend, kasih default biar aman)
-  const data = receipt?.data || {
-    orderId: "#PM-VA-20241029",
-    date: "29 Oktober 2024",
-    method: "Transfer Bank Virtual Account",
-    totalPaid: 1500000,
-    courseTitle: "Perencanaan Keuangan Masa Pensiun",
-    courseBatch: "Batch: Eksklusif Senior - 12 Minggu",
-    courseImage: "/images/course-preview.png",
-  };
-
+  // Format harga ke Rupiah asli
   const formatRupiah = (angka) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
       maximumFractionDigits: 0,
-    }).format(angka);
+    }).format(angka || 0);
   };
+
+  // Format tanggal buatan database ke format Indonesia (Contoh: 18 Juni 2026)
+  const formatTanggal = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  // Olah path gambar thumbnail dari database
+  const courseImage = course?.thumbnail
+    ? `/storage/${course.thumbnail.replace(/^public\//, '')}`
+    : "/images/course-preview.png";
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF9F8]">
@@ -62,14 +69,15 @@ export default function PembayaranBerhasil({ receipt }) {
             />
           </div>
 
-          {/* --- DETAIL --- */}
+          {/* --- DETAIL DUA KOLOM --- */}
           <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {/* Kartu Kursus Aktif */}
-            <div className="rounded-2xl border border-[#E4E2E1] bg-white overflow-hidden">
+
+            {/* KARTU KURSUS AKTIF (DINAMIS) */}
+            <div className="rounded-2xl border border-[#E4E2E1] bg-white overflow-hidden shadow-sm">
               <div className="relative">
                 <img
-                  src={data.courseImage}
-                  alt={data.courseTitle}
+                  src={courseImage}
+                  alt={course?.title}
                   className="w-full h-44 object-cover"
                 />
                 <span className="absolute top-4 left-4 bg-[#008740] text-white text-xs font-bold px-3 py-1 rounded-full">
@@ -77,8 +85,8 @@ export default function PembayaranBerhasil({ receipt }) {
                 </span>
               </div>
               <div className="p-6">
-                <h3 className="text-lg font-bold text-[#1B1C1C] leading-snug">
-                  {data.courseTitle}
+                <h3 className="text-lg font-bold text-[#1B1C1C] leading-snug line-clamp-2">
+                  {course?.title || "Nama Pelatihan"}
                 </h3>
                 <p className="mt-2 flex items-center gap-2 text-sm text-[#6B7280]">
                   <svg
@@ -94,11 +102,13 @@ export default function PembayaranBerhasil({ receipt }) {
                       d="M17 20v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2M9 8a3 3 0 106 0 3 3 0 00-6 0zm12 12v-2a4 4 0 00-3-3.8"
                     />
                   </svg>
-                  {data.courseBatch}
+                  Kategori: {course?.category?.nama || "Umum"}
                 </p>
+
+                {/* Tombol Keramat Langsung Loncat Masuk Ruang Kelas */}
                 <Link
-                  href={`/pelatihan/${slug}/kelas`}
-                  className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF8928] py-3.5 font-bold text-white hover:bg-[#F57F1E] transition-colors"
+                  href={`/pelatihan/${course?.id}/kelas`}
+                  className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF8928] py-3.5 font-bold text-white hover:bg-[#F57F1E] transition-colors shadow-sm"
                 >
                   Lihat Pelatihan Sekarang
                   <svg
@@ -119,26 +129,28 @@ export default function PembayaranBerhasil({ receipt }) {
               </div>
             </div>
 
-            {/* Ringkasan Transaksi */}
-            <div className="rounded-2xl border border-[#E4E2E1] bg-white p-6">
+            {/* RINGKASAN TRANSAKSI NOTA DB (DINAMIS) */}
+            <div className="rounded-2xl border border-[#E4E2E1] bg-white p-6 shadow-sm">
               <h3 className="text-lg font-bold text-[#1B1C1C]">
                 Ringkasan Transaksi
               </h3>
               <dl className="mt-5 space-y-4">
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-[#6B7280]">Order ID</dt>
-                  <dd className="font-semibold text-[#1B1C1C]">
-                    {data.orderId}
+                  <dd className="font-mono font-bold text-[#1B1C1C]">
+                    #{transaction?.nomor_transaksi || "ID-TRANSAKSI"}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-[#6B7280]">Tanggal</dt>
-                  <dd className="font-semibold text-[#1B1C1C]">{data.date}</dd>
+                  <dd className="font-semibold text-[#1B1C1C]">
+                    {formatTanggal(transaction?.created_at)}
+                  </dd>
                 </div>
                 <div className="flex items-start justify-between gap-4">
                   <dt className="text-[#6B7280]">Metode Pembayaran</dt>
                   <dd className="font-semibold text-[#1B1C1C] text-right">
-                    {data.method}
+                    Midtrans Gateway
                   </dd>
                 </div>
               </dl>
@@ -148,7 +160,7 @@ export default function PembayaranBerhasil({ receipt }) {
               <div className="flex items-center justify-between">
                 <span className="text-[#6B7280]">Total Dibayar</span>
                 <span className="text-xl font-bold text-[#008740]">
-                  {formatRupiah(data.totalPaid)}
+                  {formatRupiah(transaction?.nominal || course?.price)}
                 </span>
               </div>
 
@@ -177,6 +189,7 @@ export default function PembayaranBerhasil({ receipt }) {
                 </p>
               </div>
             </div>
+
           </div>
         </div>
       </main>

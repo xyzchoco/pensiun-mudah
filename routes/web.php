@@ -13,8 +13,12 @@ use Laravel\Socialite\Facades\Socialite;
 use App\Models\CourseCategory;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PelatihanController;
+use App\Http\Controllers\PembayaranController;
 use Illuminate\Support\Facades\Auth;
 
+// ==========================================
+// PUBLIC ROUTES (Bisa diakses tanpa login)
+// ==========================================
 Route::get('/', function () {
     $landingData = LandingPage::first();
 
@@ -60,6 +64,14 @@ Route::get('/auth/google/callback', function () {
 Route::get('/api/home', [HomeController::class, 'index']);
 Route::get('/api/courses/{id}', [CourseController::class, 'show']);
 
+// Webhook / callback dari payment gateway (server-to-server)
+Route::post('/payment/callback', [PembayaranController::class, 'webhook'])
+    ->name('payment.callback');
+
+
+// ==========================================
+// CLOSURE UNTUK PAYLOAD EVENT
+// ==========================================
 $eventPayload = function (string|int $id) {
     $webinar = Webinar::find($id);
 
@@ -106,15 +118,16 @@ $eventPayload = function (string|int $id) {
     ];
 };
 
+
+// ==========================================
+// PROTECTED ROUTES (Wajib Login)
+// ==========================================
 Route::middleware(['auth'])->group(function () use ($eventPayload) {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
-    Route::get('/sertifikat', function () {
-        return Inertia::render('Sertifikat');
-    })->name('sertifikat.index');
-
+    // -- Event --
     Route::get('/event', fn () => Inertia::render('Event/SemuaEvent', [
         'events' => Webinar::where('is_published', true)
             ->latest()
@@ -136,7 +149,6 @@ Route::middleware(['auth'])->group(function () use ($eventPayload) {
             'email' => 'required|email',
             'phone' => 'required|string|max:30',
         ]);
-
         return redirect()->route('event.success', $slug);
     })->name('event.register');
 
@@ -144,60 +156,43 @@ Route::middleware(['auth'])->group(function () use ($eventPayload) {
         'event' => $eventPayload($slug),
     ]))->name('event.success');
 
+    // -- Sertifikat --
+    Route::get('/sertifikat', function () {
+        return Inertia::render('Sertifikat');
+    })->name('sertifikat.index');
+
     Route::get('/sertifikat/{id}', fn (string $id) => Inertia::render('Sertifikat/DetailSertifikat', [
         'certificate' => ['id' => $id],
     ]))->name('sertifikat.detail');
 
+    // -- Pelatihan / Kelas --
     Route::get('/beli-pelatihan', [PelatihanController::class, 'index'])
         ->name('beli-pelatihan');
 
-    Route::get('/pelatihan', function () {
-        return Inertia::render('Pelatihan');
-    });
+    Route::get('/pelatihan', [PelatihanController::class, 'myCourses'])->name('pelatihan.index');
 
-    Route::get('/pelatihan/{slug}', fn (string $slug) => Inertia::render('Pelatihan/DetailPelatihan', [
-        'course' => ['slug' => $slug, 'id' => $slug],
-    ]))->name('pelatihan.detail');
+    Route::get('/pelatihan/{slug}', [PelatihanController::class, 'show'])
+        ->name('pelatihan.detail');
 
-    // "Kelas Saya" / Mulai Belajar (post-enrollment learning hub)
-    Route::get('/pelatihan/{id}/kelas', fn (string $id) => Inertia::render('Pelatihan/KelasSaya', [
-        'enrollment' => ['course' => ['id' => $id]],
-    ]))->name('pelatihan.kelas');
+    Route::get('/pelatihan/{id}/kelas', [PelatihanController::class, 'kelas'])
+        ->name('pelatihan.kelas');
 
     Route::post('/api/mark-done', [CourseController::class, 'markMaterialAsDone']);
 
+    // -- Pembayaran & Midtrans --
+    Route::get('/pelatihan/{slug}/pembelian', [PembayaranController::class, 'checkout'])
+        ->name('payment.detail');
+
+    // INI YANG TADI KETINGGALAN DAN BIKIN 404 BOS:
+    Route::get('/payment/finish', [PembayaranController::class, 'finish'])
+        ->name('payment.finish');
+
+    Route::get('/pelatihan/{slug}/pembayaran/berhasil', [PembayaranController::class, 'success'])
+        ->name('payment.success');
+
+    // -- Profile --
     Route::get('/profile', [ProfileController::class, 'edit'])
         ->name('profile.edit');
-});
-
-Route::middleware(['auth'])->group(function () {
-    // Langkah 1: Detail pembelian + pilih metode pembayaran
-    Route::get('/pelatihan/{slug}/pembelian', fn (string $slug) => Inertia::render('Payment/DetailPembelian', [
-        'order' => ['courseId' => $slug, 'slug' => $slug, 'backHref' => '/beli-pelatihan'],
-    ]))->name('payment.detail');
-
-    // Langkah 2: Halaman pembayaran per metode
-    Route::get('/pelatihan/{slug}/pembayaran/virtual-account', fn (string $slug) => Inertia::render('Payment/PembayaranVirtualAccount', [
-        'payment' => ['courseId' => $slug, 'slug' => $slug, 'backHref' => '/beli-pelatihan'],
-    ]))->name('payment.va');
-
-    Route::get('/pelatihan/{slug}/pembayaran/qris', fn (string $slug) => Inertia::render('Payment/PembayaranQRIS', [
-        'payment' => ['courseId' => $slug, 'slug' => $slug, 'backHref' => '/beli-pelatihan'],
-    ]))->name('payment.qris');
-
-    Route::get('/pelatihan/{slug}/pembayaran/e-wallet', fn (string $slug) => Inertia::render('Payment/PembayaranEWallet', [
-        'payment' => ['courseId' => $slug, 'slug' => $slug, 'backHref' => '/beli-pelatihan'],
-    ]))->name('payment.ewallet');
-
-    // Langkah 3: Pembayaran berhasil / struk
-    Route::get('/pelatihan/{slug}/pembayaran/berhasil', fn (string $slug) => Inertia::render('Payment/PembayaranBerhasil', [
-        'receipt' => ['courseId' => $slug, 'slug' => $slug, 'backHref' => '/beli-pelatihan'],
-    ]))->name('payment.success');
-
-    // Webhook / callback dari payment gateway (server-to-server)
-    Route::post('/payment/callback', fn () => response()->json(['status' => 'ok']))
-        ->withoutMiddleware(['auth', 'verified'])
-        ->name('payment.callback');
 });
 
 require __DIR__.'/auth.php';
