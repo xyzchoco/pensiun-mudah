@@ -152,14 +152,15 @@ class PembayaranController extends Controller
     {
         $orderId = $request->query('order_id');
         $transactionStatus = $request->query('transaction_status');
+        $statusCode = $request->query('status_code'); // Kita ambil status_code-nya sekalian
 
-        // REVISI: Pakai first() biasa biar gak nendang layar 404 kalau data dihapus manual
+        // Cari datanya di DB
         $transaction = Transaction::where('nomor_transaksi', $orderId)->first();
 
-        // Proteksi: Jika transaksi gak ketemu di DB (karena abis dihapus pas testing)
+        // Proteksi jika data ghaib
         if (!$transaction) {
             return redirect()->route('beli-pelatihan')
-                ->with('error', 'Transaksi lama tidak ditemukan atau sudah dihapus bos. Silakan buat pesanan baru.');
+                ->with('error', 'Transaksi tidak ditemukan bos.');
         }
 
         $course = \App\Models\Course::find($transaction->course_id);
@@ -168,22 +169,49 @@ class PembayaranController extends Controller
             return redirect()->route('beli-pelatihan');
         }
 
-        // 1. Kalau Berhasil Bayar
-        if ($transactionStatus === 'settlement' || $transactionStatus === 'capture') {
+        // REVISI DETEKTOR UTAMA: 
+        // Kita nyatakan SUKSES jika statusnya 'settlement' OR status_code-nya 200 OR dapet flag 'success' dari frontend
+        if (
+            $transactionStatus === 'settlement' || 
+            $transactionStatus === 'capture' || 
+            $statusCode == 200 || 
+            $request->query('flag') === 'success'
+        ) {
+            
+            // 1. Update status transaksi di database jadi 'success'
+            $transaction->update(['status' => 'success']);
+
+            // 2. Masukkan user ke tabel enrollments biar kelasnya kebuka!
+            $cekEnrollment = Enrollment::where('user_id', $transaction->user_id)
+                ->where('course_id', $transaction->course_id)
+                ->exists();
+
+            if (!$cekEnrollment) {
+                Enrollment::create([
+                    'user_id' => $transaction->user_id,
+                    'course_id' => $transaction->course_id,
+                    'tanggal_daftar' => now(),
+                    'status' => 'active', // Langsung aktif siap belajar!
+                    'progress_persen' => 0,
+                    'is_completed' => false,
+                ]);
+            }
+
+            // Lempar ke halaman sukses bawaan React lu
             return redirect()->route('payment.success', $course->slug);
         }
 
-        // 2. Kalau Expire / Gagal / Cancel
-        if ($transactionStatus === 'expire' || $transactionStatus === 'cancel' || $transactionStatus === 'deny') {
-            // Update status di DB lu jadi failed
+        // JIKA EXPIRED / GAGAL (Biasanya status_code 407 atau status expire)
+        if ($transactionStatus === 'expire' || $transactionStatus === 'cancel' || $transactionStatus === 'deny' || $statusCode == 407) {
             $transaction->update(['status' => 'failed']);
 
-            // Tendang balik ke halaman pembelian dengan pesan error
             return redirect()->route('payment.detail', $course->slug)
-                ->with('error', 'Waktu pembayaran lu udah habis (expired) bos. Silakan klik tombol bayar lagi buat dapet invoice baru!');
+                ->with('error', 'Waktu pembayaran lu udah habis bos. Silakan klik tombol bayar lagi!');
         }
 
-        return redirect()->route('beli-pelatihan');
+        // Fallback aman kalau statusnya masih beneran pending gantung
+        return redirect()->route('payment.detail', $course->slug)
+            ->with('info', 'Pembayaran Anda sedang diproses, mohon tunggu sebentar.');
     }
 
     // =================================================================

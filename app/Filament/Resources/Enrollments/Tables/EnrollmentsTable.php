@@ -36,12 +36,12 @@ class EnrollmentsTable
                         'dropped' => 'danger',
                     }),
 
-                TextColumn::make('progress_percentage')
+                TextColumn::make('progress_persen')
                     ->label('Progres')
                     ->suffix('%')
                     ->sortable(),
 
-                TextColumn::make('enrolled_at')
+                TextColumn::make('tanggal_daftar')
                     ->label('Tanggal Daftar')
                     ->dateTime('d M Y, H:i')
                     ->sortable(),

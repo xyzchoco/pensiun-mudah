@@ -34,7 +34,7 @@ class EnrollmentForm
                     ->default('active')
                     ->required(),
 
-                TextInput::make('progress_percentage')
+                TextInput::make('progress_persen')
                     ->label('Persentase Progres (%)')
                     ->numeric()
                     ->default(0)
