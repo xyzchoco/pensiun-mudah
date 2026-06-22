@@ -120,7 +120,10 @@ export default function Dashboard({ banners, events }) {
                                 </div>
                             </div>
 
-                            <div className="bg-white border border-[#E4E2E1] p-5 rounded-2xl shadow-sm flex items-center gap-4">
+                            <Link
+                                href="/statistik-waktu-belajar"
+                                className="bg-white border border-[#E4E2E1] p-5 rounded-2xl shadow-sm flex items-center gap-4 transition-all hover:border-[#008740] hover:shadow-md cursor-pointer"
+                            >
                                 <div className="w-12 h-12 bg-[#FFF7ED] text-[#EA580C] rounded-full flex items-center justify-center text-2xl">
                                     🕒
                                 </div>
@@ -140,7 +143,7 @@ export default function Dashboard({ banners, events }) {
                                         +5h minggu ini
                                     </p>
                                 </div>
-                            </div>
+                            </Link>
 
                             <div className="bg-white border border-[#E4E2E1] p-5 rounded-2xl shadow-sm flex items-center gap-4">
                                 <div className="w-12 h-12 bg-[#FFF3E5] text-[#FF8928] rounded-full flex items-center justify-center text-2xl">
@@ -259,7 +262,10 @@ export default function Dashboard({ banners, events }) {
                         </div>
 
                         {/* 5. AKTIVITAS BELAJAR (CHART) */}
-                        <div className="bg-white border border-[#E4E2E1] p-6 rounded-2xl shadow-sm">
+                        <Link
+                            href="/detail-aktivitas-pelatihan"
+                            className="group bg-white border border-[#E4E2E1] p-6 rounded-2xl shadow-sm transition hover:border-[#008740] hover:shadow-md"
+                        >
                             <h3 className="font-bold text-[#1B1C1C] mb-8 flex items-center gap-2">
                                 <span>📊</span> Aktivitas Belajar (7 Hari)
                             </h3>
@@ -295,7 +301,7 @@ export default function Dashboard({ banners, events }) {
                                 ))}
                             </div>
                             <div className="h-8"></div>
-                        </div>
+                        </Link>
                     </div>
 
                     {/* KONTEN KANAN (SIDEBAR - 4 KOLOM) */}

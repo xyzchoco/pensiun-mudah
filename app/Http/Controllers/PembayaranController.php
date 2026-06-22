@@ -13,6 +13,29 @@ use Midtrans\Snap;
 
 class PembayaranController extends Controller
 {
+    // Tampilkan halaman konfirmasi setelah berhasil daftar kelas GRATIS
+    public function konfirmasiGratis($slug)
+    {
+        $user = Auth::user();
+
+        $course = Course::with('category')->where('slug', $slug)->firstOrFail();
+
+        // Pastikan user memang sudah terdaftar di kelas gratis ini
+        $enrolled = Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->where('status', 'active')
+            ->exists();
+
+        if (! $enrolled) {
+            return redirect()->route('beli-pelatihan')
+                ->with('error', 'Anda belum terdaftar pada kelas ini.');
+        }
+
+        return Inertia::render('Pelatihan/KonfirmasiPendaftaranGratis', [
+            'course' => $course,
+        ]);
+    }
+
     // =================================================================
     // 1. FUNGSI UNTUK MENAMPILKAN HALAMAN CHECKOUT & BIKIN TOKEN MIDTRANS
     // =================================================================
@@ -43,7 +66,7 @@ class PembayaranController extends Controller
                 'status' => 'active',
             ]);
 
-            return redirect()->route('pelatihan.kelas', $course->id)
+            return redirect()->route('pelatihan.gratis.konfirmasi', $course->slug)
                 ->with('success', 'Pelatihan gratis berhasil diklaim!');
         }
 

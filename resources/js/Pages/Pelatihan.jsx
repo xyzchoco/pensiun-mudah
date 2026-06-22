@@ -1,147 +1,222 @@
-import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Head, usePage, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState } from "react";
+import { Head, Link, usePage } from "@inertiajs/react";
+import { ImageIcon, Play } from "lucide-react";
+import DashboardLayout from "@/Layouts/DashboardLayout";
+import Footer from "@/Components/Footer";
 
-// Terima props dinamis dari controller
-export default function Pelatihan({ ongoingCourses = [], completedCourses = [] }) {
-    const { auth } = usePage().props;
-    const userName = auth?.user?.name || 'User Pensiun Mudah';
+const ongoingFallback = [
+  {
+    id: 1,
+    category: "Keuangan",
+    title: "Literasi Keuangan Masa Pensiun",
+    progress: 65,
+    image: "",
+  },
+  {
+    id: 2,
+    category: "Kesehatan",
+    title: "Kesehatan Fisik di Usia Emas",
+    progress: 30,
+    image: "",
+  },
+  {
+    id: 3,
+    category: "Hobi",
+    title: "Berkebun Organik di Rumah",
+    progress: 85,
+    image: "",
+  },
+  {
+    id: 4,
+    category: "Sosial",
+    title: "Membangun Komunitas di Masa",
+    progress: 15,
+    image: "",
+  },
+];
 
-    // State untuk tab aktif
-    const [activeTab, setActiveTab] = useState('sedang_berjalan');
+const completedFallback = [
+  {
+    id: 5,
+    category: "Keuangan",
+    title: "Literasi Keuangan Masa Pensiun",
+    image: "",
+  },
+  {
+    id: 6,
+    category: "Kesehatan",
+    title: "Kesehatan Fisik di Usia Emas",
+    image: "",
+  },
+  {
+    id: 7,
+    category: "Hobi",
+    title: "Berkebun Organik di Rumah",
+    image: "",
+  },
+  {
+    id: 8,
+    category: "Sosial",
+    title: "Membangun Komunitas di Masa",
+    image: "",
+  },
+  {
+    id: 9,
+    category: "Sosial",
+    title: "Membangun Komunitas di Masa",
+    image: "",
+  },
+  {
+    id: 10,
+    category: "Sosial",
+    title: "Membangun Komunitas di Masa",
+    image: "",
+  },
+];
 
-    return (
-        <DashboardLayout title="Pelatihan" showSearch={false}>
-            <Head title="Pelatihan" />
+function normalizeCourse(course) {
+  const image = course.image || course.thumbnail || "";
+  return {
+    ...course,
+    category: course.category || course.kategori || "Umum",
+    image: image.includes("course-preview.png") ? "" : image,
+    progress: Number(course.progress || 0),
+  };
+}
 
-            <div className="pb-10 max-w-7xl">
+function CourseThumb({ src, alt }) {
+  if (src) {
+    return <img src={src} alt={alt} className="h-[176px] w-full object-cover" />;
+  }
 
-                {/* --- HEADER SECTION --- */}
-                <div className="mb-8 mt-2">
-                    <h1 className="text-3xl md:text-[34px] font-bold text-[#1B1C1C] mb-3">
-                        Halo, {userName}
-                    </h1>
-                    <p className="text-[#4B5563] text-base max-w-2xl leading-relaxed">
-                        Lanjutkan Pelatihan Anda hari ini untuk masa pensiun yang lebih bermakna.
-                    </p>
-                </div>
+  return (
+    <div className="flex h-[176px] w-full items-center justify-center bg-[#F3F2F0] text-[#B8B4B2]">
+      <ImageIcon className="h-9 w-9" />
+    </div>
+  );
+}
 
-                {/* --- TABS NAVIGATION --- */}
-                <div className="flex gap-8 border-b border-[#E4E2E1] mb-8">
-                    <button
-                        onClick={() => setActiveTab('sedang_berjalan')}
-                        className={`pb-4 text-[15px] font-bold transition-all relative ${activeTab === 'sedang_berjalan' ? 'text-[#006B32]' : 'text-[#6B7280] hover:text-[#1B1C1C]'
-                            }`}
-                    >
-                        Sedang Berjalan ({ongoingCourses.length})
-                        {activeTab === 'sedang_berjalan' && (
-                            <span className="absolute bottom-0 left-0 w-full h-1 bg-[#006B32] rounded-t-md"></span>
-                        )}
-                    </button>
+function CourseCard({ course, tab }) {
+  const isOngoing = tab === "berjalan";
 
-                    <button
-                        onClick={() => setActiveTab('selesai')}
-                        className={`pb-4 text-[15px] font-bold transition-all relative ${activeTab === 'selesai' ? 'text-[#006B32]' : 'text-[#6B7280] hover:text-[#1B1C1C]'
-                            }`}
-                    >
-                        Selesai ({completedCourses.length})
-                        {activeTab === 'selesai' && (
-                            <span className="absolute bottom-0 left-0 w-full h-1 bg-[#006B32] rounded-t-md"></span>
-                        )}
-                    </button>
-                </div>
+  return (
+    <article className="overflow-hidden rounded-lg border border-[#E4E2E1] bg-white shadow-sm">
+      <div className="relative">
+        <CourseThumb src={course.image} alt={course.title} />
+        <span className="absolute left-4 top-4 rounded-full bg-[#007A3D] px-4 py-2 text-xs font-extrabold text-white">
+          {course.category}
+        </span>
+      </div>
 
-                {/* --- GRID KONTEN --- */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="p-6">
+        <h2 className="min-h-[76px] text-[26px] font-extrabold leading-tight text-[#1F1F1F]">
+          {course.title}
+        </h2>
 
-                    {/* VIEW: SEDANG BERJALAN */}
-                    {activeTab === 'sedang_berjalan' && ongoingCourses.map((course) => (
-                        <div key={course.id} className="bg-white border border-[#E4E2E1] rounded-[24px] overflow-hidden shadow-sm flex flex-col">
-                            <div className="relative h-[180px] bg-gray-100 shrink-0">
-                                {course.image ? (
-                                    <img src={course.image} className="w-full h-full object-cover" alt="Course" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                    </div>
-                                )}
-                                <span className="absolute top-4 left-4 bg-[#006B32] text-white text-[11px] font-bold px-3 py-1.5 rounded-full">{course.category}</span>
-                            </div>
-
-                            <div className="p-6 flex flex-col flex-grow">
-                                <h3 className="font-bold text-lg text-[#1B1C1C] mb-8 line-clamp-2">{course.title}</h3>
-                                <div className="mt-auto">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm text-[#4B5563]">Progres Belajar</span>
-                                        <span className="text-sm font-bold text-[#006B32]">{course.progress}%</span>
-                                    </div>
-                                    <div className="w-full bg-gray-100 rounded-full h-2 mb-6">
-                                        <div className="bg-[#006B32] h-full rounded-full" style={{ width: `${course.progress}%` }}></div>
-                                    </div>
-
-                                    {/* LINK KELAS AKTIF SEKARANG DINAMIS BOS */}
-                                    <Link
-                                        href={`/pelatihan/${course.id}/kelas`}
-                                        className="w-full flex items-center justify-center gap-2 bg-[#FF8928] hover:bg-[#e67a22] text-white font-bold py-3 rounded-xl text-sm transition-colors text-center"
-                                    >
-                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" /></svg>
-                                        Lanjutkan Belajar
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-
-                    {/* EMPTY STATE SEDANG BERJALAN */}
-                    {activeTab === 'sedang_berjalan' && ongoingCourses.length === 0 && (
-                        <div className="col-span-full text-center py-12 text-[#6B7280]">
-                            Belum ada pelatihan yang sedang berjalan bos. Yuk beli kelas dulu!
-                        </div>
-                    )}
-
-                    {/* VIEW: SELESAI */}
-                    {activeTab === 'selesai' && completedCourses.map((course) => (
-                        <div key={course.id} className="bg-white border border-[#E4E2E1] rounded-[24px] overflow-hidden shadow-sm flex flex-col">
-                            <div className="relative h-[180px] bg-gray-100 shrink-0">
-                                {course.image ? (
-                                    <img src={course.image} className="w-full h-full object-cover" alt="Course" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                    </div>
-                                )}
-                                <span className="absolute top-4 left-4 bg-[#006B32] text-white text-[11px] font-bold px-3 py-1.5 rounded-full">{course.category}</span>
-                            </div>
-
-                            <div className="p-6 flex flex-col flex-grow">
-                                <h3 className="font-bold text-lg text-[#1B1C1C] mb-8 line-clamp-2">{course.title}</h3>
-
-                                <div className="mt-auto space-y-3">
-                                    <Link
-                                        href={route('sertifikat.index')}
-                                        className="w-full flex items-center justify-center gap-2 bg-[#FF8928] hover:bg-[#e67a22] text-white font-bold py-3 rounded-xl text-sm transition-colors text-center"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                        Unduh Sertifikat
-                                    </Link>
-
-                                    <button className="w-full border border-[#E4E2E1] text-[#1B1C1C] font-bold py-3 rounded-xl text-sm hover:bg-gray-50 transition-colors">
-                                        Beri Penilaian
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-
-                    {/* EMPTY STATE SELESAI */}
-                    {activeTab === 'selesai' && completedCourses.length === 0 && (
-                        <div className="col-span-full text-center py-12 text-[#6B7280]">
-                            Belum ada pelatihan yang diselesaikan bos. Semangat belajarnya!
-                        </div>
-                    )}
-
-                </div>
+        {isOngoing ? (
+          <>
+            <div className="mt-4 flex items-center justify-between text-base font-extrabold">
+              <span className="text-[#3D4A3E]">Progres Belajar</span>
+              <span className="text-[#007A3D]">{course.progress}%</span>
             </div>
-        </DashboardLayout>
-    );
+            <div className="mt-2 h-3 rounded-full bg-[#E7E4E2]">
+              <div
+                className="h-3 rounded-full bg-[#007A3D]"
+                style={{ width: `${course.progress}%` }}
+              />
+            </div>
+            <Link
+              href={`/pelatihan/${course.id}/kelas`}
+              className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-[#FF8928] text-lg font-extrabold text-[#4B3009] transition hover:bg-[#F57F1E]"
+            >
+              <Play className="h-5 w-5" />
+              Lanjutkan Belajar
+            </Link>
+          </>
+        ) : (
+          <div className="mt-3 space-y-4">
+            <Link
+              href="/sertifikat"
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-[#FF8928] text-lg font-extrabold text-[#4B3009] transition hover:bg-[#F57F1E]"
+            >
+              <Play className="h-5 w-5" />
+              Unduh Sertifikat
+            </Link>
+            <button
+              type="button"
+              className="flex h-14 w-full items-center justify-center rounded-lg border-2 border-[#007A3D] text-lg font-extrabold text-[#007A3D]"
+            >
+              Beri Penilaian
+            </button>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+export default function Pelatihan({ ongoingCourses = [], completedCourses = [] }) {
+  const { auth } = usePage().props;
+  const userName = auth?.user?.name || "Budi Santoso";
+  const [tab, setTab] = useState("berjalan");
+  const ongoing = (ongoingCourses.length ? ongoingCourses : ongoingFallback).map(
+    normalizeCourse,
+  );
+  const completed = (
+    completedCourses.length ? completedCourses : completedFallback
+  ).map(normalizeCourse);
+  const list = tab === "berjalan" ? ongoing : completed;
+
+  return (
+    <DashboardLayout title="Pelatihan" showSearch={false}>
+      <Head title="Pelatihan" />
+
+      <div className="mx-auto max-w-[908px] pb-8">
+        <h1 className="text-[34px] font-extrabold leading-tight text-[#1F1F1F]">
+          Halo, {userName}
+        </h1>
+        <p className="mt-3 max-w-[640px] text-xl leading-8 text-[#3D4A3E]">
+          Lanjutkan Pelatihan Anda hari ini untuk masa pensiun yang lebih
+          bermakna.
+        </p>
+
+        <div className="mt-9 border-b border-[#E1DEDC]">
+          <div className="flex gap-16">
+            <button
+              type="button"
+              onClick={() => setTab("berjalan")}
+              className={`px-6 pb-4 text-lg font-extrabold ${
+                tab === "berjalan"
+                  ? "border-b-4 border-[#007A3D] text-[#007A3D]"
+                  : "text-[#3D4A3E]"
+              }`}
+            >
+              Sedang Berjalan ({ongoing.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("selesai")}
+              className={`px-6 pb-4 text-lg font-extrabold ${
+                tab === "selesai"
+                  ? "border-b-4 border-[#007A3D] text-[#007A3D]"
+                  : "text-[#3D4A3E]"
+              }`}
+            >
+              Selesai ({completed.length})
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {list.map((course) => (
+            <CourseCard key={course.id} course={course} tab={tab} />
+          ))}
+        </div>
+      </div>
+
+      <div className="-mx-8 -mb-8 mt-8">
+        <Footer />
+      </div>
+    </DashboardLayout>
+  );
 }

@@ -127,6 +127,12 @@ Route::middleware(['auth'])->group(function () use ($eventPayload) {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
+    Route::get('/statistik-waktu-belajar', fn () => Inertia::render('StatistikWaktuBelajar'))
+        ->name('statistik.waktu');
+
+    Route::get('/detail-aktivitas-pelatihan', fn () => Inertia::render('DetailAktivitasPelatihan'))
+        ->name('pelatihan.aktivitas.detail');
+
     // -- Event --
     Route::get('/event', fn () => Inertia::render('Event/SemuaEvent', [
         'events' => Webinar::where('is_published', true)
@@ -177,11 +183,23 @@ Route::middleware(['auth'])->group(function () use ($eventPayload) {
     Route::get('/pelatihan/{id}/kelas', [PelatihanController::class, 'kelas'])
         ->name('pelatihan.kelas');
 
+    Route::get('/pelatihan/{id}/belajar', [PelatihanController::class, 'belajar'])
+        ->name('pelatihan.belajar');
+
+    Route::get('/pelatihan/{id}/kuis', [PelatihanController::class, 'kuis'])
+        ->name('pelatihan.kuis');
+
+    Route::get('/pelatihan/{id}/kuis/hasil', [PelatihanController::class, 'hasilKuis'])
+        ->name('pelatihan.kuis.hasil');
+
     Route::post('/api/mark-done', [CourseController::class, 'markMaterialAsDone']);
 
     // -- Pembayaran & Midtrans --
     Route::get('/pelatihan/{slug}/pembelian', [PembayaranController::class, 'checkout'])
         ->name('payment.detail');
+
+    Route::get('/pelatihan/{slug}/gratis/konfirmasi', [PembayaranController::class, 'konfirmasiGratis'])
+        ->name('pelatihan.gratis.konfirmasi');
 
     // INI YANG TADI KETINGGALAN DAN BIKIN 404 BOS:
     Route::get('/payment/finish', [PembayaranController::class, 'finish'])
