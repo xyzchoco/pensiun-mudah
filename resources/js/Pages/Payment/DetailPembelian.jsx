@@ -45,13 +45,11 @@ export default function DetailPembelian({ course, transaction, snapToken, midtra
     if (snapToken) {
       window.snap.pay(snapToken, {
         onSuccess: function (result) {
-          router.get(`/pelatihan/${slug}/pembayaran/berhasil`);
+          // KITA SUNTIK &flag=success DI SINI BOS, BIAR BACKEND TAU INI 100% VALID SUKSES
+          router.get(`/payment/finish?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}&flag=success`);
         },
         onPending: function (result) {
-          // Biar gak mental ke dashboard, baris router.get di bawah ini diapus bos!
-          alert('Silakan selesaikan pembayaran Anda sesuai instruksi di pop-up Midtrans.');
-
-          // router.get('/dashboard'); // <-- INI BIANG KEROKNYA, CORET / APUS AJA BOS!
+          router.get(`/payment/finish?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}`);
         },
         onError: function (result) {
           alert('Pembayaran gagal, silakan coba metode lain.');
