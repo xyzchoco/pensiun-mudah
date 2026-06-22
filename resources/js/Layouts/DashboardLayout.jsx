@@ -153,7 +153,7 @@ function Header({
   const firstName = displayName.split(" ")[0];
 
   return (
-    <header className="flex items-center justify-between h-16 sm:h-20 px-4 sm:px-6 lg:px-10 bg-white border-b border-[#E4E2E1]/30 shrink-0 gap-4">
+    <header className="sticky top-0 z-30 flex items-center justify-between h-16 sm:h-20 px-4 sm:px-6 lg:px-10 bg-white border-b border-[#E4E2E1]/30 shrink-0 gap-4">
       <div className="flex items-center gap-3 min-w-0">
         <button
           type="button"

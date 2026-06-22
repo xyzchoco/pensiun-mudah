@@ -14,6 +14,9 @@ export default function Kuis({ learning }) {
   const initialQuestionNumber = Number(params.get("q")) || 2;
   const [questionNumber, setQuestionNumber] = useState(initialQuestionNumber);
   const [selected, setSelected] = useState(3);
+  const firstLessonHref = course.firstLessonId
+    ? `/pelatihan/${course.id}/belajar?lesson=${encodeURIComponent(course.firstLessonId)}`
+    : `/pelatihan/${course.id}/belajar`;
 
   const question = useMemo(() => {
     return (
@@ -45,7 +48,7 @@ export default function Kuis({ learning }) {
 
       <main className="mx-auto max-w-[1072px] px-8 pb-6 pt-9">
         <Link
-          href={`/pelatihan/${course.id}/kelas`}
+          href={firstLessonHref}
           className="inline-flex items-center gap-3 text-lg font-extrabold text-[#007A3D]"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -57,7 +60,7 @@ export default function Kuis({ learning }) {
             Beranda
           </Link>
           <ChevronRight className="h-4 w-4 text-[#007A3D]" />
-          <Link href={`/pelatihan/${course.id}/kelas`} className="text-[#007A3D]">
+          <Link href={firstLessonHref} className="text-[#007A3D]">
             Modul Saya
           </Link>
           <ChevronRight className="h-4 w-4 text-[#007A3D]" />
@@ -127,7 +130,7 @@ export default function Kuis({ learning }) {
             href={
               questionNumber > 1
                 ? `/pelatihan/${course.id}/kuis?q=${questionNumber - 1}`
-                : `/pelatihan/${course.id}/belajar`
+                : firstLessonHref
             }
             className="inline-flex h-16 min-w-[180px] items-center justify-center gap-2 rounded-xl border-2 border-[#007A3D] px-8 text-lg font-extrabold text-[#007A3D]"
           >

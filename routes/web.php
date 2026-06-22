@@ -130,6 +130,9 @@ Route::middleware(['auth'])->group(function () use ($eventPayload) {
     Route::get('/statistik-waktu-belajar', fn () => Inertia::render('StatistikWaktuBelajar'))
         ->name('statistik.waktu');
 
+    Route::get('/gabung-kelas', fn () => Inertia::render('GabungKelas'))
+        ->name('gabung.kelas');
+
     Route::get('/detail-aktivitas-pelatihan', fn () => Inertia::render('DetailAktivitasPelatihan'))
         ->name('pelatihan.aktivitas.detail');
 

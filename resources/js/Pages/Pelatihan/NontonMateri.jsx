@@ -1,29 +1,21 @@
+import { useState } from "react";
 import { Head, Link, usePage } from "@inertiajs/react";
 import {
   ArrowLeft,
   ArrowRight,
-  CheckCircle2,
-  ChevronDown,
-  Circle,
   Clock3,
   FileText,
-  HelpCircle,
-  Lock,
   Maximize,
   Play,
   Settings,
   Volume2,
 } from "lucide-react";
 import LearningLayout from "@/Components/Pelatihan/LearningLayout";
+import KurikulumSidebar from "@/Components/Pelatihan/KurikulumSidebar";
 import { flattenMaterials, normalizeLearning } from "./learningContent";
 
-function materialIcon(material, active) {
-  if (material.done) return <CheckCircle2 className="h-4 w-4 text-[#00A96B]" />;
-  if (active) return <Play className="h-4 w-4 text-[#00A96B]" />;
-  return <Circle className="h-4 w-4 text-[#B7C2BB]" />;
-}
-
 export default function NontonMateri({ learning }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { url } = usePage();
   const { course, modules, progress } = normalizeLearning(learning);
   const params = new URLSearchParams(url.split("?")[1] || "");
@@ -33,7 +25,9 @@ export default function NontonMateri({ learning }) {
     materials.find((item) => String(item.id) === String(requestedLesson)) ||
     materials[0];
   const activeIndex = Math.max(
-    materials.findIndex((item) => String(item.id) === String(activeMaterial?.id)),
+    materials.findIndex(
+      (item) => String(item.id) === String(activeMaterial?.id),
+    ),
     0,
   );
   const nextMaterial = materials[activeIndex + 1];
@@ -45,74 +39,19 @@ export default function NontonMateri({ learning }) {
     <LearningLayout showHeaderBack alignHeaderContentLeft backHref="/pelatihan">
       <Head title={`${activeMaterial?.title || "Materi"} - Pensiun Mudah`} />
 
-      <div className="flex min-h-[1030px] border-b border-[#BFD1C0]">
-        <aside className="hidden w-[320px] shrink-0 border-r border-[#E1E2DF] bg-white lg:block">
-          <div className="px-4 py-5">
-            <h2 className="text-xl font-extrabold text-[#1F2937]">Kurikulum Kursus</h2>
-            <p className="mt-1 text-base text-[#6B7280]">Progress: {progress}% selesai</p>
-            <div className="mt-2 h-2 w-full rounded-full bg-[#E7E4E2]">
-              <div
-                className="h-2 rounded-full bg-[#00A96B]"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-
-          <nav>
-            {modules.map((module, index) => {
-              const isFirst = index === 0;
-              return (
-                <section key={module.id} className="border-t border-[#ECEDEA]">
-                  <div
-                    className={`flex min-h-[82px] items-center justify-between px-4 py-4 font-bold ${
-                      isFirst ? "bg-[#E9F7EF] text-[#00A553]" : "text-[#344054]"
-                    }`}
-                  >
-                    <span className="max-w-[230px] leading-7">{module.title}</span>
-                    {isFirst ? (
-                      <ChevronDown className="h-5 w-5 text-[#00A553]" />
-                    ) : (
-                      <Lock className="h-4 w-4 text-[#9AA6A0]" />
-                    )}
-                  </div>
-
-                  {isFirst ? (
-                    <div className="border-l-4 border-[#00A553]">
-                      {(module.materials || []).map((material) => {
-                        const active =
-                          String(material.id) === String(activeMaterial?.id);
-                        return (
-                          <Link
-                            key={material.id}
-                            href={`/pelatihan/${course.id}/belajar?lesson=${material.id}`}
-                            className={`flex items-start gap-3 px-8 py-3 text-sm leading-6 ${
-                              active
-                                ? "bg-[#F4FFF7] font-semibold text-[#00A553]"
-                                : "text-[#475467] hover:bg-[#FBFAF8]"
-                            }`}
-                          >
-                            <span className="mt-1">{materialIcon(material, active)}</span>
-                            <span>{material.title}</span>
-                          </Link>
-                        );
-                      })}
-
-                      {module.quiz ? (
-                        <Link
-                          href={`/pelatihan/${course.id}/kuis`}
-                          className="flex items-center gap-3 px-8 py-3 text-sm font-semibold text-[#FF8A00] hover:bg-[#FFF4E8]"
-                        >
-                          <HelpCircle className="h-4 w-4" />
-                          {module.quiz.title || "Quiz Modul 1"}
-                        </Link>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </section>
-              );
-            })}
-          </nav>
-        </aside>
+      <div
+        className={`flex min-h-[1030px] border-b border-[#BFD1C0] transition-[padding] duration-300 ${
+          sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[320px]"
+        }`}
+      >
+        <KurikulumSidebar
+          modules={modules}
+          progress={progress}
+          courseId={course.id}
+          activeMaterialId={activeMaterial?.id}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
+        />
 
         <main className="flex-1 bg-white">
           <section className="relative border-b-4 border-black bg-[#183B28]">
@@ -157,11 +96,13 @@ export default function NontonMateri({ learning }) {
 
           <article className="mx-auto max-w-[910px] px-8 py-16">
             <h1 className="text-[32px] font-extrabold leading-tight text-[#111827]">
-              {activeMaterial?.title || "Materi 1: Menemukan Ikigai Baru di Masa Pensiun"}
+              {activeMaterial?.title ||
+                "Materi 1: Menemukan Ikigai Baru di Masa Pensiun"}
             </h1>
             <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-[#667085]">
               <span className="flex items-center gap-1.5">
-                <Clock3 className="h-4 w-4" /> Durasi: {activeMaterial?.duration || "24 Menit"}
+                <Clock3 className="h-4 w-4" /> Durasi:{" "}
+                {activeMaterial?.duration || "24 Menit"}
               </span>
               <span className="flex items-center gap-1.5">
                 <FileText className="h-4 w-4" /> PDF Tersedia
@@ -200,7 +141,11 @@ export default function NontonMateri({ learning }) {
 
             <div className="flex items-center justify-between gap-4">
               <Link
-                href={activeIndex > 0 ? `/pelatihan/${course.id}/belajar?lesson=${materials[activeIndex - 1].id}` : `/pelatihan/${course.id}/kelas`}
+                href={
+                  activeIndex > 0
+                    ? `/pelatihan/${course.id}/belajar?lesson=${materials[activeIndex - 1].id}`
+                    : "/pelatihan"
+                }
                 className="inline-flex min-w-[245px] items-center justify-center gap-3 rounded-lg border-2 border-[#00A553] px-6 py-4 font-extrabold text-[#00A553]"
               >
                 <ArrowLeft className="h-5 w-5" />

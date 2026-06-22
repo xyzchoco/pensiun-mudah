@@ -31,7 +31,7 @@ function LearningHeader({
     : "flex items-center gap-4";
 
   return (
-    <header className="h-[72px] border-b border-[#C9D8C9] bg-white">
+    <header className="sticky top-0 z-30 h-[72px] border-b border-[#C9D8C9] bg-white">
       <div className={containerClass}>
         <Link href="/" className={logoClass}>
           <img src="/images/logo.png" alt="Pensiun Mudah" className="h-12 w-auto" />

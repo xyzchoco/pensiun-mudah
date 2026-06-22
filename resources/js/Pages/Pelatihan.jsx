@@ -98,6 +98,9 @@ function CourseThumb({ src, alt }) {
 
 function CourseCard({ course, tab }) {
   const isOngoing = tab === "berjalan";
+  const learnHref = course.firstLessonId
+    ? `/pelatihan/${course.id}/belajar?lesson=${encodeURIComponent(course.firstLessonId)}`
+    : `/pelatihan/${course.id}/belajar`;
 
   return (
     <article className="overflow-hidden rounded-lg border border-[#E4E2E1] bg-white shadow-sm">
@@ -126,7 +129,7 @@ function CourseCard({ course, tab }) {
               />
             </div>
             <Link
-              href={`/pelatihan/${course.id}/kelas`}
+              href={learnHref}
               className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-[#FF8928] text-lg font-extrabold text-[#4B3009] transition hover:bg-[#F57F1E]"
             >
               <Play className="h-5 w-5" />

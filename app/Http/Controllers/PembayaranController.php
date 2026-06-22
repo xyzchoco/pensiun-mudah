@@ -53,7 +53,7 @@ class PembayaranController extends Controller
             ->exists();
 
         if ($sudahBeli) {
-            return redirect()->route('pelatihan.kelas', $course->id)
+            return redirect()->route('pelatihan.belajar', $this->learningRouteParams($course))
                 ->with('success', 'Lu udah punya kelas ini bos, langsung gass belajar!');
         }
 
@@ -222,7 +222,8 @@ class PembayaranController extends Controller
         $user = Auth::user();
         
         // Cari data kursus berdasarkan slug di URL
-        $course = Course::where('slug', $slug)->firstOrFail();
+        $course = Course::with('modules.materials')->where('slug', $slug)->firstOrFail();
+        $course->setAttribute('firstLessonId', $this->firstMaterialId($course));
         
         // Cari data transaksi sukses terbaru milik user untuk kursus ini
         $transaction = Transaction::where('user_id', $user->id)
@@ -246,5 +247,27 @@ class PembayaranController extends Controller
         // Nanti kita racik logika notifikasinya di sini
         // Sementara kasih respons OK dulu biar server Midtrans seneng
         return response()->json(['status' => 'ok']);
+    }
+
+    private function learningRouteParams(Course $course): array
+    {
+        $params = ['id' => $course->id];
+        $firstMaterialId = $this->firstMaterialId($course);
+
+        if ($firstMaterialId) {
+            $params['lesson'] = $firstMaterialId;
+        }
+
+        return $params;
+    }
+
+    private function firstMaterialId(Course $course): mixed
+    {
+        $course->loadMissing('modules.materials');
+
+        return $course->modules
+            ->flatMap(fn ($module) => $module->materials)
+            ->first()
+            ?->id;
     }
 }

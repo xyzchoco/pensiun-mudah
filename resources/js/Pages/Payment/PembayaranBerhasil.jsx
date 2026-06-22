@@ -7,6 +7,9 @@ export default function PembayaranBerhasil({ course, transaction }) {
   // Ambil slug dinamis dari course, fallback ke default kalau kosong
   const slug = course?.slug || course?.id || "manajemen-investasi-aman";
   const backHref = "/beli-pelatihan";
+  const learnHref = course?.firstLessonId
+    ? `/pelatihan/${course?.id}/belajar?lesson=${encodeURIComponent(course.firstLessonId)}`
+    : `/pelatihan/${course?.id}/belajar`;
 
   // Format harga ke Rupiah asli
   const formatRupiah = (angka) => {
@@ -107,7 +110,7 @@ export default function PembayaranBerhasil({ course, transaction }) {
 
                 {/* Tombol Keramat Langsung Loncat Masuk Ruang Kelas */}
                 <Link
-                  href={`/pelatihan/${course?.id}/kelas`}
+                  href={learnHref}
                   className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF8928] py-3.5 font-bold text-white hover:bg-[#F57F1E] transition-colors shadow-sm"
                 >
                   Lihat Pelatihan Sekarang

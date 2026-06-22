@@ -18,6 +18,9 @@ const wrongNumbers = new Set([3, 7]);
 
 export default function HasilKuis({ learning }) {
   const { course } = normalizeLearning(learning);
+  const firstLessonHref = course.firstLessonId
+    ? `/pelatihan/${course.id}/belajar?lesson=${encodeURIComponent(course.firstLessonId)}`
+    : `/pelatihan/${course.id}/belajar`;
 
   return (
     <LearningLayout>
@@ -25,7 +28,7 @@ export default function HasilKuis({ learning }) {
 
       <main className="mx-auto max-w-[1072px] px-8 pb-24 pt-14">
         <Link
-          href={`/pelatihan/${course.id}/kelas`}
+          href={firstLessonHref}
           className="inline-flex items-center gap-3 text-lg font-extrabold text-[#007A3D]"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -106,7 +109,7 @@ export default function HasilKuis({ learning }) {
 
             <div className="mt-20 flex flex-wrap items-center gap-4">
               <Link
-                href={`/pelatihan/${course.id}/belajar`}
+                href={firstLessonHref}
                 className="inline-flex h-14 items-center justify-center gap-2 rounded-lg bg-[#FF8928] px-4 text-base font-extrabold text-[#1F1F1F] shadow-sm"
               >
                 Lanjut ke Modul Berikutnya

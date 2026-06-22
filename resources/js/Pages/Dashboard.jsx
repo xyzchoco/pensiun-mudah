@@ -179,9 +179,9 @@ export default function Dashboard({ banners, events }) {
                                     className="border border-[#E4E2E1] px-4 py-3 rounded-lg w-full md:w-[240px] text-xs bg-[#FBF9F8] outline-none focus:border-[#008740]"
                                     placeholder="CONTOH: CORP-2024-XXXX"
                                 />
-                                <button className="bg-[#FF8928] hover:bg-[#e67a22] text-white px-6 py-3 rounded-lg font-bold text-sm whitespace-nowrap flex items-center gap-2 transition-colors">
+                                <Link href="/gabung-kelas" className="bg-[#FF8928] hover:bg-[#e67a22] text-white px-6 py-3 rounded-lg font-bold text-sm whitespace-nowrap flex items-center gap-2 transition-colors">
                                     <span>🔗</span> Gabung
-                                </button>
+                                </Link>
                             </div>
                         </div>
 

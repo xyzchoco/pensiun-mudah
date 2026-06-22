@@ -48,32 +48,13 @@ class PelatihanController extends Controller
 
     public function kelas($id)
     {
-        $user = Auth::user();
+        $enrollment = $this->activeEnrollment($id);
 
-        $enrollment = Enrollment::with(['course.category', 'course.modules.materials', 'course.modules.quizzes.questions.options'])
-            ->where('user_id', $user->id)
-            ->where('course_id', $id)
-            ->first();
-
-        if (!$enrollment) {
-            return redirect()->route('beli-pelatihan')
-                ->with('error', 'Hayo, lu harus daftar/beli pelatihannya dulu bos!');
+        if ($enrollment instanceof \Illuminate\Http\RedirectResponse) {
+            return $enrollment;
         }
 
-        if ($enrollment->status === 'dropped') {
-            return redirect()->route('beli-pelatihan')
-                ->with('error', 'Akses pelatihan ini sudah ditutup.');
-        }
-
-        $completedMaterialIds = $this->completedMaterialIds($user->id, $enrollment->course);
-        $enrollmentPayload = $enrollment->toArray();
-        $enrollmentPayload['course'] = $this->coursePayload($enrollment->course);
-        $enrollmentPayload['modules'] = $this->modulePayload($enrollment->course, $completedMaterialIds);
-        $enrollmentPayload['progressPercent'] = (int) $enrollment->progress_persen;
-
-        return Inertia::render('Pelatihan/KelasSaya', [
-            'enrollment' => $enrollmentPayload,
-        ]);
+        return redirect()->route('pelatihan.belajar', $this->learningRouteParams($enrollment->course));
     }
 
     public function belajar(Request $request, $id)
@@ -120,7 +101,7 @@ class PelatihanController extends Controller
         $user = Auth::user();
 
         // 1. Tarik kelas yang SEDANG BERJALAN (status active & belum completed)
-        $ongoing = Enrollment::with(['course.category'])
+        $ongoing = Enrollment::with(['course.category', 'course.modules.materials'])
             ->where('user_id', $user->id)
             ->where('status', 'active')
             ->where('is_completed', false)
@@ -132,6 +113,7 @@ class PelatihanController extends Controller
                     'title' => $enroll->course->title,
                     'category' => $enroll->course->category?->nama ?? 'Umum',
                     'progress' => (int) $enroll->progress_persen,
+                    'firstLessonId' => $this->firstMaterialId($enroll->course),
                     'thumbnail' => $enroll->course->thumbnail 
                         ? '/storage/' . preg_replace('/^public\//', '', $enroll->course->thumbnail) 
                         : '/images/course-preview.png',
@@ -213,8 +195,31 @@ class PelatihanController extends Controller
             'description' => $course->description,
             'category' => $course->category?->nama ?? 'Umum',
             'progress' => 15,
+            'firstLessonId' => $this->firstMaterialId($course),
             'thumbnailUrl' => $this->storageUrl($course->thumbnail),
         ];
+    }
+
+    private function learningRouteParams(Course $course): array
+    {
+        $params = ['id' => $course->id];
+        $firstMaterialId = $this->firstMaterialId($course);
+
+        if ($firstMaterialId) {
+            $params['lesson'] = $firstMaterialId;
+        }
+
+        return $params;
+    }
+
+    private function firstMaterialId(Course $course): mixed
+    {
+        $course->loadMissing('modules.materials');
+
+        return $course->modules
+            ->flatMap(fn ($module) => $module->materials)
+            ->first()
+            ?->id;
     }
 
     private function modulePayload(Course $course, array $completedMaterialIds): array
