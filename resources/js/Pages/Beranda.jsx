@@ -2,6 +2,19 @@ import { useRef } from 'react';
 import MainLayout from '../Layouts/MainLayout';
 import { Link } from '@inertiajs/react';
 
+const formatEventDate = (date) => {
+    if (!date) return '-';
+
+    const parsedDate = new Date(date);
+    if (Number.isNaN(parsedDate.getTime())) return date;
+
+    return parsedDate.toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+    });
+};
+
 // Pastikan props 'landing' masuk di sini
 export default function Beranda({ landing, events, categories }) {
     const eventScrollRef = useRef(null);
@@ -183,16 +196,19 @@ export default function Beranda({ landing, events, categories }) {
 
                                             <div className="flex flex-col gap-2 text-xs text-[#3D4A3E] mb-6">
                                                 {/* Format tanggal biar cantik ala Indonesia */}
-                                                <div className="flex items-center gap-2"><span>📅</span> {new Date(event.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                                                <div className="flex items-center gap-2"><span>📅</span> {formatEventDate(event.tanggal)}</div>
                                                 <div className="flex items-center gap-2"><span>🎥</span> {event.lokasi_link}</div>
                                                 <div className="flex items-center gap-2"><span>👤</span> {event.narasumber}</div>
                                             </div>
 
                                             <div className="mt-auto">
                                                 <p className="text-xs text-center text-[#3D4A3E] mb-3">Kapasitas {event.kapasitas} | <span className="text-[#008740]">Sisa Kuota: {event.sisa_kuota}</span></p>
-                                                <button className="w-full bg-[#FF8928] hover:bg-[#e67a22] text-white font-bold py-2 rounded-lg text-sm transition-colors">
+                                                <Link
+                                                    href={`/event-landing/${event.id}`}
+                                                    className="block w-full bg-[#FF8928] hover:bg-[#e67a22] text-white font-bold py-2 rounded-lg text-sm text-center transition-colors"
+                                                >
                                                     Lihat Detail
-                                                </button>
+                                                </Link>
                                             </div>
                                         </div>
                                     </div>
@@ -272,9 +288,9 @@ export default function Beranda({ landing, events, categories }) {
                                             {kategori.courses_count || 0} Kursus
                                         </p>
 
-                                        <button className="w-full border border-[#008740] text-[#008740] hover:bg-[#008740] hover:text-white font-bold py-2 rounded-lg text-sm transition-colors">
+                                        <Link href="/katalog-pelatihan" className="block w-full border border-[#008740] text-[#008740] hover:bg-[#008740] hover:text-white font-bold py-2 rounded-lg text-sm text-center transition-colors">
                                             Lihat Detail
-                                        </button>
+                                        </Link>
                                     </div>
                                 ))
                             ) : (

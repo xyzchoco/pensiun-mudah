@@ -54,7 +54,11 @@ Route::get('/auth/google/callback', function () {
 
         Auth::login($user);
 
-        return redirect()->intended('/dashboard');
+        if (! $user->kategori_pensiun) {
+            return redirect()->route('onboarding.kategori');
+        }
+
+        return redirect()->intended($user->kategori_pensiun === 'korporat' ? '/korporat/dashboard' : '/dashboard');
 
     } catch (\Exception $e) {
         dd($e->getMessage());
@@ -118,11 +122,57 @@ $eventPayload = function (string|int $id) {
     ];
 };
 
+Route::get('/event-landing/{slug}', fn (string $slug) => Inertia::render('Landing/DetailEventLanding', [
+    'event' => $eventPayload($slug),
+]))->name('landing.event.detail');
+
+Route::get('/katalog-pelatihan', fn () => Inertia::render('Landing/KatalogPelatihanLanding'))
+    ->name('landing.katalog');
 
 // ==========================================
 // PROTECTED ROUTES (Wajib Login)
 // ==========================================
 Route::middleware(['auth'])->group(function () use ($eventPayload) {
+
+    Route::get('/onboarding/pilih-kategori', fn () => Inertia::render('Onboarding/PilihKategori'))
+        ->name('onboarding.kategori');
+
+    Route::post('/onboarding/kategori', function () {
+        $data = request()->validate([
+            'kategori' => ['required', 'in:publik,korporat'],
+        ]);
+
+        request()->user()->forceFill([
+            'kategori_pensiun' => $data['kategori'],
+        ])->save();
+
+        if ($data['kategori'] === 'korporat') {
+            return redirect()->route('korporat.verifikasi');
+        }
+
+        return redirect()->route('dashboard');
+    })->name('onboarding.kategori.store');
+
+    Route::get('/korporat/verifikasi', fn () => Inertia::render('Korporat/VerifikasiKorporat'))
+        ->name('korporat.verifikasi');
+
+    Route::post('/korporat/verifikasi', function () {
+        request()->validate([
+            'namaPerusahaan' => ['required', 'string', 'max:255'],
+            'jabatan' => ['required', 'string', 'max:255'],
+        ]);
+
+        return redirect()->route('korporat.dashboard');
+    })->name('korporat.verifikasi.store');
+
+    Route::get('/korporat/dashboard', fn () => Inertia::render('Korporat/DashboardKorporat'))
+        ->name('korporat.dashboard');
+
+    Route::get('/korporat/beli-pelatihan', fn () => Inertia::render('Korporat/BeliPelatihanKorporat'))
+        ->name('korporat.beli-pelatihan');
+
+    Route::get('/korporat/profil-perusahaan', fn () => Inertia::render('Korporat/ProfilPerusahaan'))
+        ->name('korporat.profil-perusahaan');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');

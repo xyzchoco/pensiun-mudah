@@ -103,7 +103,10 @@ export default function Dashboard({ banners, events }) {
                     <div className="col-span-12 xl:col-span-8 flex flex-col gap-6">
                         {/* 2. STATS CARDS */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-white border border-[#E4E2E1] p-5 rounded-2xl shadow-sm flex items-center gap-4">
+                            <Link
+                                href="/pelatihan"
+                                className="bg-white border border-[#E4E2E1] p-5 rounded-2xl shadow-sm flex items-center gap-4 transition-all hover:border-[#008740] hover:shadow-md cursor-pointer"
+                            >
                                 <div className="w-12 h-12 bg-[#EFF6FF] text-[#2563EB] rounded-full flex items-center justify-center text-2xl">
                                     📘
                                 </div>
@@ -118,7 +121,7 @@ export default function Dashboard({ banners, events }) {
                                         +2 bulan ini
                                     </p>
                                 </div>
-                            </div>
+                            </Link>
 
                             <Link
                                 href="/statistik-waktu-belajar"
@@ -145,7 +148,10 @@ export default function Dashboard({ banners, events }) {
                                 </div>
                             </Link>
 
-                            <div className="bg-white border border-[#E4E2E1] p-5 rounded-2xl shadow-sm flex items-center gap-4">
+                            <Link
+                                href="/sertifikat"
+                                className="bg-white border border-[#E4E2E1] p-5 rounded-2xl shadow-sm flex items-center gap-4 transition-all hover:border-[#008740] hover:shadow-md cursor-pointer"
+                            >
                                 <div className="w-12 h-12 bg-[#FFF3E5] text-[#FF8928] rounded-full flex items-center justify-center text-2xl">
                                     🏅
                                 </div>
@@ -160,7 +166,7 @@ export default function Dashboard({ banners, events }) {
                                         1 dalam proses
                                     </p>
                                 </div>
-                            </div>
+                            </Link>
                         </div>
 
                         {/* 3. GABUNG KORPORAT */}

@@ -249,9 +249,12 @@ function Header({
                 Member Gratis
               </p>
             </div>
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#006B32] border-2 border-[#006B32]/20 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
+            <Link
+              href="/profile"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#006B32] border-2 border-[#006B32]/20 flex items-center justify-center text-white font-bold text-xs sm:text-sm"
+            >
               {getInitials(displayName)}
-            </div>
+            </Link>
           </div>
         </div>
       </div>

@@ -33,6 +33,16 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $user = $request->user();
+
+        if (! $user->kategori_pensiun) {
+            return redirect()->route('onboarding.kategori');
+        }
+
+        if ($user->kategori_pensiun === 'korporat') {
+            return redirect()->route('korporat.dashboard');
+        }
+
         return redirect()->route('dashboard');
     }
 

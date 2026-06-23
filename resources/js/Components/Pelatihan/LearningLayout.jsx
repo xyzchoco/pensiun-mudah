@@ -149,7 +149,7 @@ export default function LearningLayout({
   withFooter = true,
 }) {
   return (
-    <div className="min-h-screen bg-[#FBFAF8] text-[#1F1F1F]">
+    <div className="min-h-screen bg-[#FBFAF8] text-[#1F1F1F] font-['Atkinson_Hyperlegible']">
       <LearningHeader
         backHref={backHref}
         showHeaderBack={showHeaderBack}
