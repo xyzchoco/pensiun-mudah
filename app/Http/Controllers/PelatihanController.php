@@ -31,7 +31,7 @@ class PelatihanController extends Controller
 
     public function show($slug)
     {
-        $course = Course::with('category')->where('slug', $slug)->firstOrFail();
+        $course = Course::with(['category', 'lessons'])->where('slug', $slug)->firstOrFail();
 
         $relatedCourses = Course::with('category')
             ->where('category_id', $course->category_id)
@@ -100,7 +100,7 @@ class PelatihanController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Tarik kelas yang SEDANG BERJALAN (status active & belum completed)
+        // 1. Tarik kelas yang SEDANG BERJALAN (Udah dibalikin ke materials)
         $ongoing = Enrollment::with(['course.category', 'course.modules.materials'])
             ->where('user_id', $user->id)
             ->where('status', 'active')
@@ -123,7 +123,7 @@ class PelatihanController extends Controller
                 ];
             });
 
-        // 2. Tarik kelas yang SUDAH SELESAI (status completed ATAU is_completed = true)
+        // 2. Tarik kelas yang SUDAH SELESAI
         $completed = Enrollment::with(['course.category'])
             ->where('user_id', $user->id)
             ->where(function($query) {
@@ -146,7 +146,6 @@ class PelatihanController extends Controller
                 ];
             });
 
-        // Lempar kedua data tersebut ke React Pelatihan
         return Inertia::render('Pelatihan', [
             'ongoingCourses' => $ongoing,
             'completedCourses' => $completed
@@ -157,6 +156,7 @@ class PelatihanController extends Controller
     {
         $user = Auth::user();
 
+        // UDAH DIBALIKIN JADI materials
         $enrollment = Enrollment::with(['course.category', 'course.modules.materials', 'course.modules.quizzes.questions.options'])
             ->where('user_id', $user->id)
             ->where('course_id', $courseId)
@@ -214,24 +214,29 @@ class PelatihanController extends Controller
 
     private function firstMaterialId(Course $course): mixed
     {
+        // UDAH DIBALIKIN JADI materials
         $course->loadMissing('modules.materials');
 
         return $course->modules
             ->flatMap(fn ($module) => $module->materials)
             ->first()
-            ?->id;
+            ->id ?? null;
     }
 
     private function modulePayload(Course $course, array $completedMaterialIds): array
     {
         return $course->modules->values()->map(function ($module, $moduleIndex) use ($completedMaterialIds) {
             $quiz = $module->quizzes->first();
+            
+            // 👇 UDAH DIBALIKIN JADI materials 👇
             $materials = $module->materials->values()->map(function ($material) use ($completedMaterialIds) {
                 return [
                     'id' => $material->id,
                     'title' => $material->judul,
                     'type' => $material->tipe,
                     'duration' => $material->durasi_menit . ' Menit',
+                    'video_url' => $material->url_video, 
+                    'konten' => $material->konten,
                     'done' => in_array($material->id, $completedMaterialIds, true),
                 ];
             })->all();
@@ -241,8 +246,10 @@ class PelatihanController extends Controller
                 'title' => $module->judul,
                 'subtitle' => $module->deskripsi,
                 'locked' => (bool) $module->is_locked && $moduleIndex > 0,
-                'materials' => $materials,
-                'lessons' => $materials,
+                
+                'materials' => $materials, 
+                'lessons' => $materials, // Tetap dibiarkan jaga-jaga kalau frontend nyari nama ini
+                
                 'quiz' => $quiz ? [
                     'id' => $quiz->id,
                     'title' => $quiz->judul,
@@ -251,7 +258,6 @@ class PelatihanController extends Controller
                     'totalQuestions' => $quiz->total_soal ?: max($quiz->questions->count(), 10),
                     'questions' => $quiz->questions->values()->map(function ($question) {
                         $options = $question->options->values();
-
                         return [
                             'id' => $question->id,
                             'text' => $question->teks_soal,
@@ -266,6 +272,7 @@ class PelatihanController extends Controller
 
     private function completedMaterialIds(int $userId, Course $course): array
     {
+        // UDAH DIBALIKIN JADI materials
         $materialIds = $course->modules
             ->flatMap(fn ($module) => $module->materials->pluck('id'))
             ->all();
@@ -274,9 +281,9 @@ class PelatihanController extends Controller
             return [];
         }
 
-        return DB::table('material_user')
+        return DB::table('material_user') 
             ->where('user_id', $userId)
-            ->whereIn('material_id', $materialIds)
+            ->whereIn('material_id', $materialIds) 
             ->pluck('material_id')
             ->map(fn ($id) => (int) $id)
             ->all();

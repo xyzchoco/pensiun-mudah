@@ -221,8 +221,9 @@ class PembayaranController extends Controller
     {
         $user = Auth::user();
         
-        // Cari data kursus berdasarkan slug di URL
-        $course = Course::with('modules.materials')->where('slug', $slug)->firstOrFail();
+        // REVISI DI SINI: Tambahkan 'category' ke dalam fungsi with()
+        $course = Course::with(['modules.materials', 'category'])->where('slug', $slug)->firstOrFail();
+        
         $course->setAttribute('firstLessonId', $this->firstMaterialId($course));
         
         // Cari data transaksi sukses terbaru milik user untuk kursus ini

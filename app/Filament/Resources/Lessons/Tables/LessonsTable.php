@@ -22,33 +22,24 @@ class LessonsTable
                     ->sortable()
                     ->searchable()
                     ->limit(20),
-
-                TextColumn::make('title')
-                    ->label('Judul Materi')
-                    ->searchable()
-                    ->sortable(),
-
-                TextColumn::make('order')
-                    ->label('Urutan')
-                    ->sortable()
-                    ->badge()
-                    ->color('info'),
-
+                
                 IconColumn::make('is_free')
-                    ->label('Gratis')
-                    ->boolean(),
+                    ->label('Status Preview')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle'),
             ])
-            ->defaultSort('course_id', 'asc') // Otomatis dikelompokkan berdasarkan kursusnya
+            ->defaultSort('course_id', 'asc')
             ->filters([
                 SelectFilter::make('course_id')
                     ->relationship('course', 'title')
                     ->label('Filter Kursus'),
             ])
-            ->recordActions([
+            ->actions([
                 EditAction::make(),
                 DeleteAction::make()->requiresConfirmation(),
             ])
-            ->toolbarActions([
+            ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()->requiresConfirmation(),
                 ]),

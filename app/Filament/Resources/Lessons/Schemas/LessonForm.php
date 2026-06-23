@@ -7,7 +7,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Toggle;
-use Illuminate\Support\Str;
 
 class LessonForm
 {
@@ -17,42 +16,24 @@ class LessonForm
             ->components([
                 Select::make('course_id')
                     ->relationship('course', 'title')
-                    ->label('Bagian dari Kursus')
+                    ->label('Pilih Kursus')
                     ->required()
-                    ->searchable(), // Biar gampang dicari kalau kursusnya udah banyak
-
-                TextInput::make('title')
-                    ->label('Judul Materi (Contoh: Bab 1 - Pengenalan)')
-                    ->required()
-                    ->maxLength(255)
-                    ->live(onBlur: true)
-                    ->afterStateUpdated(fn (string $operation, $state, $set) => $operation === 'create' ? $set('slug', Str::slug($state)) : null),
-
-                TextInput::make('slug')
-                    ->label('URL Slug')
-                    ->required()
-                    ->unique(ignoreRecord: true)
-                    ->maxLength(255),
+                    ->searchable(),
 
                 TextInput::make('video_url')
-                    ->label('Link Video (YouTube/Vimeo)')
-                    ->url() // Validasi harus format URL
-                    ->nullable()
+                    ->label('Link Video Preview (YouTube)')
+                    ->url()
+                    ->required() // Preview harus ada videonya dong biar user tertarik
                     ->maxLength(255),
 
-                TextInput::make('order')
-                    ->label('Urutan Materi')
-                    ->numeric()
-                    ->default(1)
-                    ->required(),
-
                 Toggle::make('is_free')
-                    ->label('Materi Gratis (Preview)')
-                    ->default(false)
-                    ->helperText('Aktifkan jika bab ini boleh ditonton tanpa perlu beli kursus.'),
+                    ->label('Aktifkan Preview')
+                    ->default(true)
+                    ->helperText('Aktifkan agar user bisa menonton video trailer ini sebelum beli.'),
 
                 RichEditor::make('content')
-                    ->label('Teks Penjelasan / Rangkuman')
+                    ->label('Deskripsi Singkat Cuplikan')
+                    ->placeholder('Tulis kalimat pancingan biar user tertarik beli...')
                     ->columnSpanFull(),
             ]);
     }

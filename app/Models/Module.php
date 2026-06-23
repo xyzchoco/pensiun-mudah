@@ -13,13 +13,17 @@ use Illuminate\Database\Eloquent\Model;
             return $this->belongsTo(Course::class);
         }
 
-        public function materials(): \Illuminate\Database\Eloquent\Relations\HasMany
-        {
-            return $this->hasMany(Material::class)->orderBy('urutan');
-        }
-
         public function quizzes(): \Illuminate\Database\Eloquent\Relations\HasMany
         {
             return $this->hasMany(Quiz::class);
+        }
+        public function lessons()
+        {
+            return $this->hasMany(Lesson::class, 'module_id')->orderBy('urutan');
+        }
+
+        public function materials()
+        {
+            return $this->hasMany(Material::class)->orderBy('urutan');
         }
     }

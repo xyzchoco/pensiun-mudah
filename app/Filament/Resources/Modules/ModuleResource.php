@@ -15,6 +15,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor; // TAMBAHIN IMPORT INI BOS!
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Actions\EditAction;
@@ -40,7 +41,7 @@ class ModuleResource extends Resource
                     ->schema([
                         Select::make('course_id')
                             ->label('Pilih Kursus')
-                            ->relationship('course', 'title') // Otomatis narik data dari tabel courses
+                            ->relationship('course', 'title') 
                             ->required(),
                         TextInput::make('judul')
                             ->label('Judul Modul')
@@ -60,12 +61,12 @@ class ModuleResource extends Resource
                             ->columnSpanFull(),
                     ])->columns(2),
 
-                // SECTION 2: REPEATER MATERI (Langsung input materi di dalam modul)
+                // SECTION 2: REPEATER MATERI
                 Section::make('Konten / Materi Pembelajaran')
                     ->description('Tambah, ubah, atau susun materi (Video/PDF/Artikel) di dalam modul ini.')
                     ->schema([
-                        Repeater::make('materials') // Nama relasi di model Module
-                            ->relationship('materials') // Menggunakan relasi hasMany ke tabel materials
+                        Repeater::make('materials') 
+                            ->relationship('materials') 
                             ->schema([
                                 TextInput::make('judul')
                                     ->label('Judul Materi')
@@ -78,14 +79,14 @@ class ModuleResource extends Resource
                                         'artikel' => 'Artikel Bacaan',
                                     ])
                                     ->required()
-                                    ->reactive(), // Biar inputan di bawahnya dinamis muncul sesuai tipe
+                                    ->reactive(), 
                                 TextInput::make('url_video')
                                     ->label('URL Video (YouTube/Vimeo/S3)')
                                     ->url()
-                                    ->visible(fn ($get) => $get('tipe') === 'video'), // Hanya muncul kalau tipe = video
+                                    ->visible(fn ($get) => $get('tipe') === 'video'), 
                                 TextInput::make('url_pdf')
                                     ->label('URL File PDF')
-                                    ->visible(fn ($get) => $get('tipe') === 'pdf'), // Hanya muncul kalau tipe = pdf
+                                    ->visible(fn ($get) => $get('tipe') === 'pdf'), 
                                 TextInput::make('durasi_menit')
                                     ->label('Estimasi Durasi (Menit)')
                                     ->numeric()
@@ -95,10 +96,19 @@ class ModuleResource extends Resource
                                     ->numeric()
                                     ->default(1)
                                     ->required(),
+
+                                // 👇 TARUH DI SINI BOS 👇
+                                RichEditor::make('konten')
+                                    ->label('Isi Artikel / Bacaan Materi')
+                                    ->placeholder('Ketik materi bacaan lengkap di sini bos...')
+                                    ->visible(fn ($get) => in_array($get('tipe'), ['artikel', 'video'])) // Bisa muncul di tipe Artikel dan Video buat deskripsi
+                                    ->columnSpanFull(),
+                                // 👆 SAMPAI SINI 👆
+
                             ])
                             ->columns(2)
-                            ->itemLabel(fn (array $state): ?string => $state['judul'] ?? null) // Menampilkan judul materi di baris repeater
-                            ->collapsible() // Bisa di-collapse biar rapi
+                            ->itemLabel(fn (array $state): ?string => $state['judul'] ?? null) 
+                            ->collapsible() 
                             ->columnSpanFull(),
                     ]),
             ]);
@@ -123,7 +133,7 @@ class ModuleResource extends Resource
                     ->boolean(),
                 TextColumn::make('materials_count')
                     ->label('Total Materi')
-                    ->counts('materials'), // Otomatis ngitung jumlah materi di dalam modul
+                    ->counts('materials'), 
             ])
             ->filters([
                 //

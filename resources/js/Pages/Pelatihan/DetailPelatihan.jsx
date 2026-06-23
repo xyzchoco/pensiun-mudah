@@ -7,26 +7,17 @@ import PelatihanFooter from '@/Components/Pelatihan/PelatihanFooter';
 
 export default function DetailPelatihan({ course }) {
     // Data kursus (anggap dari backend, kasih default biar aman dirender)
-    const data = course || {
-        id: 1,
-        slug: 'manajemen-keuangan-masa-pensiun',
-        title: 'Manajemen Keuangan Masa Pensiun',
-        thumbnail: '/images/course-preview.png',
-        preview_video: '#',
-        description:
-            'Kursus komprehensif yang dirancang khusus untuk para profesional menjelang dan memasuki masa pensiun. Pelajari cara mengelola, melindungi, dan mengembangkan aset Anda agar masa tua tetap tenang, sehat, dan sejahtera.',
-        duration: '12 Jam',
-        price: 199000,
-        original_price: 499000,
-        rating_average: 4.8,
-        total_reviews: 124,
-    };
+    const data = course || {};
+
+    if (!data) return <div>Loading...</div>;
+
+    const previewLesson = data.lessons && data.lessons.length > 0 ? data.lessons[0] : null;
 
     const slug = data.slug || data.id;
 
     // Fitur yang didapat (ditampilin di kartu pembelian)
     const purchaseFeatures = [
-        '24 Modul Video HD',
+        'Modul Video HD',
         'E-Book Perencanaan Keuangan',
         'Grup WA Eksklusif Pensiunan',
         'Sertifikat Kelulusan Resmi',
@@ -218,15 +209,15 @@ export default function DetailPelatihan({ course }) {
 
                     {/* --- 3. GRID KONTEN UTAMA --- */}
                     <div className="mt-8 grid grid-cols-1 lg:grid-cols-10 gap-8">
-                        {/* KIRI 70% */}
                         <div className="lg:col-span-7">
                             <CoursePreviewCard
                                 thumbnail={data.thumbnail}
+                                // KIRIM VIDEO URL KE KOMPONEN
+                                videoUrl={previewLesson ? previewLesson.video_url : null}
                                 label={`Tonton Cuplikan Kursus: ${data.title}`}
                             />
                         </div>
 
-                        {/* KANAN 30% */}
                         <div className="lg:col-span-3">
                             <PurchaseCard
                                 slug={slug}
@@ -242,9 +233,10 @@ export default function DetailPelatihan({ course }) {
                         <h2 className="text-2xl font-bold text-[#1B1C1C]">
                             Tentang Kursus Ini
                         </h2>
-                        <p className="mt-3 text-[#6B7280] leading-relaxed">
-                            {data.description}
-                        </p>
+                        <div
+                            className="mt-3 text-[#6B7280] leading-relaxed prose max-w-none"
+                            dangerouslySetInnerHTML={{ __html: data.description }}
+                        />
 
                         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                             {benefits.map((benefit, index) => (

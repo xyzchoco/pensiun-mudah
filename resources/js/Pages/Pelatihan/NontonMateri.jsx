@@ -12,37 +12,65 @@ import {
 } from "lucide-react";
 import LearningLayout from "@/Components/Pelatihan/LearningLayout";
 import KurikulumSidebar from "@/Components/Pelatihan/KurikulumSidebar";
-import { flattenMaterials, normalizeLearning } from "./learningContent";
 
 export default function NontonMateri({ learning }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { url } = usePage();
-  const { course, modules, progress } = normalizeLearning(learning);
+
+  const { course, modules, progress } = learning;
+
+  const materials = modules.flatMap((modul) => modul.materials || []);
+
   const params = new URLSearchParams(url.split("?")[1] || "");
-  const materials = flattenMaterials(modules);
   const requestedLesson = params.get("lesson");
+
   const activeMaterial =
     materials.find((item) => String(item.id) === String(requestedLesson)) ||
     materials[0];
+
   const activeIndex = Math.max(
     materials.findIndex(
-      (item) => String(item.id) === String(activeMaterial?.id),
+      (item) => String(item.id) === String(activeMaterial?.id)
     ),
-    0,
+    0
   );
+
+  const prevMaterial = materials[activeIndex - 1];
   const nextMaterial = materials[activeIndex + 1];
+
+  const prevHref = prevMaterial
+    ? `/pelatihan/${course.id}/belajar?lesson=${prevMaterial.id}`
+    : `/pelatihan/${course.id}/kelas`;
+
   const nextHref = nextMaterial
     ? `/pelatihan/${course.id}/belajar?lesson=${nextMaterial.id}`
     : `/pelatihan/${course.id}/kuis`;
+
+  const getYouTubeEmbedUrl = (url) => {
+    if (!url) return null;
+    let videoId = '';
+    if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1].split('?')[0];
+    } else if (url.includes('watch?v=')) {
+      videoId = url.split('watch?v=')[1].split('&')[0];
+    } else if (url.includes('embed/')) {
+      return url;
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+  };
+
+  // DETEKTOR SAKTI: Cek aja kalau URL video-nya ada isinya, anggep itu video!
+  const isVideo = activeMaterial?.type?.toLowerCase().includes('video') || activeMaterial?.video_url;
+
+  // Cari tau materi ini ada di modul mana (Buat nampilin Deskripsi Modul lu)
+  const activeModule = modules.find(m => m.materials?.some(mat => mat.id === activeMaterial?.id));
 
   return (
     <LearningLayout showHeaderBack alignHeaderContentLeft backHref="/pelatihan">
       <Head title={`${activeMaterial?.title || "Materi"} - Pensiun Mudah`} />
 
       <div
-        className={`flex min-h-[1030px] border-b border-[#BFD1C0] transition-[padding] duration-300 ${
-          sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[320px]"
-        }`}
+        className={`flex min-h-[1030px] border-b border-[#BFD1C0] transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[320px]"}`}
       >
         <KurikulumSidebar
           modules={modules}
@@ -55,97 +83,79 @@ export default function NontonMateri({ learning }) {
 
         <main className="flex-1 bg-white">
           <section className="relative border-b-4 border-black bg-[#183B28]">
-            {course.thumbnailUrl ? (
-              <img
-                src={course.thumbnailUrl}
-                alt={course.title}
-                className="absolute inset-0 h-full w-full object-cover opacity-45"
-              />
-            ) : (
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_45%_35%,rgba(255,255,255,.14),transparent_32%),linear-gradient(135deg,#1B5036,#10251B)]" />
-            )}
             <div className="relative flex aspect-video min-h-[420px] items-center justify-center overflow-hidden">
-              <button
-                type="button"
-                className="flex h-24 w-24 items-center justify-center rounded-full bg-[#008740] text-white shadow-xl transition hover:scale-105"
-                aria-label="Putar video"
-              >
-                <Play className="ml-1 h-12 w-12 fill-current" />
-              </button>
-
-              <div className="absolute inset-x-6 bottom-5">
-                <div className="h-1.5 rounded-full bg-white/25">
-                  <div className="relative h-1.5 w-[45%] rounded-full bg-[#FF8928]">
-                    <span className="absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 translate-x-1/2 rounded-full bg-white shadow" />
-                  </div>
+              {isVideo ? (
+                <div className="w-full h-full flex items-center justify-center bg-black">
+                  {activeMaterial?.video_url ? (
+                    <iframe
+                      className="w-full h-full aspect-video"
+                      src={getYouTubeEmbedUrl(activeMaterial.video_url)}
+                      title={activeMaterial.title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  ) : (
+                    <div className="text-white text-center">
+                      <Play className="h-12 w-12 mx-auto mb-2 text-gray-500" />
+                      <p className="text-sm text-gray-400">Link video belum di-input di admin panel</p>
+                    </div>
+                  )}
                 </div>
-                <div className="mt-4 flex items-center justify-between text-white">
-                  <div className="flex items-center gap-5">
-                    <Play className="h-5 w-5 fill-current" />
-                    <Volume2 className="h-5 w-5" />
-                    <span className="text-sm font-medium">10:45 / 32:00</span>
-                  </div>
-                  <div className="flex items-center gap-5">
-                    <Settings className="h-5 w-5" />
-                    <Maximize className="h-5 w-5" />
-                  </div>
+              ) : (
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_45%_35%,rgba(255,255,255,.14),transparent_32%),linear-gradient(135deg,#1B5036,#10251B)] flex flex-col items-center justify-center">
+                  <FileText className="h-16 w-16 mb-4 text-[#FF8928]" />
+                  <p className="text-xl font-bold text-white">Mode Membaca Artikel</p>
+                  <p className="text-sm text-gray-300 mt-1">Silakan baca materi lengkap di bawah</p>
                 </div>
-              </div>
+              )}
             </div>
           </section>
 
           <article className="mx-auto max-w-[910px] px-8 py-16">
             <h1 className="text-[32px] font-extrabold leading-tight text-[#111827]">
-              {activeMaterial?.title ||
-                "Materi 1: Menemukan Ikigai Baru di Masa Pensiun"}
+              {activeMaterial?.title || "Judul Materi"}
             </h1>
-            <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-[#667085]">
+
+            {/* MUNCULIN DESKRIPSI MODUL DI SINI BIAR KELIATAN */}
+            {activeModule?.subtitle && (
+              <p className="text-[#007A3D] font-medium mt-2 text-lg">
+                Modul: {activeModule.subtitle}
+              </p>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-[#667085]">
               <span className="flex items-center gap-1.5">
-                <Clock3 className="h-4 w-4" /> Durasi:{" "}
-                {activeMaterial?.duration || "24 Menit"}
+                <Clock3 className="h-4 w-4" /> Durasi: {activeMaterial?.duration || "0 Menit"}
               </span>
               <span className="flex items-center gap-1.5">
-                <FileText className="h-4 w-4" /> PDF Tersedia
+                <FileText className="h-4 w-4" /> {isVideo ? 'Video Materi' : 'PDF / Teks Tersedia'}
               </span>
             </div>
 
             <hr className="my-8 border-[#E4E7EC]" />
 
             <div className="space-y-7 text-lg leading-8 text-[#344054]">
-              <p className="text-[22px] font-medium leading-9 text-[#1F2937]">
-                Pensiun bukanlah akhir dari produktivitas, melainkan awal dari
-                babak baru untuk mengejar apa yang benar-benar Anda cintai.
-              </p>
-              <p>
-                Konsep Ikigai berasal dari Jepang yang berarti "alasan untuk
-                bangun di pagi hari". Bagi banyak pensiunan, tantangan terbesar
-                adalah kehilangan rutinitas kerja yang selama ini mendefinisikan
-                identitas mereka. Dalam materi ini, kita akan mempelajari
-                bagaimana memetakan kembali empat elemen kunci:
-              </p>
-              <div className="pl-6">
-                <p>Apa yang Anda cintai (Passion)</p>
-                <p>Apa yang Anda kuasai (Mission)</p>
-                <p>Apa yang dunia butuhkan (Vocation)</p>
-                <p>Apa yang membuat Anda tetap berdaya (Profession/Value)</p>
-              </div>
-              <p>
-                Dengan menemukan titik temu di antara keempatnya, masa pensiun
-                Anda tidak hanya akan diisi dengan istirahat, tetapi dengan
-                kegembiraan yang bermakna bagi diri sendiri dan lingkungan
-                sekitar.
-              </p>
+              {activeMaterial?.konten ? (
+                <div
+                  className="prose max-w-none text-[#344054]"
+                  dangerouslySetInnerHTML={{ __html: activeMaterial.konten }}
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-[22px] font-medium leading-9 text-gray-400">
+                    Belum ada artikel pendamping untuk materi ini.
+                  </p>
+                  <p className="text-sm text-gray-300 mt-2">(Kolom "Konten/Artikel" di Filament masih kosong)</p>
+                </div>
+              )}
             </div>
 
             <hr className="my-10 border-[#E4E7EC]" />
 
             <div className="flex items-center justify-between gap-4">
               <Link
-                href={
-                  activeIndex > 0
-                    ? `/pelatihan/${course.id}/belajar?lesson=${materials[activeIndex - 1].id}`
-                    : "/pelatihan"
-                }
+                href={prevHref}
                 className="inline-flex min-w-[245px] items-center justify-center gap-3 rounded-lg border-2 border-[#00A553] px-6 py-4 font-extrabold text-[#00A553]"
               >
                 <ArrowLeft className="h-5 w-5" />
