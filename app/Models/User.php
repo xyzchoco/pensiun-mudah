@@ -13,7 +13,6 @@ class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable;
 
-    // 1. TAMBAHKAN INI: Memberitahu Eloquent bahwa PK adalah user_id
     protected $primaryKey = 'user_id';
     public $incrementing = true;
     protected $keyType = 'int';
@@ -25,8 +24,6 @@ class User extends Authenticatable implements FilamentUser
         'whatsapp',
         'tanggal_lahir',
         'kategori_pensiun',
-        // 'nama_perusahaan', // Sudah dihapus dari migrasi kan?
-        // 'jabatan',         // Sudah dihapus dari migrasi kan?
         'google_id',
         'is_verified',
         'role_id',
