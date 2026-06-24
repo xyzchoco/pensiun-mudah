@@ -13,9 +13,10 @@ return new class extends Migration
             
             // Relasi ke kategori dan user (admin/instruktur yang bikin)
             $table->foreignId('category_id')->constrained('course_categories');
-            $table->foreignId('created_by')->constrained('users');
+            $table->foreignId('created_by')->constrained('users', 'user_id');
             
             $table->string('title');
+            $table->string('tipe_kelas')->default('Online');
             $table->string('slug')->unique(); // Untuk URL SEO friendly
             $table->text('description')->nullable();
             $table->string('thumbnail')->nullable();

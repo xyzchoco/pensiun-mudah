@@ -17,6 +17,7 @@ class Course extends Model
         'course_type',
         'price',
         'status',
+        'tipe_kelas'
     ];
 
     public function category(): BelongsTo

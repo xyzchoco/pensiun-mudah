@@ -26,12 +26,22 @@ class CourseForm
                     ->label('Kategori Kursus')
                     ->required(),
 
+                Select::make('tipe_kelas')
+                    ->label('Tipe Kelas')
+                    ->options([
+                        'Online' => 'Online',
+                        'Offline' => 'Offline',
+                        'Hybrid' => 'Hybrid',
+                    ])
+                    ->required()
+                    ->default('Online'),
+
                 // Info Utama Kursus
                 TextInput::make('title')
                     ->label('Judul Kursus')
                     ->required()
                     ->maxLength(100)
-                    ->live(onBlur: true) // Otomatis bikin slug saat judul diketik
+                    ->live(onBlur: true) 
                     ->afterStateUpdated(fn (string $operation, $state, $set) => $operation === 'create' ? $set('slug', Str::slug($state)) : null),
 
                 TextInput::make('slug')
@@ -42,7 +52,7 @@ class CourseForm
 
                 RichEditor::make('description')
                     ->label('Deskripsi Kursus')
-                    ->columnSpanFull(), // Biar formnya lebar penuh
+                    ->columnSpanFull(),
 
                 FileUpload::make('thumbnail')
                     ->label('Thumbnail Kursus')

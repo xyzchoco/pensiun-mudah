@@ -27,23 +27,19 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+   public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
-        $user = $request->user();
+        $user = Auth::user();
 
-        if (! $user->kategori_pensiun) {
-            return redirect()->route('onboarding.kategori');
-        }
-
+        // LOGIKA REDIRECT BERDASARKAN KATEGORI
         if ($user->kategori_pensiun === 'korporat') {
-            return redirect()->route('korporat.dashboard');
+            return redirect()->intended(route('korporat.dashboard'));
         }
 
-        return redirect()->route('dashboard');
+        return redirect()->intended(route('dashboard'));
     }
 
     /**

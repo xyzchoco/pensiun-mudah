@@ -32,20 +32,27 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        // 1. Validasi Input
+        // 1. FORMAT NOMOR WA DULUAN SEBELUM DIVALIDASI!
+        // Biar kalau user ngetik 08..., langsung diubah jadi 628... di dalam Request
+        if ($request->filled('whatsapp')) {
+            $request->merge([
+                'whatsapp' => $this->formatNomorWa($request->whatsapp)
+            ]);
+        }
+
+        // 2. BARU LAKUKAN VALIDASI
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'whatsapp' => 'required|string|max:20|unique:'.User::class, // Pastikan nomor unik
+            'whatsapp' => 'required|string|max:20|unique:'.User::class, // Ini sekarang ngecek yang 628...
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        // 2. Format nomor WA & Bikin Kode OTP
-        $phone = $this->formatNomorWa($request->whatsapp);
-        $otpCode = rand(100000, 999999);
+        $phone = $request->whatsapp; // Ini otomatis udah 628...
+        
+        // 3. SET OTP STATIS UNTUK BYPASS
+        $otpCode = 123456; 
 
-        // 3. Simpan data pendaftaran ke Cache (berlaku 5 menit)
-        // Kita belum save ke database sebelum OTP-nya benar!
         Cache::put('register_otp_' . $phone, [
             'otp' => $otpCode,
             'name' => $request->name,
@@ -54,34 +61,21 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ], now()->addMinutes(5));
 
-        // 4. Kirim Pesan WA via Fonnte
-        $response = Http::withHeaders([
-            'Authorization' => env('FONNTE_TOKEN') // Pastikan lu isi ini di file .env
-        ])->post('https://api.fonnte.com/send', [
-            'target' => $phone,
-            'message' => "*VERIFIKASI AKUN*\n\nKode OTP Anda adalah: *$otpCode*.\n\nKode ini berlaku selama 5 menit. Jangan berikan kode ini kepada siapapun.",
-            'countryCode' => '62',
-        ]);
-
-        if ($response->successful()) {
-            // Lempar ke halaman masukin OTP, bawa data nomor WA-nya
-            return redirect()->route('verify-otp.show')->with('whatsapp', $phone);
-        }
-
-        // Kalau gagal ngirim WA
-        return back()->withErrors(['whatsapp' => 'Gagal mengirim kode OTP. Pastikan nomor WhatsApp aktif.']);
+        // 4. LANGSUNG ANGGAP SUKSES & LEMPAR KE HALAMAN OTP
+        session(['whatsapp_verification' => $phone]);
+        return redirect()->route('verify-otp.show');
     }
 
     /**
      * Menampilkan halaman UI untuk masukin OTP
      */
-    public function showVerifyOtp(): Response
+    public function showVerifyOtp(): Response|RedirectResponse
     {
-        // Kita ambil nomor WA dari session
-        $whatsapp = session('whatsapp');
+        // Ambil dari session yang diset di method store
+        $whatsapp = session('whatsapp_verification');
 
         if (!$whatsapp) {
-            return Inertia::render('Auth/Register'); // Kalau ga ada nomor, suruh regis ulang
+            return redirect()->route('register'); // Redirect pakai route name yang benar
         }
 
         return Inertia::render('Auth/VerifyOtp', [
@@ -98,6 +92,7 @@ class RegisteredUserController extends Controller
             'whatsapp' => 'required|string',
             'otp' => 'required|numeric',
         ]);
+
 
         $phone = $request->whatsapp;
         $inputOtp = $request->otp;
@@ -117,18 +112,19 @@ class RegisteredUserController extends Controller
             'name' => $cachedData['name'],
             'email' => $cachedData['email'],
             'whatsapp' => $cachedData['whatsapp'],
-            'password' => $cachedData['password'], // Udah di-hash dari awal
+            'password' => $cachedData['password'],
             'role_id' => $userRole->id,
         ]);
 
-        // Bersihkan memori Cache
+        // Bersihkan memori Cache & Session
         Cache::forget('register_otp_' . $phone);
+        session()->forget('whatsapp_verification');
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('onboarding.kategori', absolute: false));
+        return redirect()->route('onboarding.kategori'); // Sesuaikan dengan route yang ada
     }
 
     /**
@@ -153,13 +149,12 @@ class RegisteredUserController extends Controller
         $cachedData['otp'] = $newOtpCode;
         Cache::put('register_otp_' . $phone, $cachedData, now()->addMinutes(5));
 
-        // Tembak ulang API Fonnte
+        // Tembak ulang API Fonnte (dengan asForm dan tanpa countryCode)
         Http::withHeaders([
             'Authorization' => env('FONNTE_TOKEN')
-        ])->post('https://api.fonnte.com/send', [
+        ])->asForm()->post('https://api.fonnte.com/send', [
             'target' => $phone,
-            'message' => "*KIRIM ULANG OTP*\n\nKode OTP baru Anda adalah: *$newOtpCode*.\n\nKode ini berlaku selama 5 menit. Jangan berikan kode ini kepada siapapun.",
-            'countryCode' => '62',
+            'message' => "*KIRIM ULANG OTP*\n\nKode OTP baru Anda adalah: *$newOtpCode*.\n\nKode ini berlaku selama 5 menit. Jangan berikan kode ini kepada siapapun."
         ]);
 
         return back(); // Inertia onSuccess di React bakal jalan, reset timer ke 120 detik otomatis

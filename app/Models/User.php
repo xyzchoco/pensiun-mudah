@@ -13,6 +13,11 @@ class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable;
 
+    // 1. TAMBAHKAN INI: Memberitahu Eloquent bahwa PK adalah user_id
+    protected $primaryKey = 'user_id';
+    public $incrementing = true;
+    protected $keyType = 'int';
+
     protected $fillable = [
         'name',
         'email',
@@ -20,6 +25,8 @@ class User extends Authenticatable implements FilamentUser
         'whatsapp',
         'tanggal_lahir',
         'kategori_pensiun',
+        // 'nama_perusahaan', // Sudah dihapus dari migrasi kan?
+        // 'jabatan',         // Sudah dihapus dari migrasi kan?
         'google_id',
         'is_verified',
         'role_id',
@@ -42,21 +49,26 @@ class User extends Authenticatable implements FilamentUser
 
     public function role(): BelongsTo
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsTo(Role::class, 'role_id', 'id');
     }
 
     public function membership(): BelongsTo
     {
-        return $this->belongsTo(Membership::class);
+        return $this->belongsTo(Membership::class, 'membership_id', 'id');
     }
 
     public function enrollments()
     {
-        return $this->hasMany(Enrollment::class);
+        return $this->hasMany(Enrollment::class, 'user_id', 'user_id');
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->role?->role_name === 'Admin';
+    }
+
+    public function corporateProfile() 
+    {
+        return $this->hasOne(CorporateProfile::class, 'user_id', 'user_id');
     }
 }

@@ -144,21 +144,14 @@ export default function DetailPelatihan({ course }) {
                 <div className="mx-auto max-w-6xl px-6 lg:px-8 py-8">
                     {/* --- 1. NAVIGASI KEMBALI --- */}
                     <Link
-                        href="/beli-pelatihan"
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-[#008740] hover:text-[#006B32] transition-colors"
+                        // Fungsi ini akan mengecek apakah URL sebelumnya berisi '/korporat/'
+                        href={typeof window !== 'undefined' && window.document.referrer.includes('/korporat/')
+                            ? '/korporat/beli-pelatihan'
+                            : '/beli-pelatihan'}
+                        className="inline-flex items-center gap-2 font-bold text-[#006B32] transition-opacity hover:opacity-80"
                     >
-                        <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M15 19l-7-7 7-7"
-                            />
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" />
                         </svg>
                         Kembali ke Beli Pelatihan
                     </Link>

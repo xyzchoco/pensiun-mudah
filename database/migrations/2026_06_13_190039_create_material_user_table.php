@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('material_user', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('material_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
+            $table->foreignId('material_id')->constrained('materials')->onDelete('cascade');
             $table->timestamps(); // created_at ini otomatis jadi penanda waktu selesai
         });
     }

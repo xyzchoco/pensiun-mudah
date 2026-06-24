@@ -135,6 +135,7 @@ function BenefitIcon({ name }) {
 }
 
 export default function DetailKelasKorporat({
+    course, // Prop untuk menangkap data dari backend
     title = 'Manajemen Keuangan Masa Pensiun',
     rating = '4.8',
     reviewCount = '124',
@@ -149,6 +150,23 @@ export default function DetailKelasKorporat({
     const decrement = () => setQty((prev) => (prev > 1 ? prev - 1 : 1));
     const increment = () => setQty((prev) => prev + 1);
 
+    // Mengambil URL video dari lesson pertama (jika datanya ada)
+    const videoUrl = course?.lessons?.[0]?.video_url;
+
+    // Helper untuk mengubah URL YouTube biasa menjadi URL Embed agar bisa diputar di iframe
+    const getEmbedUrl = (url) => {
+        if (!url) return null;
+        if (url.includes('youtube.com/watch?v=')) {
+            return url.replace('watch?v=', 'embed/');
+        }
+        if (url.includes('youtu.be/')) {
+            return url.replace('youtu.be/', 'youtube.com/embed/');
+        }
+        return url;
+    };
+
+    const embedUrl = getEmbedUrl(videoUrl);
+
     return (
         <div className="flex min-h-screen flex-col bg-[#FBF9F8] font-['Atkinson_Hyperlegible']">
             <Head title={title + ' - Pensiun Mudah'} />
@@ -157,8 +175,8 @@ export default function DetailKelasKorporat({
             <main className="flex-1">
                 <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-10">
                     <Link
-                        href={backHref}
-                        className="inline-flex items-center gap-2 font-bold text-[#006B32] transition-opacity hover:opacity-80"
+                        href={document.referrer.includes('korporat') ? '/korporat/beli-pelatihan' : '/beli-pelatihan'}
+                        className="inline-flex items-center gap-2 font-bold text-[#006B32]"
                     >
                         <svg
                             className="h-5 w-5"
@@ -212,20 +230,32 @@ export default function DetailKelasKorporat({
                     <div className="mt-6 grid gap-6 lg:grid-cols-3">
                         <div className="lg:col-span-2">
                             <div className="relative flex aspect-video items-end overflow-hidden rounded-2xl bg-gradient-to-br from-[#1B3326] to-[#0C1A12] p-6">
-                                <span className="absolute inset-0 flex items-center justify-center">
-                                    <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#006B32] text-white shadow-lg">
-                                        <svg
-                                            className="h-7 w-7"
-                                            fill="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path d="M8 5v14l11-7z" />
-                                        </svg>
-                                    </span>
-                                </span>
-                                <p className="relative font-bold text-white">
-                                    {videoCaption}
-                                </p>
+                                {embedUrl ? (
+                                    <iframe
+                                        src={embedUrl}
+                                        title="Course Video"
+                                        className="absolute inset-0 h-full w-full border-0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    ></iframe>
+                                ) : (
+                                    <>
+                                        <span className="absolute inset-0 flex items-center justify-center">
+                                            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#006B32] text-white shadow-lg">
+                                                <svg
+                                                    className="h-7 w-7"
+                                                    fill="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path d="M8 5v14l11-7z" />
+                                                </svg>
+                                            </span>
+                                        </span>
+                                        <p className="relative z-10 font-bold text-white">
+                                            {videoCaption}
+                                        </p>
+                                    </>
+                                )}
                             </div>
                         </div>
 

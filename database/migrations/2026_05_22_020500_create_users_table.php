@@ -6,13 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
+            $table->id('user_id');
             
             // Relasi ke Master Data (Role & Membership)
             $table->foreignId('role_id')->constrained('roles');
@@ -21,11 +18,15 @@ return new class extends Migration
             // Data Utama User
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('whatsapp')->nullable();
+            $table->string('whatsapp')->unique();
+            $table->date('tanggal_lahir')->nullable();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password'); // Laravel akan nge-hash ini secara otomatis
+            $table->string('password');
             $table->string('google_id')->nullable();
             $table->boolean('is_verified')->default(false);
+            
+            // Kategori Pensiun
+            $table->string('kategori_pensiun')->nullable();
             
             $table->rememberToken();
             $table->timestamps();
@@ -47,11 +48,9 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
+        // Urutan drop yang benar dan bersih
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');

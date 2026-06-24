@@ -19,10 +19,12 @@ class UserSeeder extends Seeder
         
         User::firstOrCreate(
             ['email' => 'admin@gmail.com'],
+
             [
                 'name' => 'Admin Pensiun Mudah',
-                'password' => Hash::make('123'),
-                'role_id' => $adminRole->id,
+                'whatsapp' => '6281234567890', 
+                'password' => Hash::make('123'), 
+                'role_id' => $adminRole->id, 
                 'is_verified' => true,
             ]
         );

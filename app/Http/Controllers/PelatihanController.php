@@ -31,7 +31,7 @@ class PelatihanController extends Controller
 
     public function show($slug)
     {
-        $course = Course::with(['category', 'lessons'])->where('slug', $slug)->firstOrFail();
+       $course = Course::with(['category', 'lessons'])->where('slug', $slug)->firstOrFail();
 
         $relatedCourses = Course::with('category')
             ->where('category_id', $course->category_id)

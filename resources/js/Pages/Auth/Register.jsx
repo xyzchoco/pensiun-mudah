@@ -32,42 +32,48 @@ export default function Register() {
                     {/* Nama */}
                     <div className="flex flex-col gap-2">
                         <label className="font-['Atkinson_Hyperlegible'] font-bold text-lg">Nama Lengkap</label>
-                        <input 
-                            className="w-full p-4 border border-[#6D7B6D] rounded-lg focus:ring-2 focus:ring-[#006B32] outline-none"
+                        <input
+                            className={`w-full p-4 border rounded-lg outline-none transition-all ${errors.name ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-[#6D7B6D] focus:ring-2 focus:ring-[#006B32]'}`}
                             placeholder="Masukkan nama lengkap sesuai KTP"
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
                         />
-                        <span className="text-sm text-[#3D4A3E]">Mohon gunakan nama asli Anda untuk keperluan sertifikat.</span>
-                        {errors.name && <span className="text-red-500 text-sm">{errors.name}</span>}
+                        {/* Pesan Error Nama */}
+                        {errors.name ? (
+                            <span className="text-red-500 text-sm font-semibold mt-1">{errors.name}</span>
+                        ) : (
+                            <span className="text-sm text-[#3D4A3E]">Mohon gunakan nama asli Anda untuk keperluan sertifikat.</span>
+                        )}
                     </div>
 
                     {/* Email */}
                     <div className="flex flex-col gap-2">
                         <label className="font-['Atkinson_Hyperlegible'] font-bold text-lg">Alamat Email</label>
-                        <input 
+                        <input
                             type="email"
-                            className="w-full p-4 border border-[#6D7B6D] rounded-lg focus:ring-2 focus:ring-[#006B32] outline-none"
+                            className={`w-full p-4 border rounded-lg outline-none transition-all ${errors.email ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-[#6D7B6D] focus:ring-2 focus:ring-[#006B32]'}`}
                             placeholder="contoh@email.com"
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
                         />
-                        {errors.email && <span className="text-red-500 text-sm">{errors.email}</span>}
+                        {/* Pesan Error Email */}
+                        {errors.email && <span className="text-red-500 text-sm font-semibold mt-1">{errors.email}</span>}
                     </div>
 
                     {/* WhatsApp */}
                     <div className="flex flex-col gap-2">
                         <label className="font-['Atkinson_Hyperlegible'] font-bold text-lg">Nomor WhatsApp</label>
                         <div className="flex">
-                            <div className="bg-[#F0EDED] border border-[#6D7B6D] border-r-0 px-4 flex items-center rounded-l-lg font-bold text-[#3D4A3E]">+62</div>
+                            <div className={`bg-[#F0EDED] border border-r-0 px-4 flex items-center rounded-l-lg font-bold text-[#3D4A3E] ${errors.whatsapp ? 'border-red-500' : 'border-[#6D7B6D]'}`}>+62</div>
                             <input
-                                className="w-full p-4 border border-[#6D7B6D] rounded-r-lg focus:ring-2 focus:ring-[#006B32] outline-none"
+                                className={`w-full p-4 border rounded-r-lg outline-none transition-all ${errors.whatsapp ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-[#6D7B6D] focus:ring-2 focus:ring-[#006B32]'}`}
                                 placeholder="8123456789"
                                 value={data.whatsapp}
                                 onChange={(e) => setData('whatsapp', e.target.value)}
                             />
                         </div>
-                        {errors.whatsapp && <span className="text-red-500 text-sm">{errors.whatsapp}</span>}
+                        {/* Pesan Error WA */}
+                        {errors.whatsapp && <span className="text-red-500 text-sm font-semibold mt-1">{errors.whatsapp}</span>}
                     </div>
 
                     {/* Password */}
@@ -75,11 +81,12 @@ export default function Register() {
                         <label className="font-['Atkinson_Hyperlegible'] font-bold text-lg">Kata Sandi</label>
                         <input
                             type="password"
-                            className="w-full p-4 border border-[#6D7B6D] rounded-lg focus:ring-2 focus:ring-[#006B32] outline-none"
+                            className={`w-full p-4 border rounded-lg outline-none transition-all ${errors.password ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-[#6D7B6D] focus:ring-2 focus:ring-[#006B32]'}`}
                             value={data.password}
                             onChange={(e) => setData('password', e.target.value)}
                         />
-                        {errors.password && <span className="text-red-500 text-sm">{errors.password}</span>}
+                        {/* Pesan Error Password */}
+                        {errors.password && <span className="text-red-500 text-sm font-semibold mt-1">{errors.password}</span>}
                     </div>
 
                     {/* Confirm Password */}
@@ -87,16 +94,18 @@ export default function Register() {
                         <label className="font-['Atkinson_Hyperlegible'] font-bold text-lg">Konfirmasi Kata Sandi</label>
                         <input
                             type="password"
-                            className="w-full p-4 border border-[#6D7B6D] rounded-lg focus:ring-2 focus:ring-[#006B32] outline-none"
+                            className={`w-full p-4 border rounded-lg outline-none transition-all ${errors.password_confirmation ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-[#6D7B6D] focus:ring-2 focus:ring-[#006B32]'}`}
                             value={data.password_confirmation}
                             onChange={(e) => setData('password_confirmation', e.target.value)}
                         />
+                        {/* Pesan Error Confirm Password */}
+                        {errors.password_confirmation && <span className="text-red-500 text-sm font-semibold mt-1">{errors.password_confirmation}</span>}
                     </div>
 
                     {/* Submit */}
                     <button
                         disabled={processing}
-                        className="w-full bg-[#FF8928] hover:bg-[#e67a22] text-white font-bold text-lg py-4 rounded-lg transition-all mt-4"
+                        className="w-full bg-[#FF8928] hover:bg-[#e67a22] text-white font-bold text-lg py-4 rounded-lg transition-all mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {processing ? 'Memproses...' : 'Daftar Sekarang'}
                     </button>

@@ -141,8 +141,8 @@ export default function PilihKategori() {
                                         disabled
                                             ? 'flex cursor-not-allowed flex-col items-center rounded-2xl border border-[#E4E2E1] bg-[#F6F3F2] p-6 text-center opacity-60'
                                             : active
-                                              ? 'flex flex-col items-center rounded-2xl border-2 border-[#006B32] bg-white p-6 text-center'
-                                              : 'flex flex-col items-center rounded-2xl border border-[#E4E2E1] bg-white p-6 text-center hover:border-[#006B32]/40'
+                                                ? 'flex flex-col items-center rounded-2xl border-2 border-[#006B32] bg-white p-6 text-center'
+                                                : 'flex flex-col items-center rounded-2xl border border-[#E4E2E1] bg-white p-6 text-center hover:border-[#006B32]/40'
                                     }
                                 >
                                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F0EDED] text-[#3D4A3E]">

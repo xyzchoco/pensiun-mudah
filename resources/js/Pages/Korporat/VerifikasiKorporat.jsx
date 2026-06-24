@@ -16,7 +16,10 @@ function BrandLogo() {
 }
 
 export default function VerifikasiKorporat() {
-    const [form, setForm] = useState({ namaPerusahaan: '', jabatan: '' });
+    const [form, setForm] = useState({
+        namaPerusahaan: '',
+        jabatan: ''
+    });
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -36,41 +39,9 @@ export default function VerifikasiKorporat() {
                         Verifikasi Akun Korporat
                     </h1>
                     <p className="mt-3 text-[#3D4A3E]">
-                        Untuk mengakses fitur khusus HRD dan manfaat korporat,
-                        silakan unggah bukti identitas kerja Anda. Kami akan
-                        meninjau dokumen Anda dalam waktu maksimal 24 jam kerja.
+                        Lengkapi data dasar perusahaan Anda untuk mengaktifkan akses ke fitur korporat.
+                        Data lainnya dapat Anda lengkapi nanti melalui menu Profil Perusahaan.
                     </p>
-
-                    <div className="mt-6 flex gap-3 rounded-lg border-l-4 border-[#006B32] bg-[#F6F3F2] p-4">
-                        <svg
-                            className="h-5 w-5 shrink-0 text-[#006B32]"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z"
-                            />
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 12l2 2 4-4"
-                            />
-                        </svg>
-                        <div>
-                            <p className="font-bold text-[#1B1C1C]">
-                                Data Anda Aman
-                            </p>
-                            <p className="mt-1 text-sm text-[#3D4A3E]">
-                                Dokumen hanya digunakan untuk proses verifikasi
-                                identitas dan tidak akan disebarluaskan sesuai
-                                kebijakan privasi kami.
-                            </p>
-                        </div>
-                    </div>
 
                     <form onSubmit={handleSubmit} className="mt-8 space-y-6">
                         <div>
@@ -80,16 +51,13 @@ export default function VerifikasiKorporat() {
                             <input
                                 type="text"
                                 value={form.namaPerusahaan}
-                                onChange={(e) =>
-                                    setForm({
-                                        ...form,
-                                        namaPerusahaan: e.target.value,
-                                    })
-                                }
+                                onChange={(e) => setForm({ ...form, namaPerusahaan: e.target.value })}
                                 placeholder="Masukkan nama perusahaan Anda"
                                 className="mt-2 w-full rounded-lg border border-[#E4E2E1] bg-[#FBF9F8] px-4 py-3 text-[#1B1C1C] outline-none placeholder:text-[#9AA6A0] focus:border-[#006B32] focus:ring-2 focus:ring-[#006B32]/20"
+                                required
                             />
                         </div>
+
                         <div>
                             <label className="block font-bold text-[#1B1C1C]">
                                 Jabatan
@@ -97,14 +65,10 @@ export default function VerifikasiKorporat() {
                             <input
                                 type="text"
                                 value={form.jabatan}
-                                onChange={(e) =>
-                                    setForm({
-                                        ...form,
-                                        jabatan: e.target.value,
-                                    })
-                                }
+                                onChange={(e) => setForm({ ...form, jabatan: e.target.value })}
                                 placeholder="Masukkan jabatan Anda di perusahaan"
                                 className="mt-2 w-full rounded-lg border border-[#E4E2E1] bg-[#FBF9F8] px-4 py-3 text-[#1B1C1C] outline-none placeholder:text-[#9AA6A0] focus:border-[#006B32] focus:ring-2 focus:ring-[#006B32]/20"
+                                required
                             />
                         </div>
 
@@ -113,20 +77,7 @@ export default function VerifikasiKorporat() {
                                 type="submit"
                                 className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#FF8928] px-6 py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"
                             >
-                                <svg
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M5 12l14-7-7 14-2-5-5-2z"
-                                    />
-                                </svg>
-                                Daftar
+                                Simpan & Lanjutkan
                             </button>
                             <Link
                                 href="/onboarding/pilih-kategori"
