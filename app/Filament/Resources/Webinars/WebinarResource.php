@@ -15,7 +15,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TimePicker;
@@ -45,7 +45,9 @@ class WebinarResource extends Resource
                 TextInput::make('lokasi_link')->label('Link / Lokasi')->required(),
                 TextInput::make('kapasitas')->numeric()->required(),
                 TextInput::make('sisa_kuota')->numeric()->required(),
-                Textarea::make('deskripsi')->required()->columnSpanFull(),
+                RichEditor::make('deskripsi')
+                    ->required()
+                    ->columnSpanFull(),
                 FileUpload::make('image_path')
                     ->image()
                     ->disk('public')

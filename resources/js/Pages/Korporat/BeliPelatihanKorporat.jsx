@@ -142,7 +142,7 @@ function CourseCard({ course }) {
                 </div>
 
                 <Link
-                    href={`/pelatihan/${course.slug || course.id}`}
+                    href={`/korporat/pelatihan/${course.slug || course.id}`}
                     className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5"
                 >
                     Lihat Detail

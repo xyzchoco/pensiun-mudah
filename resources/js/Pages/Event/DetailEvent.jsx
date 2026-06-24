@@ -38,83 +38,23 @@ const formatJam = (jam) => {
 };
 
 export default function DetailEvent({ event, relatedEvents }) {
-    // Data default biar halaman kerender persis screenshot walau backend cuma kirim slug
-    const dummyEvent = {
-        id: 1,
-        slug: 'seminar-strategi-investasi-aman',
-        title: 'Seminar: Strategi Investasi Aman untuk Masa Pensiun',
-        description:
-            'Memasuki masa pensiun membutuhkan pergeseran paradigma dalam mengelola kekayaan. Seminar ini dirancang khusus untuk membantu para profesional dan senior yang ingin memastikan aset mereka tetap tumbuh secara stabil tanpa risiko tinggi.\n\nKita akan membahas secara mendalam mengenai manajemen aset berisiko rendah (low-risk asset management), pemilihan instrumen investasi yang memberikan arus kas berkelanjutan, serta cara melindungi daya beli dari inflasi di masa mendatang.',
-        thumbnail: '/images/event-placeholder.svg',
-        type: 'Seminar Online',
-        status: 'Akan Datang',
-        speaker_name: 'Dr. Irwan Santoso, CFP',
-        speaker_title: 'Financial Strategist',
-        speaker_photo: '/images/event-placeholder.svg',
-        speaker_quote:
-            'Keamanan finansial bukan tentang seberapa banyak Anda hasilkan, tapi seberapa tenang Anda saat tidur.',
-        capacity: 200,
-        registered_count: 150,
-        location: 'Online',
-        platform: 'Google Meet',
-        start_date: '2024-10-15',
-        end_date: null,
-        start_time: '09:00',
-        registration_deadline: '2024-10-13',
-        benefits: [
-            'E-Sertifikat Resmi',
-            'Materi PPT & Rekaman',
-            'Sesi Konsultasi Grup',
-        ],
-        topics: [
-            'Memahami profil risiko investasi di usia 45+',
-            'Strategi alokasi aset yang defensif namun progresif',
-            'Diversifikasi cerdas: Obligasi negara, Reksadana pasar uang, dan Emas',
-            'Perencanaan warisan dan proteksi aset keluarga',
-        ],
-    };
-
-    const dummyRelated = [
-        {
-            id: 11,
-            slug: 'yoga-meditasi-masa-tua',
-            title: 'Yoga & Meditasi: Menjaga Keseimbangan Masa Tua',
-            thumbnail: '/images/event-placeholder.svg',
-            category: 'Kesehatan',
-            type: 'Gratis',
-            date: '2024-10-20',
-        },
-        {
-            id: 12,
-            slug: 'workshop-portofolio-rendah-risiko',
-            title: 'Workshop: Menyusun Portofolio Rendah Risiko',
-            thumbnail: '/images/event-placeholder.svg',
-            category: 'Keuangan',
-            type: 'Berbayar',
-            date: '2024-10-22',
-        },
-        {
-            id: 13,
-            slug: 'legal-corner-hukum-waris',
-            title: 'Legal Corner: Memahami Hukum Waris & Hibah',
-            thumbnail: '/images/event-placeholder.svg',
-            category: 'Legal',
-            type: 'Webinar',
-            date: '2024-10-25',
-        },
-    ];
-
-    // Merge: data dummy jadi dasar, ditimpa props backend (slug dari route tetap kepakai)
-    const ev = { ...dummyEvent, ...(event || {}) };
-    const related =
-        relatedEvents && relatedEvents.length ? relatedEvents : dummyRelated;
+    const ev = event || {};
+    const related = relatedEvents || [];
+    const topics = ev.topics || [];
+    const description = ev.description || '';
+    const descriptionHtml = /<\/?[a-z][\s\S]*>/i.test(description)
+        ? description
+        : description
+              .split(/\n{2,}/)
+              .filter(Boolean)
+              .map((paragraph) => `<p>${paragraph}</p>`)
+              .join('');
 
     // Nilai turunan buat kartu info
     const lokasi = ev.location
         ? `${ev.location}${ev.platform ? ` (${ev.platform})` : ''}`
         : ev.platform || '-';
     const waktu = ev.start_time ? `${formatJam(ev.start_time)} - Selesai` : '-';
-    const paragraphs = (ev.description || '').split('\n\n');
 
     return (
         <div className="min-h-screen flex flex-col bg-[#FBF9F8]">
@@ -251,47 +191,54 @@ export default function DetailEvent({ event, relatedEvents }) {
                                         Tentang Seminar Ini
                                     </h2>
                                 </div>
-                                <div className="mt-4 space-y-4 text-[#4B5563] leading-relaxed">
-                                    {paragraphs.map((paragraph, index) => (
-                                        <p key={index}>{paragraph}</p>
-                                    ))}
-                                </div>
+                                <div
+                                    className="prose prose-sm sm:prose-base mt-4 max-w-none text-[#4B5563] prose-headings:text-[#1B1C1C] prose-strong:text-[#1B1C1C] prose-a:text-[#008740]"
+                                    dangerouslySetInnerHTML={{
+                                        __html:
+                                            descriptionHtml ||
+                                            '<p>Deskripsi event belum tersedia.</p>',
+                                    }}
+                                />
                             </div>
 
                             {/* TOPIK UTAMA */}
-                            <div className="mt-6">
-                                <p className="font-bold text-[#1B1C1C]">
-                                    Topik Utama:
-                                </p>
-                                <ul className="mt-3 divide-y divide-[#E4E2E1] border-y border-[#E4E2E1]">
-                                    {ev.topics.map((topik, index) => (
-                                        <li
-                                            key={index}
-                                            className="flex items-start gap-3 py-3 text-[#1B1C1C]"
-                                        >
-                                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#008740]"></span>
-                                            <span className="leading-relaxed">
-                                                {topik}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                            {topics.length > 0 && (
+                                <div className="mt-6">
+                                    <p className="font-bold text-[#1B1C1C]">
+                                        Topik Utama:
+                                    </p>
+                                    <ul className="mt-3 divide-y divide-[#E4E2E1] border-y border-[#E4E2E1]">
+                                        {topics.map((topik, index) => (
+                                            <li
+                                                key={index}
+                                                className="flex items-start gap-3 py-3 text-[#1B1C1C]"
+                                            >
+                                                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#008740]"></span>
+                                                <span className="leading-relaxed">
+                                                    {topik}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
 
                             {/* EVENT TERKAIT */}
-                            <div className="mt-10">
-                                <h2 className="text-2xl font-bold text-[#1B1C1C]">
-                                    Event Terkait Lainnya
-                                </h2>
-                                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                                    {related.map((item) => (
-                                        <RelatedEventCard
-                                            key={item.id || item.slug}
-                                            event={item}
-                                        />
-                                    ))}
+                            {related.length > 0 && (
+                                <div className="mt-10">
+                                    <h2 className="text-2xl font-bold text-[#1B1C1C]">
+                                        Event Terkait Lainnya
+                                    </h2>
+                                    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                                        {related.map((item) => (
+                                            <RelatedEventCard
+                                                key={item.id || item.slug}
+                                                event={item}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* ===== KOLOM KANAN (30%) ===== */}

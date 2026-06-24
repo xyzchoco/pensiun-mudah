@@ -4,23 +4,22 @@ import EventInfoGrid from '@/Components/Event/EventInfoGrid';
 import EventRegistrationCard from '@/Components/Event/EventRegistrationCard';
 import EventFooter from '@/Components/Event/EventFooter';
 
-// Data dummy fallback (dipakai saat backend belum mengirim props event)
-const dummyEvent = {
-    id: 1,
-    slug: 'seminar-strategi-investasi-aman',
-    title: 'Seminar: Strategi Investasi Aman untuk Masa Pensiun',
-    thumbnail: '/images/event-placeholder.svg',
-    description:
-        'Pelajari bagaimana cara mengelola aset Anda dengan risiko minimal di masa pensiun. Seminar ini dirancang khusus untuk memberikan wawasan mendalam mengenai instrumen investasi yang aman, stabil, dan memberikan pertumbuhan berkelanjutan bagi Anda yang memprioritaskan ketenangan pikiran.',
-    date: '2024-10-15',
-    time: '09:00',
-    platform: 'Google Meet',
-    price: 0,
-};
-
-export default function DaftarEvent({ event }) {
-    // Gabungkan dummy dengan props supaya selalu lengkap
-    const ev = { ...dummyEvent, ...(event || {}) };
+export default function DaftarEvent({ event, eventSlug }) {
+    const ev = event || {};
+    const description = ev.description || '';
+    const descriptionHtml = /<\/?[a-z][\s\S]*>/i.test(description)
+        ? description
+        : description
+            .split(/\n{2,}/)
+            .filter(Boolean)
+            .map((paragraph) => `<p>${paragraph}</p>`)
+            .join('');
+    const venueLabel = ev.is_online ? 'Platform' : 'Lokasi';
+    const venueValue = ev.is_online
+        ? ev.platform || 'Google Meet'
+        : ev.location || 'Lokasi menyusul';
+    const venueHref = ev.is_online ? ev.platform_url : ev.location_url;
+    const backHref = `/event/${ev.slug || eventSlug || ''}`;
 
     return (
         <div className="min-h-screen flex flex-col bg-[#FBF9F8]">
@@ -32,7 +31,7 @@ export default function DaftarEvent({ event }) {
                 <div className="mx-auto max-w-7xl px-6 lg:px-8 py-8">
                     {/* --- 1. TOP NAVIGATION --- */}
                     <Link
-                        href={`/event/${ev.slug}`}
+                        href={backHref}
                         className="inline-flex items-center gap-2 text-sm font-semibold text-[#008740] hover:text-[#006B32] transition-colors"
                     >
                         <svg
@@ -48,7 +47,7 @@ export default function DaftarEvent({ event }) {
                                 d="M19 12H5M11 18l-6-6 6-6"
                             />
                         </svg>
-                        Kembali ke Daftar Event
+                        Kembali ke Detail Event
                     </Link>
 
                     {/* --- 2. MAIN GRID (60 / 40) --- */}
@@ -81,7 +80,10 @@ export default function DaftarEvent({ event }) {
                                 <EventInfoGrid
                                     date={ev.date}
                                     time={ev.time}
-                                    platform={ev.platform}
+                                    isOnline={ev.is_online}
+                                    venueLabel={venueLabel}
+                                    venueValue={venueValue}
+                                    venueHref={venueHref}
                                     price={ev.price}
                                 />
                             </div>
@@ -91,16 +93,24 @@ export default function DaftarEvent({ event }) {
                                 <h2 className="text-xl font-bold text-[#1B1C1C]">
                                     Tentang Seminar
                                 </h2>
-                                <p className="mt-4 text-[#4B5563] leading-relaxed whitespace-pre-line">
-                                    {ev.description}
-                                </p>
+                                <div
+                                    className="prose prose-sm sm:prose-base mt-4 max-w-none text-[#4B5563] prose-headings:text-[#1B1C1C] prose-strong:text-[#1B1C1C] prose-a:text-[#008740]"
+                                    dangerouslySetInnerHTML={{
+                                        __html:
+                                            descriptionHtml ||
+                                            '<p>Deskripsi event belum tersedia.</p>',
+                                    }}
+                                />
                             </div>
                         </div>
 
                         {/* RIGHT COLUMN */}
                         <div className="lg:col-span-2">
                             <div className="lg:sticky lg:top-8">
-                                <EventRegistrationCard slug={ev.slug} />
+                                <EventRegistrationCard
+                                    slug={ev.slug}
+                                    isOnline={ev.is_online}
+                                />
                             </div>
                         </div>
                     </div>

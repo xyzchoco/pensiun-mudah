@@ -41,7 +41,18 @@ const formatBiaya = (price) => {
     }).format(price);
 };
 
-export default function EventInfoGrid({ date, time, platform, price }) {
+export default function EventInfoGrid({
+    date,
+    time,
+    platform,
+    price,
+    isOnline = true,
+    venueLabel,
+    venueValue,
+    venueHref,
+}) {
+    const locationLabel = venueLabel || (isOnline ? 'Platform' : 'Lokasi');
+    const locationValue = venueValue || platform || '-';
     const items = [
         {
             label: 'Tanggal',
@@ -83,23 +94,41 @@ export default function EventInfoGrid({ date, time, platform, price }) {
             ),
         },
         {
-            label: 'Platform',
-            value: platform,
+            label: locationLabel,
+            value: locationValue,
+            href: venueHref,
             icon: (
-                <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    viewBox="0 0 24 24"
-                >
-                    <rect x="3" y="4" width="18" height="12" rx="1.5" />
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M8 20h8M12 16v4"
-                    />
-                </svg>
+                isOnline ? (
+                    <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        viewBox="0 0 24 24"
+                    >
+                        <rect x="3" y="4" width="18" height="12" rx="1.5" />
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M8 20h8M12 16v4"
+                        />
+                    </svg>
+                ) : (
+                    <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 21s7-5.2 7-11a7 7 0 10-14 0c0 5.8 7 11 7 11z"
+                        />
+                        <circle cx="12" cy="10" r="2.5" />
+                    </svg>
+                )
             ),
         },
     ];
@@ -114,9 +143,20 @@ export default function EventInfoGrid({ date, time, platform, price }) {
                     <span className="text-[#008740]">{item.icon}</span>
                     <div className="min-w-0">
                         <p className="text-xs text-[#6B7280]">{item.label}</p>
-                        <p className="font-bold text-[#1B1C1C] truncate">
-                            {item.value}
-                        </p>
+                        {item.href ? (
+                            <a
+                                href={item.href}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="block truncate font-bold text-[#008740] underline decoration-[#008740]/30 underline-offset-4 hover:text-[#006B32]"
+                            >
+                                {item.value}
+                            </a>
+                        ) : (
+                            <p className="font-bold text-[#1B1C1C] truncate">
+                                {item.value}
+                            </p>
+                        )}
                     </div>
                 </div>
             ))}

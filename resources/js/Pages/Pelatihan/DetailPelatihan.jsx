@@ -5,7 +5,7 @@ import BenefitCard from '@/Components/Pelatihan/BenefitCard';
 import TestimonialCard from '@/Components/Pelatihan/TestimonialCard';
 import PelatihanFooter from '@/Components/Pelatihan/PelatihanFooter';
 
-export default function DetailPelatihan({ course }) {
+export default function DetailPelatihan({ course, backUrl = '/beli-pelatihan' }) {
     // Data kursus (anggap dari backend, kasih default biar aman dirender)
     const data = course || {};
 
@@ -144,10 +144,7 @@ export default function DetailPelatihan({ course }) {
                 <div className="mx-auto max-w-6xl px-6 lg:px-8 py-8">
                     {/* --- 1. NAVIGASI KEMBALI --- */}
                     <Link
-                        // Fungsi ini akan mengecek apakah URL sebelumnya berisi '/korporat/'
-                        href={typeof window !== 'undefined' && window.document.referrer.includes('/korporat/')
-                            ? '/korporat/beli-pelatihan'
-                            : '/beli-pelatihan'}
+                        href={backUrl}
                         className="inline-flex items-center gap-2 font-bold text-[#006B32] transition-opacity hover:opacity-80"
                     >
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
