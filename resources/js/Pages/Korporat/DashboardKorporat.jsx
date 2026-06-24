@@ -128,7 +128,7 @@ export default function DashboardKorporat({ banners = [], events = [] }) {
                         Pelatihan Yang Pernah Dibeli
                     </h2>
                     <Link
-                        href="/korporat/beli-pelatihan"
+                        href="/korporat/pelatihan-dibeli"
                         className="text-sm font-bold text-[#006B32]"
                     >
                         Lihat Semua

@@ -81,7 +81,7 @@ export default function Pelatihan({ ongoingCourses = [], completedCourses = [] }
 
                   {/* LINK KELAS AKTIF SEKARANG DINAMIS BOS */}
                   <Link
-                    href={`/pelatihan/${course.id}/kelas`}
+                    href={`/pelatihan/${course.id}/belajar${course.firstLessonId ? `?lesson=${course.firstLessonId}` : ''}`}
                     className="w-full flex items-center justify-center gap-2 bg-[#FF8928] hover:bg-[#e67a22] text-white font-bold py-3 rounded-xl text-sm transition-colors text-center"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" /></svg>

@@ -36,11 +36,15 @@ class PelatihanController extends Controller
         $relatedCourses = Course::with('category')
             ->where('category_id', $course->category_id)
             ->where('id', '!=', $course->id)
-            ->where('status', 'published') 
+            ->where('status', 'published')
             ->take(3)
             ->get();
 
-        return Inertia::render('Pelatihan/DetailPelatihan', [
+        // Cek apakah request dari korporat route
+        $isKorporat = request()->routeIs('korporat.pelatihan.detail');
+        $view = $isKorporat ? 'Korporat/DetailKelasKorporat' : 'Pelatihan/DetailPelatihan';
+
+        return Inertia::render($view, [
             'course' => $course,
             'relatedCourses' => $relatedCourses,
         ]);

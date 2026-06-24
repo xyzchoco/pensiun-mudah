@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('corporate_profiles', function (Blueprint $table) {
         $table->id('corp_profile_id');
-        $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
+        $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
         $table->string('nama_perusahaan');
         $table->string('jabatan');
         $table->string('kategori_bisnis');

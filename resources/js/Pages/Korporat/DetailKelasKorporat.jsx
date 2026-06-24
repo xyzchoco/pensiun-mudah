@@ -175,7 +175,7 @@ export default function DetailKelasKorporat({
             <main className="flex-1">
                 <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-10">
                     <Link
-                        href={document.referrer.includes('korporat') ? '/korporat/beli-pelatihan' : '/beli-pelatihan'}
+                        href="/korporat/beli-pelatihan"
                         className="inline-flex items-center gap-2 font-bold text-[#006B32]"
                     >
                         <svg
@@ -282,29 +282,7 @@ export default function DetailKelasKorporat({
                                 ))}
                             </ul>
 
-                            <button
-                                type="button"
-                                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF8928] py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"
-                            >
-                                Beli Sekarang
-                                <svg
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <circle cx="9" cy="20" r="1" />
-                                    <circle cx="18" cy="20" r="1" />
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M2 3h3l2.4 12.4a1 1 0 001 .8h8.7a1 1 0 001-.8L21 7H6"
-                                    />
-                                </svg>
-                            </button>
-
-                            <div className="mt-3 flex items-center justify-center gap-3">
+                            <div className="mt-6 flex items-center justify-center gap-3">
                                 <button
                                     type="button"
                                     onClick={decrement}
@@ -349,6 +327,28 @@ export default function DetailKelasKorporat({
                                     </svg>
                                 </button>
                             </div>
+
+                            <button
+                                type="button"
+                                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF8928] py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"
+                            >
+                                Beli Sekarang
+                                <svg
+                                    className="h-5 w-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle cx="9" cy="20" r="1" />
+                                    <circle cx="18" cy="20" r="1" />
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M2 3h3l2.4 12.4a1 1 0 001 .8h8.7a1 1 0 001-.8L21 7H6"
+                                    />
+                                </svg>
+                            </button>
 
                             <p className="mt-3 text-center text-xs text-[#9AA6A0]">
                                 Akses seumur hidup. Jaminan 7 hari uang kembali.

@@ -269,7 +269,7 @@ export default function Dashboard({ banners, events }) {
 
                         {/* 5. AKTIVITAS BELAJAR (CHART) */}
                         <Link
-                            href="/detail-aktivitas-pelatihan"
+                            href="/detail-aktivitas"
                             className="group bg-white border border-[#E4E2E1] p-6 rounded-2xl shadow-sm transition hover:border-[#008740] hover:shadow-md"
                         >
                             <h3 className="font-bold text-[#1B1C1C] mb-8 flex items-center gap-2">

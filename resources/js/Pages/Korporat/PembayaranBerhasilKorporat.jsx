@@ -278,7 +278,7 @@ export default function PembayaranBerhasilKorporat({
                                 href={dashboardHref}
                                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF8928] py-3.5 font-bold text-white shadow-sm transition-colors hover:bg-[#F57F1E]"
                             >
-                                Buka Dashboard Admin
+                                Kembali ke Dashboard
                                 <svg
                                     className="h-5 w-5"
                                     fill="none"
