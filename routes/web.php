@@ -244,108 +244,78 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/sertifikat/{id}', fn ($id) => Inertia::render('Sertifikat/DetailSertifikat', ['certificateId' => $id]))->name('sertifikat.detail');
 
         // Events
-        Route::get('/event', function () {
-            $events = Webinar::where('is_published', true)->latest()->get()->map(function ($event) {
-                return [
-                    'id' => $event->id,
-                    'slug' => \Illuminate\Support\Str::slug($event->judul),
-                    'title' => $event->judul,
-                    'description' => $event->deskripsi,
-                    'thumbnail' => $event->image_path ? '/storage/' . preg_replace('/^public\//', '', $event->image_path) : '/images/event-placeholder.svg',
-                    'type' => $event->jenis_event === 'Online' ? 'Seminar Online' : 'Workshop Offline',
-                    'speaker' => $event->narasumber,
-                    'capacity' => $event->kapasitas,
-                    'available_slots' => $event->sisa_kuota,
-                    'location' => $event->jenis_event === 'Online' ? null : $event->lokasi_link,
-                    'platform' => $event->jenis_event === 'Online' ? 'Google Meet' : null,
-                    'start_date' => $event->tanggal,
-                    'start_time' => $event->jam,
-                    'is_online' => $event->jenis_event === 'Online',
-                ];
-            });
+        $mapWebinar = function ($e) {
+            $isOnline = $e->jenis_event === 'Online';
+            $eventLink = $e->lokasi_link;
 
-            return Inertia::render('Event/SemuaEvent', [
-                'events' => $events
-            ]);
+            return [
+                'id' => $e->id,
+                'slug' => \Illuminate\Support\Str::slug($e->judul),
+                'title' => $e->judul,
+                'description' => $e->deskripsi,
+                'thumbnail' => $e->image_path ? '/storage/' . preg_replace('/^public\//', '', $e->image_path) : '/images/event-placeholder.svg',
+                'image_path' => $e->image_path,
+                'category' => $e->kategori,
+                'type' => $isOnline ? 'Seminar Online' : 'Workshop Offline',
+                'status' => $e->tanggal && $e->tanggal < now()->toDateString() ? 'Selesai' : 'Akan Datang',
+                'speaker_name' => $e->narasumber,
+                'speaker_title' => $e->kategori,
+                'speaker_photo' => null,
+                'speaker_quote' => null,
+                'capacity' => (int) $e->kapasitas,
+                'registered_count' => max(0, (int) $e->kapasitas - (int) $e->sisa_kuota),
+                'available_slots' => (int) $e->sisa_kuota,
+                'location' => $isOnline ? 'Online' : $eventLink,
+                'platform' => $isOnline ? 'Google Meet' : null,
+                'location_url' => $isOnline ? null : $eventLink,
+                'platform_url' => $isOnline ? $eventLink : null,
+                'is_online' => $isOnline,
+                'start_date' => $e->tanggal,
+                'date' => $e->tanggal,
+                'start_time' => $e->jam,
+                'time' => $e->jam,
+                'registration_deadline' => $e->tanggal,
+                'benefits' => [],
+                'topics' => [],
+            ];
+        };
+
+        Route::get('/event', function () use ($mapWebinar) {
+            $events = Webinar::where('is_published', true)->latest()->get()->map($mapWebinar);
+            return Inertia::render('Event/SemuaEvent', ['events' => $events]);
         })->name('event.index');
 
         Route::get('/event/daftar', fn () => Inertia::render('Event/DaftarEvent'))->name('event.daftar');
+        Route::get('/event/{slug}/daftar', function ($slug) use ($mapWebinar) {
+            $event = Webinar::where('is_published', true)
+                ->get()
+                ->first(fn($w) => \Illuminate\Support\Str::slug($w->judul) === $slug);
 
-        Route::get('/event/{slug}/daftar', function ($slug) {
-            $event = Webinar::all()->first(fn ($webinar) => \Illuminate\Support\Str::slug($webinar->judul) === $slug);
-
-            $mappedEvent = null;
-            if ($event) {
-                $mappedEvent = [
-                    'id' => $event->id,
-                    'slug' => \Illuminate\Support\Str::slug($event->judul),
-                    'title' => $event->judul,
-                    'thumbnail' => $event->image_path ? '/storage/' . preg_replace('/^public\//', '', $event->image_path) : '/images/event-placeholder.svg',
-                    'description' => $event->deskripsi,
-                    'date' => $event->tanggal,
-                    'time' => $event->jam,
-                    'platform' => $event->jenis_event === 'Online' ? 'Google Meet' : $event->lokasi_link,
-                    'price' => 0,
-                ];
-            }
+            abort_unless($event, 404);
 
             return Inertia::render('Event/DaftarEvent', [
                 'eventSlug' => $slug,
-                'event' => $mappedEvent
+                'event' => $mapWebinar($event)
             ]);
         })->name('event.daftar.slug');
+        Route::get('/event/pendaftaran-berhasil', fn() => Inertia::render('Event/PendaftaranBerhasil', ['event' => session('registered_event')]))->name('event.pendaftaran-berhasil');
+        Route::get('/event/{slug}', function ($slug) use ($mapWebinar) {
+            $event = Webinar::where('is_published', true)
+                ->get()
+                ->first(fn($w) => \Illuminate\Support\Str::slug($w->judul) === $slug);
 
-        Route::get('/event/pendaftaran-berhasil', function () {
-            return Inertia::render('Event/PendaftaranBerhasil', [
-                'event' => session('registered_event')
-            ]);
-        })->name('event.pendaftaran-berhasil');
+            abort_unless($event, 404);
 
-        Route::get('/event/semua', function () {
-            return redirect()->route('event.index');
-        })->name('event.semua');
-
-        Route::get('/event/{slug}', function ($slug) {
-            $event = Webinar::all()->first(fn ($webinar) => \Illuminate\Support\Str::slug($webinar->judul) === $slug);
-
-            $mappedEvent = null;
-            if ($event) {
-                $mappedEvent = [
-                    'id' => $event->id,
-                    'title' => $event->judul,
-                    'slug' => \Illuminate\Support\Str::slug($event->judul),
-                    'description' => $event->deskripsi,
-                    'thumbnail' => $event->image_path ? '/storage/' . preg_replace('/^public\//', '', $event->image_path) : '/images/event-placeholder.svg',
-                    'type' => $event->jenis_event === 'Online' ? 'Seminar Online' : 'Workshop Offline',
-                    'status' => 'Akan Datang',
-                    'speaker_name' => $event->narasumber,
-                    'speaker_title' => 'Narasumber',
-                    'speaker_photo' => '/images/event-placeholder.svg',
-                    'speaker_quote' => 'Mari tingkatkan kesiapan pensiun bersama.',
-                    'capacity' => $event->kapasitas,
-                    'registered_count' => max(0, $event->kapasitas - $event->sisa_kuota),
-                    'location' => $event->jenis_event === 'Online' ? 'Online' : $event->lokasi_link,
-                    'platform' => $event->jenis_event === 'Online' ? 'Google Meet' : null,
-                    'start_date' => $event->tanggal,
-                    'end_date' => null,
-                    'start_time' => $event->jam,
-                    'registration_deadline' => \Carbon\Carbon::parse($event->tanggal)->subDays(2)->format('Y-m-d'),
-                    'benefits' => [
-                        'E-Sertifikat Resmi',
-                        'Materi PPT & Rekaman',
-                        'Sesi Konsultasi Grup',
-                    ],
-                    'topics' => [
-                        'Pemahaman mendalam mengenai materi',
-                        'Sesi tanya jawab interaktif',
-                        'Tips dan trik praktis',
-                    ],
-                ];
-            }
+            $relatedEvents = Webinar::where('is_published', true)
+                ->where('id', '!=', $event->id)
+                ->latest()
+                ->take(3)
+                ->get()
+                ->map($mapWebinar);
 
             return Inertia::render('Event/DetailEvent', [
-                'eventSlug' => $slug,
-                'event' => $mappedEvent
+                'event' => $mapWebinar($event),
+                'relatedEvents' => $relatedEvents,
             ]);
         })->name('event.detail');
 

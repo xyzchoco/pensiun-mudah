@@ -21,7 +21,7 @@ class PembayaranController extends Controller
         $course = Course::with('category')->where('slug', $slug)->firstOrFail();
 
         // Pastikan user memang sudah terdaftar di kelas gratis ini
-        $enrolled = Enrollment::where('user_id', $user->id)
+        $enrolled = Enrollment::where('user_id', $user->user_id)
             ->where('course_id', $course->id)
             ->where('status', 'active')
             ->exists();
@@ -47,7 +47,7 @@ class PembayaranController extends Controller
         $course = Course::where('slug', $slug)->firstOrFail();
 
         // 1. CEK DOUBLE BELI: Apakah user udah punya kelas ini?
-        $sudahBeli = Enrollment::where('user_id', $user->id)
+        $sudahBeli = Enrollment::where('user_id', $user->user_id)
             ->where('course_id', $course->id)
             ->where('status', 'active')
             ->exists();
@@ -60,7 +60,7 @@ class PembayaranController extends Controller
         // 2. CEK KELAS GRATIS: Kalau harga Rp0, bypass langsung kasih akses
         if ($course->price == 0) {
             Enrollment::create([
-                'user_id' => $user->id,
+                'user_id' => $user->user_id,
                 'course_id' => $course->id,
                 'tanggal_daftar' => now(),
                 'status' => 'active',
@@ -77,7 +77,7 @@ class PembayaranController extends Controller
         Config::$is3ds = true;
 
         // 4. CEK TRANSAKSI PENDING
-        $pendingTransaction = Transaction::where('user_id', $user->id)
+        $pendingTransaction = Transaction::where('user_id', $user->user_id)
             ->where('course_id', $course->id)
             ->where('status', 'pending')
             ->first();
@@ -126,7 +126,7 @@ class PembayaranController extends Controller
 
             // Simpan transaksi baru fresh ke database
             $transaction = Transaction::create([
-                'user_id' => $user->id,
+                'user_id' => $user->user_id,
                 'course_id' => $course->id,
                 'nomor_transaksi' => $orderId,
                 'nominal' => $course->price,
@@ -227,7 +227,7 @@ class PembayaranController extends Controller
         $course->setAttribute('firstLessonId', $this->firstMaterialId($course));
         
         // Cari data transaksi sukses terbaru milik user untuk kursus ini
-        $transaction = Transaction::where('user_id', $user->id)
+        $transaction = Transaction::where('user_id', $user->user_id)
             ->where('course_id', $course->id)
             ->where('status', 'success')
             ->latest()
