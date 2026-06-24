@@ -32,6 +32,27 @@ const formatJam = (jam) => {
     return `${jam.substring(0, 5)} WIB`;
 };
 
+const renderLinkedText = (text) => {
+    const value = String(text || '');
+    const parts = value.split(/(https?:\/\/[^\s<]+)/g);
+
+    return parts.map((part, index) =>
+        /^https?:\/\//.test(part) ? (
+            <a
+                key={`${part}-${index}`}
+                href={part}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="break-words text-[#006B32] underline"
+            >
+                {part}
+            </a>
+        ) : (
+            part
+        ),
+    );
+};
+
 export default function EventCard({ event }) {
     // Normalisasi field: dukung struktur baru (English) & data Webinar lama (Indonesia)
     const slug = event.slug || event.id;
@@ -113,7 +134,7 @@ export default function EventCard({ event }) {
 
                 {/* DESKRIPSI SINGKAT */}
                 <p className="mt-2 text-sm text-[#6B7280] leading-relaxed line-clamp-2">
-                    {description}
+                    {renderLinkedText(description)}
                 </p>
 
                 {/* META: NARASUMBER, KAPASITAS, LOKASI/PLATFORM */}
@@ -202,7 +223,7 @@ export default function EventCard({ event }) {
                             )
                         }
                     >
-                        {place}
+                        {renderLinkedText(place)}
                     </EventMeta>
                 </div>
 

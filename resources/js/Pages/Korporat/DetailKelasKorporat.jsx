@@ -149,6 +149,14 @@ export default function DetailKelasKorporat({
     const [qty, setQty] = useState(5);
     const decrement = () => setQty((prev) => (prev > 1 ? prev - 1 : 1));
     const increment = () => setQty((prev) => prev + 1);
+    const courseTitle = course?.title || title;
+    const coursePrice = course?.price ?? 249000;
+    const formattedPrice = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0,
+    }).format(coursePrice);
+    const purchaseHref = `/korporat/pelatihan/${course?.slug || course?.id || ''}/pembelian-online?qty=${qty}`;
 
     // Mengambil URL video dari lesson pertama (jika datanya ada)
     const videoUrl = course?.lessons?.[0]?.video_url;
@@ -169,7 +177,7 @@ export default function DetailKelasKorporat({
 
     return (
         <div className="flex min-h-screen flex-col bg-[#FBF9F8] font-['Atkinson_Hyperlegible']">
-            <Head title={title + ' - Pensiun Mudah'} />
+            <Head title={courseTitle + ' - Pensiun Mudah'} />
             <PaymentHeader />
 
             <main className="flex-1">
@@ -195,7 +203,7 @@ export default function DetailKelasKorporat({
                     </Link>
 
                     <h1 className="mt-6 text-3xl font-bold text-[#1B1C1C] sm:text-4xl">
-                        {title}
+                        {courseTitle}
                     </h1>
                     <div className="mt-3 flex flex-wrap items-center gap-4">
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FCE9D8] px-3 py-1 text-sm font-bold text-[#1B1C1C]">
@@ -264,7 +272,7 @@ export default function DetailKelasKorporat({
                                 Investasi Ilmu:
                             </p>
                             <p className="mt-1 text-4xl font-extrabold text-[#006B32]">
-                                {price}
+                                {course ? formattedPrice : price}
                             </p>
                             <p className="text-sm text-[#9AA6A0] line-through">
                                 {originalPrice}
@@ -328,8 +336,8 @@ export default function DetailKelasKorporat({
                                 </button>
                             </div>
 
-                            <button
-                                type="button"
+                            <Link
+                                href={purchaseHref}
                                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF8928] py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"
                             >
                                 Beli Sekarang
@@ -348,7 +356,7 @@ export default function DetailKelasKorporat({
                                         d="M2 3h3l2.4 12.4a1 1 0 001 .8h8.7a1 1 0 001-.8L21 7H6"
                                     />
                                 </svg>
-                            </button>
+                            </Link>
 
                             <p className="mt-3 text-center text-xs text-[#9AA6A0]">
                                 Akses seumur hidup. Jaminan 7 hari uang kembali.

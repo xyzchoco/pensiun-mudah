@@ -140,11 +140,101 @@ Route::middleware(['auth'])->group(function () {
         })->name('korporat.profil-perusahaan.update');
 
         Route::get('/korporat/profil-perusahaan/edit', fn () => Inertia::render('Korporat/EditProfilPerusahaan', ['profile' => auth()->user()->corporateProfile]))->name('korporat.profil-perusahaan.edit');
+        Route::get('/korporat/pelatihan/{slug}/pembelian-online', function ($slug, Request $request) {
+            $course = Course::with('category')->where('slug', $slug)->firstOrFail();
+            $quantity = max(1, (int) $request->query('qty', 1));
+
+            return Inertia::render('Korporat/DetailPembelianOnline', [
+                'course' => $course,
+                'quantity' => $quantity,
+                'backHref' => route('korporat.pelatihan.detail', $course->slug),
+            ]);
+        })->name('korporat.pelatihan.pembelian-online');
+        Route::get('/korporat/pelatihan-offline/{slug}', function ($slug, Request $request) {
+            $course = Course::with('category')->where('slug', $slug)->first();
+            $price = $course?->price ?? (int) $request->query('price', 0);
+            $title = $course?->title ?? $request->query('title', 'Kelas Offline Korporat');
+            $location = $request->query('location', $course?->location ?? 'Lokasi akan dikonfirmasi');
+            $eventTime = $request->query('time', $course?->time ?? 'Jadwal akan dikonfirmasi');
+            $scheduleParams = http_build_query([
+                'course_id' => $course?->id ?? $slug,
+                'title' => $title,
+                'qty' => max(1, (int) $request->query('qty', 5)),
+                'price' => $price,
+                'location' => $location,
+                'time' => $eventTime,
+                'back' => $request->fullUrl(),
+            ]);
+
+            return Inertia::render('Korporat/DetailPelatihanOffline', [
+                'title' => $title,
+                'about' => strip_tags($course?->description ?? $request->query('description', '')),
+                'location' => $location,
+                'eventTime' => $eventTime,
+                'price' => $price > 0 ? 'Rp ' . number_format($price, 0, ',', '.') : 'Gratis',
+                'backHref' => route('korporat.beli-pelatihan'),
+                'scheduleHref' => route('korporat.pilih-jadwal') . '?' . $scheduleParams,
+            ]);
+        })->name('korporat.pelatihan-offline.detail');
+        Route::get('/korporat/pelatihan-hybrid/{slug}/pembelian', function ($slug, Request $request) {
+            $course = Course::with('category')->where('slug', $slug)->first();
+            $quantity = max(1, (int) $request->query('qty', 1));
+            $price = $course?->price ?? (int) $request->query('price', 0);
+            $title = $course?->title ?? $request->query('title', 'Kelas Hybrid Korporat');
+            $description = strip_tags($course?->description ?? $request->query('description', ''));
+
+            $purchaseCourse = $course ?? [
+                'id' => $slug,
+                'title' => $title,
+                'description' => $description,
+                'price' => $price,
+                'category' => ['nama' => 'Hybrid'],
+            ];
+
+            return Inertia::render('Korporat/DetailPembelianHybrid', [
+                'course' => $purchaseCourse,
+                'quantity' => $quantity,
+                'backHref' => $request->query('back', route('korporat.beli-pelatihan')),
+            ]);
+        })->name('korporat.pelatihan-hybrid.pembelian');
+        Route::get('/korporat/pelatihan-hybrid/{slug}', function ($slug, Request $request) {
+            $course = Course::with('category')->where('slug', $slug)->first();
+            $price = $course?->price ?? (int) $request->query('price', 0);
+            $title = $course?->title ?? $request->query('title', 'Kelas Hybrid Korporat');
+            $description = strip_tags($course?->description ?? $request->query('description', ''));
+            $purchaseParams = http_build_query([
+                'qty' => max(1, (int) $request->query('qty', 5)),
+                'title' => $title,
+                'description' => $description,
+                'price' => $price,
+                'back' => $request->fullUrl(),
+            ]);
+
+            return Inertia::render('Korporat/DetailPelatihanHybrid', [
+                'title' => $title,
+                'about' => $description,
+                'duration' => $request->query('time', $course?->time ?? 'Jadwal akan dikonfirmasi'),
+                'hybridLocation' => $request->query('location', $course?->location ?? 'Lokasi akan dikonfirmasi'),
+                'price' => $price > 0 ? 'Rp ' . number_format($price, 0, ',', '.') : 'Gratis',
+                'backHref' => route('korporat.beli-pelatihan'),
+                'purchaseHref' => route('korporat.pelatihan-hybrid.pembelian', $slug) . '?' . $purchaseParams,
+            ]);
+        })->name('korporat.pelatihan-hybrid.detail');
         Route::get('/korporat/pelatihan/{slug}', [PelatihanController::class, 'show'])->name('korporat.pelatihan.detail');
         Route::get('/korporat/pelatihan-dibeli', fn () => Inertia::render('Korporat/PelatihanDibeli'))->name('korporat.pelatihan-dibeli');
         Route::get('/korporat/pembayaran-berhasil', fn () => Inertia::render('Korporat/PembayaranBerhasilKorporat'))->name('korporat.pembayaran-berhasil');
         Route::get('/korporat/modul/{slug}', fn ($slug) => Inertia::render('Korporat/DetailModulKaryawan', ['moduleName' => $slug]))->name('korporat.modul.detail');
-        Route::get('/korporat/pilih-jadwal', fn () => Inertia::render('Korporat/PilihJadwal'))->name('korporat.pilih-jadwal');
+        Route::get('/korporat/pilih-jadwal', function (Request $request) {
+            return Inertia::render('Korporat/PilihJadwal', [
+                'title' => $request->query('title', 'Kelas Offline Korporat'),
+                'location' => $request->query('location', 'Lokasi akan dikonfirmasi'),
+                'eventTime' => $request->query('time', 'Jadwal akan dikonfirmasi'),
+                'price' => (int) $request->query('price', 0),
+                'quantity' => max(1, (int) $request->query('qty', 5)),
+                'backHref' => $request->query('back', route('korporat.beli-pelatihan')),
+                'confirmHref' => route('korporat.pembayaran-berhasil'),
+            ]);
+        })->name('korporat.pilih-jadwal');
 
         // Dashboard & Pelatihan Umum
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

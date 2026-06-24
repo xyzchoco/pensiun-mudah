@@ -2,6 +2,155 @@ import { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import KorporatLayout from '@/Layouts/KorporatLayout';
 
+const demoCourses = {
+    offline: [
+        {
+            id: 'demo-offline-1',
+            title: 'Workshop Persiapan Karier Setelah Pensiun',
+            description: 'Kelas tatap muka untuk menyusun rencana aktivitas, jejaring, dan peluang kerja setelah masa pensiun.',
+            tipe_kelas: 'Offline',
+            location: 'Jakarta Training Center',
+            time: '2 hari, 09.00 - 15.00 WIB',
+            price: 750000,
+            rating: '4.8',
+            reviews: '86',
+            isDemo: true,
+            category: {
+                nama: 'Offline',
+                warna_bg_icon: '#006B32',
+                warna_teks_icon: '#FFFFFF',
+            },
+        },
+        {
+            id: 'demo-offline-2',
+            title: 'Pelatihan Wirausaha Lokal untuk Karyawan MPP',
+            description: 'Sesi praktik langsung untuk memvalidasi ide usaha, menghitung modal, dan membuat rencana penjualan.',
+            tipe_kelas: 'Offline',
+            location: 'Bandung Learning Hub',
+            time: '1 hari, 08.30 - 16.00 WIB',
+            price: 650000,
+            rating: '4.9',
+            reviews: '74',
+            isDemo: true,
+            category: {
+                nama: 'Offline',
+                warna_bg_icon: '#006B32',
+                warna_teks_icon: '#FFFFFF',
+            },
+        },
+    ],
+    hybrid: [
+        {
+            id: 'demo-hybrid-1',
+            title: 'Program Hybrid Literasi Keuangan Pensiun',
+            description: 'Gabungan sesi online dan tatap muka untuk menyusun anggaran, investasi dasar, dan dana darurat.',
+            tipe_kelas: 'Hybrid',
+            location: 'Online + Surabaya Class Point',
+            time: '3 sesi online, 1 sesi offline',
+            price: 900000,
+            rating: '4.9',
+            reviews: '112',
+            isDemo: true,
+            category: {
+                nama: 'Hybrid',
+                warna_bg_icon: '#A8632A',
+                warna_teks_icon: '#FFFFFF',
+            },
+        },
+        {
+            id: 'demo-hybrid-2',
+            title: 'Hybrid Coaching Produktivitas Masa Pensiun',
+            description: 'Pendampingan kombinasi webinar dan klinik tatap muka untuk membangun rutinitas produktif.',
+            tipe_kelas: 'Hybrid',
+            location: 'Online + Yogyakarta Workshop Room',
+            time: '4 minggu pendampingan',
+            price: 1200000,
+            rating: '4.7',
+            reviews: '59',
+            isDemo: true,
+            category: {
+                nama: 'Hybrid',
+                warna_bg_icon: '#A8632A',
+                warna_teks_icon: '#FFFFFF',
+            },
+        },
+    ],
+};
+
+const getClassType = (type) => String(type || '').trim().toLowerCase();
+
+function buildScheduleHref(course, qty) {
+    const params = new URLSearchParams();
+
+    params.set('course_id', course.id);
+    params.set('title', course.title || 'Kelas Offline Korporat');
+    params.set('qty', qty);
+    params.set('price', course.price || 0);
+
+    if (course.location) {
+        params.set('location', course.location);
+    }
+
+    if (course.time) {
+        params.set('time', course.time);
+    }
+
+    return `/korporat/pilih-jadwal?${params.toString()}`;
+}
+
+function buildOnlinePurchaseHref(course, qty) {
+    return `/korporat/pelatihan/${course.slug || course.id}/pembelian-online?qty=${qty}`;
+}
+
+function buildHybridPurchaseHref(course, qty) {
+    const slug = course.slug || course.id;
+    const params = new URLSearchParams();
+
+    params.set('qty', qty);
+
+    if (course.isDemo) {
+        params.set('title', course.title || 'Kelas Hybrid Korporat');
+        params.set('description', course.description || '');
+        params.set('price', course.price || 0);
+    }
+
+    return `/korporat/pelatihan-hybrid/${slug}/pembelian?${params.toString()}`;
+}
+
+function buildOfflineDetailHref(course) {
+    const slug = course.slug || course.id;
+
+    if (!course.isDemo) {
+        return `/korporat/pelatihan-offline/${slug}`;
+    }
+
+    const params = new URLSearchParams();
+    params.set('title', course.title || 'Kelas Offline Korporat');
+    params.set('description', course.description || '');
+    params.set('location', course.location || '');
+    params.set('time', course.time || '');
+    params.set('price', course.price || 0);
+
+    return `/korporat/pelatihan-offline/${slug}?${params.toString()}`;
+}
+
+function buildHybridDetailHref(course) {
+    const slug = course.slug || course.id;
+
+    if (!course.isDemo) {
+        return `/korporat/pelatihan-hybrid/${slug}`;
+    }
+
+    const params = new URLSearchParams();
+    params.set('title', course.title || 'Kelas Hybrid Korporat');
+    params.set('description', course.description || '');
+    params.set('location', course.location || '');
+    params.set('time', course.time || '');
+    params.set('price', course.price || 0);
+
+    return `/korporat/pelatihan-hybrid/${slug}?${params.toString()}`;
+}
+
 // Komponen Ikon untuk Kategori Kelas
 function SectionIcon({ name }) {
     if (name === 'laptop') {
@@ -31,6 +180,10 @@ function SectionIcon({ name }) {
 // Komponen Kartu Pelatihan (Dinamis)
 function CourseCard({ course }) {
     const [qty, setQty] = useState(1);
+    const classType = getClassType(course.tipe_kelas);
+    const isOfflineClass = classType === 'offline';
+    const isOnlineClass = classType === 'online';
+    const isHybridClass = classType === 'hybrid';
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('id-ID', {
@@ -112,13 +265,36 @@ function CourseCard({ course }) {
                 </div>
 
                 <div className="mt-4 flex items-center gap-3">
-                    <button
-                        type="button"
-                        className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
-                    >
-                        {/* Tombol beli menampilkan total harga jika ingin */}
-                        Beli ({qty})
-                    </button>
+                    {isOfflineClass ? (
+                        <Link
+                            href={buildScheduleHref(course, qty)}
+                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
+                        >
+                            Beli ({qty})
+                        </Link>
+                    ) : isOnlineClass ? (
+                        <Link
+                            href={buildOnlinePurchaseHref(course, qty)}
+                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
+                        >
+                            Beli ({qty})
+                        </Link>
+                    ) : isHybridClass ? (
+                        <Link
+                            href={buildHybridPurchaseHref(course, qty)}
+                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
+                        >
+                            Beli ({qty})
+                        </Link>
+                    ) : (
+                        <button
+                            type="button"
+                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
+                        >
+                            {/* Tombol beli menampilkan total harga jika ingin */}
+                            Beli ({qty})
+                        </button>
+                    )}
 
                     <div className="flex items-center gap-2">
                         <button
@@ -141,12 +317,28 @@ function CourseCard({ course }) {
                     </div>
                 </div>
 
-                <Link
-                    href={`/korporat/pelatihan/${course.slug || course.id}`}
-                    className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5"
-                >
-                    Lihat Detail
-                </Link>
+                {isOfflineClass ? (
+                    <Link
+                        href={buildOfflineDetailHref(course)}
+                        className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5"
+                    >
+                        Lihat Detail
+                    </Link>
+                ) : isHybridClass ? (
+                    <Link
+                        href={buildHybridDetailHref(course)}
+                        className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5"
+                    >
+                        Lihat Detail
+                    </Link>
+                ) : (
+                    <Link
+                        href={`/korporat/pelatihan/${course.slug || course.id}`}
+                        className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5"
+                    >
+                        Lihat Detail
+                    </Link>
+                )}
             </div>
         </div>
     );
@@ -155,11 +347,11 @@ function CourseCard({ course }) {
 // HALAMAN UTAMA
 export default function BeliPelatihanKorporat({ banners = [], courses = [] }) {
 
-    console.log("Data Courses dari Backend:", courses);
-
-    const onlineCourses = courses.filter(c => c.tipe_kelas === 'Online');
-    const offlineCourses = courses.filter(c => c.tipe_kelas === 'Offline');
-    const hybridCourses = courses.filter(c => c.tipe_kelas === 'Hybrid');
+    const onlineCourses = courses.filter(c => getClassType(c.tipe_kelas) === 'online');
+    const offlineCourses = courses.filter(c => getClassType(c.tipe_kelas) === 'offline');
+    const hybridCourses = courses.filter(c => getClassType(c.tipe_kelas) === 'hybrid');
+    const displayOfflineCourses = offlineCourses.length > 0 ? offlineCourses : demoCourses.offline;
+    const displayHybridCourses = hybridCourses.length > 0 ? hybridCourses : demoCourses.hybrid;
 
     const sections = [
         {
@@ -172,21 +364,17 @@ export default function BeliPelatihanKorporat({ banners = [], courses = [] }) {
             key: 'offline',
             label: 'Kelas Offline',
             icon: 'people',
-            courses: offlineCourses,
+            courses: displayOfflineCourses,
         },
         {
             key: 'hybrid',
             label: 'Kelas Hybrid',
             icon: 'layers',
-            courses: hybridCourses,
-        },
-        {
-            key: 'semua',
-            label: 'Semua Kelas',
-            icon: 'laptop',
-            courses: courses, // Langsung masukkan semua data kursus
+            courses: displayHybridCourses,
         }
     ];
+
+    const visibleSections = sections.filter(section => section.courses.length > 0);
 
     return (
         <KorporatLayout title="Beli Pelatihan - Pensiun Mudah" activeNav="beli">
@@ -241,29 +429,26 @@ export default function BeliPelatihanKorporat({ banners = [], courses = [] }) {
                 </div>
 
                 {/* --- MENAMPILKAN KURSUS BERDASARKAN KATEGORI --- */}
-                {sections.map((section) => (
-                    // Cuma render section kalau ada isinya
-                    section.courses.length > 0 && (
-                        <section key={section.key} className="mt-8">
-                            <h2 className="flex items-center gap-2 text-lg font-bold text-[#1B1C1C]">
-                                <span className="text-[#006B32]">
-                                    <SectionIcon name={section.icon} />
-                                </span>
-                                {section.label}
-                            </h2>
-                            <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                                {section.courses.map((course) => (
-                                    <CourseCard key={course.id} course={course} />
-                                ))}
-                            </div>
-                        </section>
-                    )
+                {visibleSections.map((section) => (
+                    <section key={section.key} className="mt-8">
+                        <h2 className="flex items-center gap-2 text-lg font-bold text-[#1B1C1C]">
+                            <span className="text-[#006B32]">
+                                <SectionIcon name={section.icon} />
+                            </span>
+                            {section.label}
+                        </h2>
+                        <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                            {section.courses.map((course) => (
+                                <CourseCard key={course.id} course={course} />
+                            ))}
+                        </div>
+                    </section>
                 ))}
 
                 {/* Jika tidak ada satupun pelatihan */}
-                {courses.length === 0 && (
+                {visibleSections.length === 0 && (
                     <div className="mt-12 text-center py-10 border-2 border-dashed border-[#E4E2E1] rounded-2xl">
-                        <p className="text-[#6B7280] font-semibold text-lg">Belum ada pelatihan yang tersedia saat ini.</p>
+                        <p className="text-[#6B7280] font-semibold text-lg">Belum ada kelas online, offline, atau hybrid yang tersedia saat ini.</p>
                     </div>
                 )}
             </div>

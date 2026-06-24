@@ -28,12 +28,32 @@ function dayClasses(item) {
     return 'text-[#1B1C1C] hover:bg-[#F0EDED]';
 }
 
+function formatPrice(value) {
+    const amount = Number(value) || 0;
+
+    if (amount <= 0) {
+        return 'Gratis';
+    }
+
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+    }).format(amount);
+}
+
 export default function PilihJadwal({
-    backHref = '/beli-pelatihan',
-    confirmHref = '/korporat/checkout',
+    backHref = '/korporat/beli-pelatihan',
+    confirmHref = '/korporat/pembayaran-berhasil',
+    title = 'Kelas Offline Korporat',
+    location = 'Lokasi akan dikonfirmasi',
+    eventTime = 'Jadwal akan dikonfirmasi',
+    price = 0,
+    quantity = 5,
 }) {
-    const [peserta, setPeserta] = useState(5);
-    const [lokasi, setLokasi] = useState('');
+    const [peserta, setPeserta] = useState(Math.max(1, Number(quantity) || 1));
+    const [lokasi, setLokasi] = useState(location);
+    const totalPrice = (Number(price) || 0) * peserta;
 
     const decrement = () => setPeserta((prev) => (prev > 1 ? prev - 1 : 1));
     const increment = () => setPeserta((prev) => prev + 1);
@@ -172,6 +192,9 @@ export default function PilihJadwal({
                             <h2 className="text-xl font-bold text-[#1B1C1C]">
                                 Ringkasan Jadwal
                             </h2>
+                            <p className="mt-2 text-sm font-semibold text-[#3D4A3E]">
+                                {title}
+                            </p>
 
                             <div className="mt-6 space-y-5">
                                 <div className="flex items-center justify-between gap-3">
