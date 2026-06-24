@@ -154,6 +154,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/sertifikat/{id}', fn ($id) => Inertia::render('Sertifikat/DetailSertifikat', ['certificateId' => $id]))->name('sertifikat.detail');
 
         // Events
+<<<<<<< HEAD
         Route::get('/event', function () {
             $events = Webinar::where('is_published', true)->latest()->get()->map(function ($event) {
                 return [
@@ -256,6 +257,80 @@ Route::middleware(['auth'])->group(function () {
             return Inertia::render('Event/DetailEvent', [
                 'eventSlug' => $slug,
                 'event' => $mappedEvent
+=======
+        $mapWebinar = function ($e) {
+            $isOnline = $e->jenis_event === 'Online';
+            $eventLink = $e->lokasi_link;
+
+            return [
+                'id' => $e->id,
+                'slug' => \Illuminate\Support\Str::slug($e->judul),
+                'title' => $e->judul,
+                'description' => $e->deskripsi,
+                'thumbnail' => $e->image_path ? '/storage/' . preg_replace('/^public\//', '', $e->image_path) : '/images/event-placeholder.svg',
+                'image_path' => $e->image_path,
+                'category' => $e->kategori,
+                'type' => $isOnline ? 'Seminar Online' : 'Workshop Offline',
+                'status' => $e->tanggal && $e->tanggal < now()->toDateString() ? 'Selesai' : 'Akan Datang',
+                'speaker_name' => $e->narasumber,
+                'speaker_title' => $e->kategori,
+                'speaker_photo' => null,
+                'speaker_quote' => null,
+                'capacity' => (int) $e->kapasitas,
+                'registered_count' => max(0, (int) $e->kapasitas - (int) $e->sisa_kuota),
+                'available_slots' => (int) $e->sisa_kuota,
+                'location' => $isOnline ? 'Online' : $eventLink,
+                'platform' => $isOnline ? 'Google Meet' : null,
+                'location_url' => $isOnline ? null : $eventLink,
+                'platform_url' => $isOnline ? $eventLink : null,
+                'is_online' => $isOnline,
+                'start_date' => $e->tanggal,
+                'date' => $e->tanggal,
+                'start_time' => $e->jam,
+                'time' => $e->jam,
+                'registration_deadline' => $e->tanggal,
+                'benefits' => [],
+                'topics' => [],
+            ];
+        };
+
+        Route::get('/event', function () use ($mapWebinar) {
+            $events = Webinar::where('is_published', true)->latest()->get()->map($mapWebinar);
+            return Inertia::render('Event/SemuaEvent', ['events' => $events]);
+        })->name('event.index');
+
+        Route::get('/event/daftar', fn () => Inertia::render('Event/DaftarEvent'))->name('event.daftar');
+        Route::get('/event/{slug}/daftar', function ($slug) use ($mapWebinar) {
+            $event = Webinar::where('is_published', true)
+                ->get()
+                ->first(fn($w) => \Illuminate\Support\Str::slug($w->judul) === $slug);
+
+            abort_unless($event, 404);
+
+            return Inertia::render('Event/DaftarEvent', [
+                'eventSlug' => $slug,
+                'event' => $mapWebinar($event)
+            ]);
+        })->name('event.daftar.slug');
+        Route::get('/event/pendaftaran-berhasil', fn() => Inertia::render('Event/PendaftaranBerhasil', ['event' => session('registered_event')]))->name('event.pendaftaran-berhasil');
+        Route::get('/event/{slug}', function ($slug) use ($mapWebinar) {
+            $event = Webinar::where('is_published', true)
+                ->get()
+                ->first(fn($w) => \Illuminate\Support\Str::slug($w->judul) === $slug);
+
+            abort_unless($event, 404);
+
+            $relatedEvents = Webinar::where('is_published', true)
+                ->where('id', '!=', $event->id)
+                ->latest()
+                ->take(3)
+                ->get()
+                ->map($mapWebinar);
+
+            return Inertia::render('Event/DetailEvent', [
+                'event' => $mapWebinar($event),
+                'relatedEvents' => $relatedEvents,
+>>>>>>> backend
             ]);
         })->name('event.detail');
 

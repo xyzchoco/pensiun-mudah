@@ -1,6 +1,6 @@
 import { useForm } from '@inertiajs/react';
 
-export default function EventRegistrationCard({ slug }) {
+export default function EventRegistrationCard({ slug, isOnline = true }) {
     // State form pakai useForm Inertia (otomatis handle CSRF + errors dari server)
     const { data, setData, post, processing, errors } = useForm({
         full_name: '',
@@ -94,8 +94,9 @@ export default function EventRegistrationCard({ slug }) {
                         <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 5a1.25 1.25 0 110 2.5A1.25 1.25 0 0112 7zm1.25 10h-2.5v-6h2.5v6z" />
                     </svg>
                     <p className="text-sm text-[#374151] leading-relaxed">
-                        Tautan Google Meet akan dikirimkan ke email Anda 1 jam
-                        sebelum acara dimulai.
+                        {isOnline
+                            ? 'Tautan Google Meet akan dikirimkan ke email Anda 1 jam sebelum acara dimulai.'
+                            : 'Tautan lokasi maps bisa dibuka langsung dari kartu info event di samping.'}
                     </p>
                 </div>
 

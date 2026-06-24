@@ -29,7 +29,7 @@ class PelatihanController extends Controller
         ]);
     }
 
-    public function show($slug)
+    public function show(Request $request, $slug)
     {
        $course = Course::with(['category', 'lessons'])->where('slug', $slug)->firstOrFail();
 
@@ -40,13 +40,16 @@ class PelatihanController extends Controller
             ->take(3)
             ->get();
 
-        // Cek apakah request dari korporat route
-        $isKorporat = request()->routeIs('korporat.pelatihan.detail');
-        $view = $isKorporat ? 'Korporat/DetailKelasKorporat' : 'Pelatihan/DetailPelatihan';
+        // Tentukan URL tombol "Kembali" berdasarkan route atau kategori user login.
+        $isCorporateUser = $request->user()?->kategori_pensiun === 'korporat';
+        $backUrl = $request->routeIs('korporat.*') || $isCorporateUser
+            ? '/korporat/beli-pelatihan'
+            : '/beli-pelatihan';
 
-        return Inertia::render($view, [
-            'course' => $course,
+        return Inertia::render('Pelatihan/DetailPelatihan', [
+            'course'         => $course,
             'relatedCourses' => $relatedCourses,
+            'backUrl'        => $backUrl,
         ]);
     }
 
@@ -106,7 +109,7 @@ class PelatihanController extends Controller
 
         // 1. Tarik kelas yang SEDANG BERJALAN (Udah dibalikin ke materials)
         $ongoing = Enrollment::with(['course.category', 'course.modules.materials'])
-            ->where('user_id', $user->id)
+            ->where('user_id', $user->user_id)
             ->where('status', 'active')
             ->where('is_completed', false)
             ->latest()
@@ -129,7 +132,7 @@ class PelatihanController extends Controller
 
         // 2. Tarik kelas yang SUDAH SELESAI
         $completed = Enrollment::with(['course.category'])
-            ->where('user_id', $user->id)
+            ->where('user_id', $user->user_id)
             ->where(function($query) {
                 $query->where('status', 'completed')
                       ->orWhere('is_completed', true);
@@ -162,7 +165,7 @@ class PelatihanController extends Controller
 
         // UDAH DIBALIKIN JADI materials
         $enrollment = Enrollment::with(['course.category', 'course.modules.materials', 'course.modules.quizzes.questions.options'])
-            ->where('user_id', $user->id)
+            ->where('user_id', $user->user_id)
             ->where('course_id', $courseId)
             ->first();
 
