@@ -22,8 +22,6 @@ class User extends Authenticatable implements FilamentUser
         'whatsapp',
         'tanggal_lahir',
         'kategori_pensiun',
-        // 'nama_perusahaan', // Sudah dihapus dari migrasi kan?
-        // 'jabatan',         // Sudah dihapus dari migrasi kan?
         'google_id',
         'is_verified',
         'role_id',
