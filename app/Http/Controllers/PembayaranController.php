@@ -10,6 +10,7 @@ use App\Models\Enrollment;
 use Illuminate\Support\Facades\Auth;
 use Midtrans\Config;
 use Midtrans\Snap;
+use App\Models\CorporateVoucher;
 
 class PembayaranController extends Controller
 {
@@ -39,50 +40,70 @@ class PembayaranController extends Controller
     // =================================================================
     // 1. FUNGSI UNTUK MENAMPILKAN HALAMAN CHECKOUT & BIKIN TOKEN MIDTRANS
     // =================================================================
-    public function checkout($slug)
+    // Jangan lupa tambahkan (Request $request) untuk menangkap parameter dari frontend
+    public function checkout(Request $request, $slug)
     {
         $user = Auth::user();
         
         // Tarik data kursusnya
         $course = Course::where('slug', $slug)->firstOrFail();
 
-        // 1. CEK DOUBLE BELI: Apakah user udah punya kelas ini?
+        // 1. TANGKAP QTY DARI REACT (Default 1 kalau tidak ada)
+        $jumlahPeserta = (int) $request->query('qty', 1);
+        $hargaPerPeserta = (int) $course->price;
+        $nominalTotal = $hargaPerPeserta * $jumlahPeserta; // Total yang dibayar ke Midtrans
+
+        // 2. CEK DOUBLE BELI (Hanya berlaku untuk user Publik/ASN)
+        // User Korporat bebas beli berkali-kali untuk nambah kuota voucher karyawan
         $sudahBeli = Enrollment::where('user_id', $user->user_id)
             ->where('course_id', $course->id)
             ->where('status', 'active')
             ->exists();
 
         if ($sudahBeli) {
-            return redirect()->route('pelatihan.belajar', $this->learningRouteParams($course))
-                ->with('success', 'Lu udah punya kelas ini bos, langsung gass belajar!');
+            return redirect()->route('payment.success', $course->slug)
+                ->with('success', 'Anda sudah memiliki pelatihan ini.');
         }
 
-        // 2. CEK KELAS GRATIS: Kalau harga Rp0, bypass langsung kasih akses
-        if ($course->price == 0) {
-            Enrollment::create([
-                'user_id' => $user->user_id,
-                'course_id' => $course->id,
-                'tanggal_daftar' => now(),
-                'status' => 'active',
-            ]);
+        // 3. CEK KELAS GRATIS (Bypass Midtrans)
+        if ($nominalTotal == 0) {
+            // Kalau Korporat yang klaim gratis, buatkan voucher. Kalau Publik, buatkan enrollment.
+            if ($user->kategori_pensiun === 'korporat') {
+                \App\Models\CorporateVoucher::create([
+                    'corporate_user_id' => $user->user_id,
+                    'course_id'         => $course->id,
+                    'code'              => 'CORP-' . strtoupper(\Illuminate\Support\Str::random(5)) . '-' . rand(100, 999),
+                    'max_uses'          => $jumlahPeserta,
+                    'used_count'        => 0,
+                ]);
+            } else {
+                Enrollment::create([
+                    'user_id'        => $user->user_id,
+                    'course_id'      => $course->id,
+                    'tanggal_daftar' => now(),
+                    'status'         => 'active',
+                ]);
+            }
 
-            return redirect()->route('pelatihan.gratis.konfirmasi', $course->slug)
+            return redirect()->route('payment.success', $course->slug)
                 ->with('success', 'Pelatihan gratis berhasil diklaim!');
         }
 
-        // 3. SETUP MIDTRANS
+        // 4. SETUP MIDTRANS
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
         Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
         Config::$isSanitized = true;
         Config::$is3ds = true;
 
-        // 4. CEK TRANSAKSI PENDING
+        // 5. CEK TRANSAKSI PENDING
         $pendingTransaction = Transaction::where('user_id', $user->user_id)
             ->where('course_id', $course->id)
             ->where('status', 'pending')
             ->first();
 
-        if ($pendingTransaction && $pendingTransaction->snap_token && now()->lessThan($pendingTransaction->batas_waktu)) {
+        // PENTING: Pastikan qty yang dibeli SAMA dengan qty di transaksi pending. 
+        // Kalau beda (misal awalnya klik beli 1, terus balik lagi klik beli 5), batalkan yang lama!
+        if ($pendingTransaction && $pendingTransaction->snap_token && now()->lessThan($pendingTransaction->batas_waktu) && $pendingTransaction->jumlah_peserta === $jumlahPeserta) {
             $snapToken = $pendingTransaction->snap_token;
             $transaction = $pendingTransaction;
         } else {
@@ -95,52 +116,53 @@ class PembayaranController extends Controller
 
             $params = [
                 'transaction_details' => [
-                    'order_id' => $orderId,
-                    'gross_amount' => (int) $course->price,
+                    'order_id'     => $orderId,
+                    'gross_amount' => $nominalTotal, // Pakai nominal total
                 ],
                 'customer_details' => [
                     'first_name' => $user->name,
-                    'email' => $user->email,
+                    'email'      => $user->email,
                 ],
                 'item_details' => [
                     [
-                        'id' => $course->id,
-                        'price' => (int) $course->price,
-                        'quantity' => 1,
-                        'name' => mb_substr($course->title, 0, 49),
+                        'id'       => $course->id,
+                        'price'    => $hargaPerPeserta, // Harga satuan
+                        'quantity' => $jumlahPeserta,   // Jumlah yang dibeli
+                        'name'     => mb_substr($course->title, 0, 49),
                     ]
                 ],
-                // REVISI DI SINI BOS: start_time dihapus & duration dinaikin ke 3 menit
                 'expiry' => [
-                    'unit' => 'minute',
+                    'unit'     => 'minute',
                     'duration' => 3 
                 ],
                 'callbacks' => [
-                    'finish' => 'http://127.0.0.1:8000/payment/finish',
-                    'error' => 'http://127.0.0.1:8000/payment/finish',
+                    'finish'  => 'http://127.0.0.1:8000/payment/finish',
+                    'error'   => 'http://127.0.0.1:8000/payment/finish',
                     'pending' => 'http://127.0.0.1:8000/payment/finish',
                 ]
             ];
 
             $snapToken = Snap::getSnapToken($params);
 
-            // Simpan transaksi baru fresh ke database
+            // Simpan transaksi baru dengan kolom yang baru kita buat
             $transaction = Transaction::create([
-                'user_id' => $user->user_id,
-                'course_id' => $course->id,
-                'nomor_transaksi' => $orderId,
-                'nominal' => $course->price,
-                'status' => 'pending',
-                'snap_token' => $snapToken,
-                'batas_waktu' => now()->addMinutes(3), // Di DB set 3 menit juga
+                'user_id'           => $user->user_id,
+                'course_id'         => $course->id,
+                'nomor_transaksi'   => $orderId,
+                'jumlah_peserta'    => $jumlahPeserta,
+                'harga_per_peserta' => $hargaPerPeserta,
+                'nominal'           => $nominalTotal,
+                'status'            => 'pending',
+                'snap_token'        => $snapToken,
+                'batas_waktu'       => now()->addMinutes(3),
             ]);
         }
 
-        // 5. Lempar semua data ke halaman React
+        // 6. Lempar semua data ke halaman React
         return Inertia::render('Payment/DetailPembelian', [
-            'course' => $course,
-            'transaction' => $transaction,
-            'snapToken' => $snapToken,
+            'course'            => $course,
+            'transaction'       => $transaction,
+            'snapToken'         => $snapToken,
             'midtransClientKey' => env('MIDTRANS_CLIENT_KEY')
         ]);
     }
@@ -152,15 +174,13 @@ class PembayaranController extends Controller
     {
         $orderId = $request->query('order_id');
         $transactionStatus = $request->query('transaction_status');
-        $statusCode = $request->query('status_code'); // Kita ambil status_code-nya sekalian
+        $statusCode = $request->query('status_code');
 
-        // Cari datanya di DB
         $transaction = Transaction::where('nomor_transaksi', $orderId)->first();
 
-        // Proteksi jika data ghaib
         if (!$transaction) {
             return redirect()->route('beli-pelatihan')
-                ->with('error', 'Transaksi tidak ditemukan bos.');
+                ->with('error', 'Transaksi tidak ditemukan.');
         }
 
         $course = \App\Models\Course::find($transaction->course_id);
@@ -169,8 +189,11 @@ class PembayaranController extends Controller
             return redirect()->route('beli-pelatihan');
         }
 
-        // REVISI DETEKTOR UTAMA: 
-        // Kita nyatakan SUKSES jika statusnya 'settlement' OR status_code-nya 200 OR dapet flag 'success' dari frontend
+        // SATPAM ANTI-REFRESH: Cegah proses double jika transaksi sudah sukses
+        if ($transaction->status === 'success') {
+            return redirect()->route('payment.success', $course->slug);
+        }
+
         if (
             $transactionStatus === 'settlement' || 
             $transactionStatus === 'capture' || 
@@ -178,42 +201,60 @@ class PembayaranController extends Controller
             $request->query('flag') === 'success'
         ) {
             
-            // 1. Update status transaksi di database jadi 'success'
             $transaction->update(['status' => 'success']);
+            $buyer = \App\Models\User::find($transaction->user_id);
 
-            // 2. Masukkan user ke tabel enrollments biar kelasnya kebuka!
-            $cekEnrollment = Enrollment::where('user_id', $transaction->user_id)
-                ->where('course_id', $transaction->course_id)
-                ->exists();
+            // LOGIKA KORPORAT
+            if ($buyer && $buyer->kategori_pensiun === 'korporat') {
+                $voucherLama = \App\Models\CorporateVoucher::where('corporate_user_id', $buyer->user_id)
+                    ->where('course_id', $transaction->course_id)
+                    ->first();
 
-            if (!$cekEnrollment) {
-                Enrollment::create([
-                    'user_id' => $transaction->user_id,
-                    'course_id' => $transaction->course_id,
-                    'tanggal_daftar' => now(),
-                    'status' => 'active', // Langsung aktif siap belajar!
-                    'progress_persen' => 0,
-                    'is_completed' => false,
-                ]);
+                if ($voucherLama) {
+                    $voucherLama->increment('max_uses', $transaction->jumlah_peserta);
+                } else {
+                    \App\Models\CorporateVoucher::create([
+                        'corporate_user_id' => $buyer->user_id,
+                        'course_id'         => $transaction->course_id,
+                        'code'              => 'CORP-' . strtoupper(\Illuminate\Support\Str::random(5)) . '-' . rand(100, 999),
+                        'max_uses'          => $transaction->jumlah_peserta,
+                        'used_count'        => 0,
+                    ]);
+                }
+            } 
+            // LOGIKA PUBLIK / ASN
+            else {
+                $cekEnrollment = Enrollment::where('user_id', $transaction->user_id)
+                    ->where('course_id', $transaction->course_id)
+                    ->exists();
+
+                if (!$cekEnrollment) {
+                    Enrollment::create([
+                        'user_id'         => $transaction->user_id,
+                        'course_id'       => $transaction->course_id,
+                        'tanggal_daftar'  => now(),
+                        'status'          => 'active',
+                        'progress_persen' => 0,
+                        'is_completed'    => false,
+                    ]);
+                }
             }
 
-            // Lempar ke halaman sukses bawaan React lu
             return redirect()->route('payment.success', $course->slug);
         }
 
-        // JIKA EXPIRED / GAGAL (Biasanya status_code 407 atau status expire)
+        // JIKA EXPIRED / GAGAL
         if ($transactionStatus === 'expire' || $transactionStatus === 'cancel' || $transactionStatus === 'deny' || $statusCode == 407) {
             $transaction->update(['status' => 'failed']);
 
             return redirect()->route('payment.detail', $course->slug)
-                ->with('error', 'Waktu pembayaran lu udah habis bos. Silakan klik tombol bayar lagi!');
+                ->with('error', 'Waktu pembayaran habis atau dibatalkan.');
         }
 
-        // Fallback aman kalau statusnya masih beneran pending gantung
+        // JIKA PENDING
         return redirect()->route('payment.detail', $course->slug)
-            ->with('info', 'Pembayaran Anda sedang diproses, mohon tunggu sebentar.');
+            ->with('info', 'Pembayaran sedang diproses.');
     }
-
     // =================================================================
     // 4. FUNGSI UNTUK NAMPILIN HALAMAN STRUK SUKSES (DINAMIS ASLI)
     // =================================================================
@@ -233,7 +274,23 @@ class PembayaranController extends Controller
             ->latest()
             ->first();
 
-        // Lempar data aslinya ke React
+        // ==========================================
+        // LOGIKA PENGECEKAN KATEGORI AKUN
+        // ==========================================
+        if ($user && $user->kategori_pensiun === 'korporat') {
+            $voucher = \App\Models\CorporateVoucher::where('corporate_user_id', $user->user_id)
+                ->where('course_id', $course->id)
+                ->latest()
+                ->first();
+
+            return Inertia::render('Korporat/PembayaranBerhasilKorporat', [
+                'course' => $course,
+                'transaction' => $transaction,
+                'voucher' => $voucher,
+            ]);
+        }
+
+        // Lempar ke halaman sukses umum (Publik / ASN)
         return Inertia::render('Payment/PembayaranBerhasil', [
             'course' => $course,
             'transaction' => $transaction,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import KorporatLayout from '@/Layouts/KorporatLayout';
 
 // Komponen Ikon untuk Kategori Kelas
@@ -41,6 +41,13 @@ function CourseCard({ course }) {
     };
 
     const totalPrice = (course.price || 0) * qty;
+
+    const handleBeli = () => {
+        router.get(route('payment.detail', {
+            slug: course.slug || course.id,
+            qty: qty
+        }));
+    };
 
     return (
         <div className="flex flex-col overflow-hidden rounded-2xl border border-[#E4E2E1] bg-white shadow-sm">
@@ -114,9 +121,9 @@ function CourseCard({ course }) {
                 <div className="mt-4 flex items-center gap-3">
                     <button
                         type="button"
+                        onClick={handleBeli} // <-- TAMBAHKAN INI
                         className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
                     >
-                        {/* Tombol beli menampilkan total harga jika ingin */}
                         Beli ({qty})
                     </button>
 

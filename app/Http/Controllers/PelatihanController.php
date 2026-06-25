@@ -10,6 +10,8 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\CorporateVoucher;
+use App\Models\VoucherRedemption;
 
 class PelatihanController extends Controller
 {
@@ -17,8 +19,13 @@ class PelatihanController extends Controller
     {
         $banners = DashboardBanner::where('is_active', true)->latest()->get();
         $categories = CourseCategory::all();
+        $user = Auth::user();
+        
+        $kategoriUser = $user ? $user->kategori_pensiun : 'publik';
+
         $courses = Course::with('category')
             ->where('status', 'published')
+            ->where('is_visible_' . $kategoriUser, true) 
             ->latest()
             ->get();
 
@@ -31,17 +38,33 @@ class PelatihanController extends Controller
 
     public function show(Request $request, $slug)
     {
-       $course = Course::with(['category', 'lessons'])->where('slug', $slug)->firstOrFail();
+        // 1. Ambil data course (Tambahan: Pastikan hanya status 'published' yang bisa diakses)
+        $course = Course::with(['category', 'lessons'])
+            ->where('slug', $slug)
+            ->where('status', 'published')
+            ->firstOrFail();
 
+        // 2. VALIDASI VISIBILITAS (Mencegah URL Bypass)
+        $kategoriUser = $request->user() ? $request->user()->kategori_pensiun : 'publik';
+        $kolomVisibilitas = 'is_visible_' . $kategoriUser;
+
+        if (!$course->$kolomVisibilitas) {
+            // Tolak akses jika kolom is_visible_{kategori} bernilai false
+            abort(404, 'Akses Ditolak: Pelatihan ini tidak tersedia untuk kategori akun Anda.');
+            // Tips: Ganti jadi abort(404) kalau lu mau pura-pura halamannya beneran nggak ada.
+        }
+
+        // 3. Ambil data course terkait (Tambahan: Pastikan related course juga difilter visibilitasnya!)
         $relatedCourses = Course::with('category')
             ->where('category_id', $course->category_id)
             ->where('id', '!=', $course->id)
             ->where('status', 'published')
+            ->where($kolomVisibilitas, true) // <-- Biar rekomendasi kelas di bawah ga bocor
             ->take(3)
             ->get();
 
-        // Tentukan URL tombol "Kembali" berdasarkan route atau kategori user login.
-        $isCorporateUser = $request->user()?->kategori_pensiun === 'korporat';
+        // 4. Tentukan URL tombol "Kembali"
+        $isCorporateUser = $kategoriUser === 'korporat';
         $backUrl = $request->routeIs('korporat.*') || $isCorporateUser
             ? '/korporat/beli-pelatihan'
             : '/beli-pelatihan';
@@ -299,5 +322,65 @@ class PelatihanController extends Controller
     private function storageUrl(?string $path): string
     {
         return $path ? '/storage/' . preg_replace('/^public\//', '', $path) : '';
+    }
+    public function klaimVoucher(Request $request)
+    {
+        $request->validate([
+            'code' => ['required', 'string'],
+        ]);
+
+        $user = auth()->user();
+
+        // 1. Cari kodenya di database
+        $voucher = \App\Models\CorporateVoucher::where('code', $request->code)->first();
+
+        if (!$voucher) {
+            return back()->with('error', 'Kode voucher tidak valid atau salah ketik bos.');
+        }
+
+        // 2. Cek apakah kuota vouchernya sudah habis
+        if ($voucher->used_count >= $voucher->max_uses) {
+            return back()->with('error', 'Maaf, kuota penggunaan kode voucher ini sudah habis.');
+        }
+
+        // 3. Cek history klaim akun ini biar ga double claim
+        $sudahKlaimKodeIni = \App\Models\VoucherRedemption::where('user_id', $user->user_id)
+            ->where('corporate_voucher_id', $voucher->id)
+            ->exists();
+
+        if ($sudahKlaimKodeIni) {
+            return back()->with('error', 'Akun anda sudah klaim kode voucher ini.');
+        }
+
+        // 4. Cek apakah user sebenarnya sudah punya kelas ini lewat jalur lain
+        $sudahEnrollKelas = \App\Models\Enrollment::where('user_id', $user->user_id)
+            ->where('course_id', $voucher->course_id)
+            ->exists();
+
+        if ($sudahEnrollKelas) {
+            return back()->with('error', 'Anda sudah terdaftar di kelas ini.');
+        }
+
+        // 5. Eksekusi klaim menggunakan DB Transaction
+        \Illuminate\Support\Facades\DB::transaction(function () use ($voucher, $user) {
+            $voucher->increment('used_count');
+
+            \App\Models\Enrollment::create([
+                'user_id'         => $user->user_id,
+                'course_id'       => $voucher->course_id,
+                'tanggal_daftar'  => now(),
+                'status'          => 'active',
+                'progress_persen' => 0,
+                'is_completed'    => false,
+            ]);
+
+            \App\Models\VoucherRedemption::create([
+                'user_id'              => $user->user_id,
+                'corporate_voucher_id' => $voucher->id,
+                'redeemed_at'          => now(),
+            ]);
+        });
+
+        return back()->with('success', 'Kode berhasil diklaim, silakan cek menu pelatihan.');
     }
 }

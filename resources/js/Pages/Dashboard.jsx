@@ -1,10 +1,29 @@
 import { useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import DashboardLayout from '../Layouts/DashboardLayout';
 
-export default function Dashboard({ banners, events }) {
+export default function Dashboard({ banners, events, }) {
     // State untuk Carousel
     const [currentIndex, setCurrentIndex] = useState(0);
+
+    const [voucherCode, setVoucherCode] = useState('');
+
+    const handleGabung = () => {
+        if (!voucherCode) {
+            alert('Masukkan kode voucher');
+            return;
+        }
+
+        router.post(route('pelatihan.voucher.klaim'), {
+            code: voucherCode
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                // Reset kolom input kalau berhasil
+                setVoucherCode('');
+            }
+        });
+    };
 
     // Auto-slide tiap 5 detik
     useEffect(() => {
@@ -26,11 +45,10 @@ export default function Dashboard({ banners, events }) {
                         banners.map((banner, index) => (
                             <div
                                 key={banner.id}
-                                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center px-10 ${
-                                    index === currentIndex
-                                        ? 'opacity-100 z-10'
-                                        : 'opacity-0 z-0'
-                                }`}
+                                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center px-10 ${index === currentIndex
+                                    ? 'opacity-100 z-10'
+                                    : 'opacity-0 z-0'
+                                    }`}
                             >
                                 {/* PANGGIL image_path BUKAN gambar */}
                                 <div
@@ -86,11 +104,10 @@ export default function Dashboard({ banners, events }) {
                                 <button
                                     key={index}
                                     onClick={() => setCurrentIndex(index)}
-                                    className={`transition-all duration-300 rounded-full ${
-                                        index === currentIndex
-                                            ? 'w-8 h-1.5 bg-[#006B32]'
-                                            : 'w-2 h-2 bg-white/40 hover:bg-white/80'
-                                    }`}
+                                    className={`transition-all duration-300 rounded-full ${index === currentIndex
+                                        ? 'w-8 h-1.5 bg-[#006B32]'
+                                        : 'w-2 h-2 bg-white/40 hover:bg-white/80'
+                                        }`}
                                 />
                             ))}
                         </div>
@@ -176,18 +193,24 @@ export default function Dashboard({ banners, events }) {
                                     <span>🏢</span> Gabung Pelatihan Korporat
                                 </h3>
                                 <p className="text-xs text-[#6B7280] max-w-[300px]">
-                                    Masukkan kode akses dari perusahaan Anda
-                                    untuk mulai belajar.
+                                    Masukkan kode akses dari perusahaan Anda untuk mulai belajar.
                                 </p>
                             </div>
                             <div className="flex gap-3 w-full md:w-auto">
                                 <input
+                                    type="text"
+                                    value={voucherCode}
+                                    onChange={(e) => setVoucherCode(e.target.value)}
                                     className="border border-[#E4E2E1] px-4 py-3 rounded-lg w-full md:w-[240px] text-xs bg-[#FBF9F8] outline-none focus:border-[#008740]"
-                                    placeholder="CONTOH: CORP-2024-XXXX"
+                                    placeholder="CONTOH: CORP-2026-XXXX"
                                 />
-                                <Link href="/gabung-kelas" className="bg-[#FF8928] hover:bg-[#e67a22] text-white px-6 py-3 rounded-lg font-bold text-sm whitespace-nowrap flex items-center gap-2 transition-colors">
+                                <button
+                                    type="button"
+                                    onClick={handleGabung}
+                                    className="bg-[#FF8928] hover:bg-[#e67a22] text-white px-6 py-3 rounded-lg font-bold text-sm whitespace-nowrap flex items-center gap-2 transition-colors"
+                                >
                                     <span>🔗</span> Gabung
-                                </Link>
+                                </button>
                             </div>
                         </div>
 
@@ -362,13 +385,13 @@ export default function Dashboard({ banners, events }) {
                                                     🕐{' '}
                                                     {event.jam
                                                         ? event.jam.substring(
-                                                              0,
-                                                              5,
-                                                          )
+                                                            0,
+                                                            5,
+                                                        )
                                                         : ''}{' '}
                                                     WIB
                                                     {event.jenis_event ===
-                                                    'Online'
+                                                        'Online'
                                                         ? ' • 🎥 Live'
                                                         : ''}
                                                 </p>

@@ -12,16 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('corporate_profiles', function (Blueprint $table) {
-        $table->id('corp_profile_id');
-        $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-        $table->string('nama_perusahaan');
-        $table->string('jabatan');
-        $table->string('kategori_bisnis');
-        $table->string('email_perusahaan');
-        $table->string('alamat_kantor');
-        $table->string('email_bisnis');
-        $table->string('no_telepon');
-        $table->timestamps();
+            $table->id('corp_profile_id');
+            $table->foreignId('user_id')
+                ->constrained('users', 'user_id')
+                ->cascadeOnDelete();
+            $table->string('nama_perusahaan');
+            $table->string('jabatan');
+            $table->string('kategori_bisnis');
+            $table->string('email_perusahaan');
+            $table->string('alamat_kantor');
+            $table->string('email_bisnis');
+            $table->string('no_telepon');
+            $table->timestamps();
         });
     }
 

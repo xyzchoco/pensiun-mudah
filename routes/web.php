@@ -23,14 +23,27 @@ Route::get('/pelatihan/{slug}', [PelatihanController::class, 'show'])->name('pel
 Route::get('/auth/google/redirect', fn () => Socialite::driver('google')->redirect())->name('google.redirect');
 Route::get('/auth/google/callback', function () {
     $googleUser = Socialite::driver('google')->user();
-    $user = User::updateOrCreate(['email' => $googleUser->email], [
-        'name' => $googleUser->name,
-        'password' => bcrypt(str()->random(16)),
-        'role_id' => 2
+    
+    // Cek apakah user sudah terdaftar di database
+    $user = User::where('email', $googleUser->email)->first();
+
+    if ($user) {
+        // Jika ADA, langsung login
+        Auth::login($user);
+        
+        // Cek apakah sudah lewat masa onboarding
+        if (!$user->kategori_pensiun) {
+            return redirect()->route('onboarding.kategori');
+        }
+        
+        return redirect()->intended($user->kategori_pensiun === 'korporat' ? '/korporat/dashboard' : '/dashboard');
+    }
+
+    return redirect()->route('register')->with([
+        'error' => 'Akun belum terdaftar. Silakan registrasi terlebih dahulu.',
+        'google_name' => $googleUser->name,
+        'google_email' => $googleUser->email,
     ]);
-    Auth::login($user);
-    if (!$user->kategori_pensiun) return redirect()->route('onboarding.kategori');
-    return redirect()->intended($user->kategori_pensiun === 'korporat' ? '/korporat/dashboard' : '/dashboard');
 });
 
 // Event Registration (Public)
@@ -111,16 +124,43 @@ Route::middleware(['auth'])->group(function () {
 
         // Korporat
         Route::get('/korporat/dashboard', function () {
-            return Inertia::render('Korporat/DashboardKorporat', [
-                'banners' => DashboardBanner::where('is_active', true)->latest()->get(),
-                'events'  => Webinar::where('is_published', true)->latest()->take(3)->get(),
-            ]);
-        })->name('korporat.dashboard');
+    $user = auth()->user();
+
+    // Ambil 3 data voucher/kelas terakhir yang dibeli oleh korporat ini
+    $purchasedCourses = \App\Models\CorporateVoucher::with('course.category')
+        ->where('corporate_user_id', $user->user_id)
+        ->latest()
+        ->take(3) // Kita batasi 3 karena ada tombol "Lihat Semua"
+        ->get()
+        ->map(function ($voucher) {
+            return [
+                'id' => $voucher->course->id,
+                'slug' => $voucher->course->slug,
+                'title' => $voucher->course->title,
+                // Hilangkan tag HTML dari deskripsi
+                'desc' => \Illuminate\Support\Str::limit(strip_tags($voucher->course->description), 80),
+                'thumbnail' => $voucher->course->thumbnail,
+                'max_uses' => $voucher->max_uses,
+                'used_count' => $voucher->used_count,
+                'category_color' => $voucher->course->category->warna_bg_icon ?? '#006B32',
+            ];
+        });
+
+    return Inertia::render('Korporat/DashboardKorporat', [
+        'banners' => \App\Models\DashboardBanner::where('is_active', true)->latest()->get(),
+        'events'  => \App\Models\Webinar::where('is_published', true)->latest()->take(3)->get(),
+        'purchasedCourses' => $purchasedCourses, // Lempar datanya ke React
+    ]);
+})->name('korporat.dashboard');
 
         Route::get('/korporat/beli-pelatihan', function () {
             return Inertia::render('Korporat/BeliPelatihanKorporat', [
                 'banners' => DashboardBanner::where('is_active', true)->latest()->get(),
-                'courses' => Course::with('category')->latest()->get(),
+                'courses' => Course::with('category')
+                    ->where('status', 'published')
+                    ->where('is_visible_korporat', true)
+                    ->latest()
+                    ->get(),
             ]);
         })->name('korporat.beli-pelatihan');
 
@@ -230,6 +270,7 @@ Route::middleware(['auth'])->group(function () {
         })->name('event.detail');
 
         // Payments & Learning
+        Route::post('/pelatihan/klaim-voucher', [PelatihanController::class, 'klaimVoucher'])->name('pelatihan.voucher.klaim');
         Route::get('/pelatihan/{slug}/pembelian', [PembayaranController::class, 'checkout'])->name('payment.detail');
         Route::get('/payment/finish', [PembayaranController::class, 'finish'])->name('payment.finish');
         Route::get('/payment/{slug}/berhasil', [PembayaranController::class, 'success'])->name('payment.success');

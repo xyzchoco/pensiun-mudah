@@ -1,32 +1,7 @@
 import { Link } from '@inertiajs/react';
 import KorporatLayout from '@/Layouts/KorporatLayout';
 
-// Mock data: Courses
-const purchasedCourses = [
-    {
-        title: 'Manajemen Keuangan',
-        desc: 'Strategi pengelolaan dana pensiun dan investasi hari tua.',
-        members: 10,
-        color: 'bg-[#1A7A47]',
-        icon: 'wallet',
-    },
-    {
-        title: 'Kesehatan Senior',
-        desc: 'Panduan pola hidup sehat dan pencegahan penyakit usia lanjut.',
-        members: 10,
-        color: 'bg-[#FF8928]',
-        icon: 'shield',
-    },
-    {
-        title: 'Persiapan Mental',
-        desc: 'Kesiapan psikologis menghadapi masa transisi purnatugas.',
-        members: 13,
-        color: 'bg-[#C2255C]',
-        icon: 'brain',
-    },
-];
-
-// Mock data: Progress
+// Mock data: Progress (Biarkan sementara kalau belum ada tabelnya)
 const memberProgress = [
     ['AS', 'Agus Setiawan', 95, 'bg-[#00A553]', 'text-[#00A553]'],
     ['RL', 'Ratna Lestari', 88, 'bg-[#00A553]', 'text-[#00A553]'],
@@ -35,7 +10,7 @@ const memberProgress = [
     ['EP', 'Eko Prasetyo', 68, 'bg-[#A8632A]', 'text-[#A8632A]'],
 ];
 
-// Mock data: Activities
+// Mock data: Activities (Biarkan sementara)
 const activities = [
     ['join', 'Budi bergabung ke Pelatihan Anda', '2 menit yang lalu'],
     ['done', 'Dini menyelesaikan Kuis 1', '15 menit yang lalu'],
@@ -43,33 +18,17 @@ const activities = [
 ];
 
 // Icon Component
-function CourseIcon({ name }) {
-    if (name === 'wallet') {
-        return (
-            <svg className="h-9 w-9" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                <rect x="3" y="6" width="18" height="13" rx="2" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M16 14h2" />
-            </svg>
-        );
-    }
-
-    if (name === 'shield') {
-        return (
-            <svg className="h-9 w-9" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v6M9 11h6" />
-            </svg>
-        );
-    }
-
+function CourseIcon() {
+    // Icon default kalau ga ada gambar
     return (
-        <svg className="h-9 w-9" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 3a4 4 0 00-4 4v1a3 3 0 000 6v1a4 4 0 004 4h1V3H9zM15 3a4 4 0 014 4v1a3 3 0 010 6v1a4 4 0 01-4 4h-1V3h1z" />
+        <svg className="h-10 w-10 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
     );
 }
 
-export default function DashboardKorporat({ banners = [], events = [] }) {
+// TAMBAHKAN purchasedCourses SEBAGAI PROPS DARI BACKEND DI SINI BOS
+export default function DashboardKorporat({ banners = [], events = [], purchasedCourses = [] }) {
     return (
         <KorporatLayout
             title="Dashboard HRD - Pensiun Mudah"
@@ -135,30 +94,51 @@ export default function DashboardKorporat({ banners = [], events = [] }) {
                     </Link>
                 </div>
 
-                {/* Purchased Courses Grid */}
+                {/* Purchased Courses Grid (SUDAH DINAMIS) */}
                 <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {purchasedCourses.map((course) => (
-                        <article
-                            key={course.title}
-                            className="overflow-hidden rounded-2xl border border-[#E4E2E1] bg-white shadow-sm"
-                        >
-                            <div className={`flex h-32 items-center justify-center text-white ${course.color}`}>
-                                <CourseIcon name={course.icon} />
-                            </div>
-                            <div className="p-5">
-                                <h3 className="font-bold text-[#1B1C1C]">{course.title}</h3>
-                                <p className="mt-1 text-sm text-[#3D4A3E]">{course.desc}</p>
-                                <div className="mt-4 flex items-center justify-between">
-                                    <span className="rounded-md bg-[#E5F0E9] px-2.5 py-1 text-xs font-bold text-[#006B32]">
-                                        AKTIF
-                                    </span>
-                                    <span className="text-xs text-[#6B7280]">
-                                        {course.members} Anggota
-                                    </span>
+                    {purchasedCourses.length > 0 ? (
+                        purchasedCourses.map((course, index) => (
+                            <article
+                                key={index}
+                                className="flex flex-col overflow-hidden rounded-2xl border border-[#E4E2E1] bg-white shadow-sm"
+                            >
+                                {/* Nampilin Thumbnail Asli kalau ada */}
+                                {course.thumbnail ? (
+                                    <img
+                                        src={`/storage/${course.thumbnail.replace(/^public\//, '')}`}
+                                        alt={course.title}
+                                        className="h-32 w-full object-cover"
+                                    />
+                                ) : (
+                                    <div
+                                        className="flex h-32 items-center justify-center text-white"
+                                        style={{ backgroundColor: course.category_color || '#006B32' }}
+                                    >
+                                        <CourseIcon />
+                                    </div>
+                                )}
+
+                                <div className="flex flex-1 flex-col p-5">
+                                    <h3 className="font-bold text-[#1B1C1C] line-clamp-2">{course.title}</h3>
+                                    <p className="mt-1 text-sm text-[#3D4A3E] line-clamp-2">{course.desc}</p>
+
+                                    <div className="mt-auto pt-4 flex items-center justify-between">
+                                        <span className="rounded-md bg-[#E5F0E9] px-2.5 py-1 text-xs font-bold text-[#006B32]">
+                                            AKTIF
+                                        </span>
+                                        <span className="text-xs font-semibold text-[#6B7280]">
+                                            {/* Ini yang nge-define member yang udah join! */}
+                                            {course.used_count} / {course.max_uses} Terpakai
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        </article>
-                    ))}
+                            </article>
+                        ))
+                    ) : (
+                        <div className="col-span-full rounded-2xl border-2 border-dashed border-[#E4E2E1] py-10 text-center">
+                            <p className="text-sm font-semibold text-[#6B7280]">Perusahaan Anda belum membeli pelatihan apapun.</p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">

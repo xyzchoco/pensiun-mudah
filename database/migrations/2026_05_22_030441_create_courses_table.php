@@ -22,7 +22,10 @@ return new class extends Migration
             $table->string('thumbnail')->nullable();
             $table->enum('course_type', ['free', 'premium'])->default('free');
             $table->decimal('price', 10, 2)->default(0);
-            $table->string('status')->default('draft'); // draft, published
+            $table->string('status')->default('draft');
+            $table->boolean('is_visible_publik')->default(false);
+            $table->boolean('is_visible_korporat')->default(false);
+            $table->boolean('is_visible_asn')->default(false);
             
             $table->timestamps();
         });

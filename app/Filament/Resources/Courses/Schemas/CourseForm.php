@@ -7,6 +7,9 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Section;
 use Illuminate\Support\Str;
 
 class CourseForm
@@ -58,9 +61,9 @@ class CourseForm
                     ->label('Thumbnail Kursus')
                     ->image()
                     ->disk('public')
-                    ->directory('course-thumbnails'), // Nanti gambarnya tersimpan di folder ini
+                    ->directory('course-thumbnails'),
 
-                // Harga & Status
+                // Harga
                 Select::make('course_type')
                     ->label('Tipe Kursus')
                     ->options([
@@ -76,14 +79,42 @@ class CourseForm
                     ->default(0)
                     ->prefix('Rp'),
 
-                Select::make('status')
-                    ->label('Status Publikasi')
-                    ->options([
-                        'draft' => 'Draft (Belum Rilis)',
-                        'published' => 'Published (Rilis)',
-                    ])
-                    ->required()
-                    ->default('draft'),
+                // ==========================================
+                // PENGATURAN PUBLIKASI & VISIBILITAS (BARU)
+                // ==========================================
+                Section::make('Pengaturan Publikasi & Visibilitas')
+                    ->description('Atur status rilis dan target audiens untuk pelatihan ini.')
+                    ->schema([
+                        // Lapis 1: Status Utama (Sesuai Diagram)
+                        Select::make('status')
+                            ->label('Status Publikasi Utama')
+                            ->options([
+                                'draft' => 'Draft (Belum Rilis)',
+                                'published' => 'Published (Rilis ke Audiens)',
+                                'archived' => 'Archived (Diarsipkan)',
+                            ])
+                            ->required()
+                            ->default('draft'),
+
+                        // Lapis 2: Visibilitas Audiens
+                        Fieldset::make('Target Audiens (Berlaku jika status "Published")')
+                            ->schema([
+                                Toggle::make('is_visible_publik')
+                                    ->label('Bisa dilihat Publik')
+                                    ->onColor('success')
+                                    ->default(true), // Default publik bisa lihat
+
+                                Toggle::make('is_visible_korporat')
+                                    ->label('Bisa dilihat Korporat')
+                                    ->onColor('warning')
+                                    ->default(false),
+
+                                Toggle::make('is_visible_asn')
+                                    ->label('Bisa dilihat ASN')
+                                    ->onColor('primary')
+                                    ->default(false),
+                            ])->columns(3),
+                    ])->collapsible(),
             ]);
     }
 }
