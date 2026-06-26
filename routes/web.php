@@ -274,16 +274,10 @@ Route::middleware(['auth'])->group(function () {
                 'backHref' => route('korporat.beli-pelatihan'),
             ]);
         })->name('korporat.pelatihan.detail-kelas');
-        Route::get('/korporat/pelatihan/{slug}/pembelian-online', function ($slug, Request $request) {
-            $course = Course::with('category')->where('slug', $slug)->firstOrFail();
-            $quantity = max(1, (int) $request->query('qty', 1));
-
-            return Inertia::render('Korporat/DetailPembelianOnline', [
-                'course' => $course,
-                'quantity' => $quantity,
-                'backHref' => route('korporat.pelatihan.detail', $course->slug),
-            ]);
-        })->name('korporat.pelatihan.pembelian-online');
+        Route::get(
+            '/korporat/pelatihan/{slug}/pembelian-online',
+            [PembayaranController::class, 'checkoutKorporat']
+        )->name('korporat.pelatihan.pembelian-online');
         Route::get('/korporat/pelatihan-offline/{slug}', function ($slug, Request $request) {
             $course = Course::with('category')->where('slug', $slug)->first();
             $price = $course?->price ?? (int) $request->query('price', 0);

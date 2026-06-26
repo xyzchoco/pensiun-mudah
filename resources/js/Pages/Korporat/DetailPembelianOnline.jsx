@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import PaymentHeader from '@/Components/Payment/PaymentHeader';
 import Footer from '@/Components/Footer';
 
@@ -19,6 +19,9 @@ function stripHtml(value) {
 
 export default function DetailPembelian({
     course = null,
+    transaction = null,
+    snapToken,
+    midtransClientKey,
     badge = 'Kursus Populer',
     title = 'Manajemen Investasi Aman untuk Pensiunan',
     description = 'Mulai bangun portofolio rendah risiko yang stabil untuk masa tua yang tenang.',
@@ -26,15 +29,61 @@ export default function DetailPembelian({
     total = 'Rp 999.000',
     quantity = 5,
     orderId = 'IND-0001-2025',
-    backHref = '/beli-pelatihan',
+    backHref = '/korporat/beli-pelatihan',
 }) {
-    const [qty, setQty] = useState(Math.max(1, Number(quantity) || 1));
+    // Inisialisasi state Qty (prioritas dari data transaction, lalu prop quantity)
+    const [qty, setQty] = useState(transaction?.jumlah_peserta || Math.max(1, Number(quantity) || 1));
+
+    // Load Midtrans Snap Script
+    useEffect(() => {
+        if (!midtransClientKey) return;
+
+        const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js"; // Ganti ke app.midtrans.com untuk Production
+        const script = document.createElement('script');
+        script.src = snapScript;
+        script.setAttribute('data-client-key', midtransClientKey);
+        script.async = true;
+        document.body.appendChild(script);
+
+        return () => { document.body.removeChild(script); };
+    }, [midtransClientKey]);
+
+    const handlePay = () => {
+        if (window.snap && snapToken) {
+            window.snap.pay(snapToken, {
+                onSuccess(result) {
+                    router.get(
+                        `/payment/finish?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}&flag=success`
+                    );
+                },
+
+                onPending(result) {
+                    router.get(
+                        `/payment/finish?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}`
+                    );
+                },
+
+                onError() {
+                    alert("Pembayaran gagal.");
+                },
+
+                onClose() {
+                    console.log("Popup ditutup");
+                },
+            });
+        }
+    };
+
+    // Helper data
     const courseTitle = course?.title || title;
     const courseDescription = stripHtml(course?.description) || description;
     const coursePrice = course?.price ?? 199000;
     const subtotal = coursePrice * qty;
+
     const coursePriceLabel = course ? formatRupiah(coursePrice) : price;
-    const totalLabel = course ? formatRupiah(subtotal) : total;
+    // Menggunakan perhitungan dinamis agar harga total berubah saat Qty ditambah/dikurang
+    const totalLabel = formatRupiah(subtotal);
+
     const thumbnail = course?.thumbnail
         ? `/storage/${String(course.thumbnail).replace(/^public\//, '')}`
         : null;
@@ -79,6 +128,7 @@ export default function DetailPembelian({
                     </h1>
 
                     <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+                        {/* Kolom Kiri: Detail Kursus & Midtrans Info */}
                         <div className="space-y-6 lg:col-span-2">
                             <div className="rounded-2xl border border-[#E4E2E1] bg-white p-5 shadow-sm">
                                 <div className="flex flex-col gap-5 sm:flex-row">
@@ -135,8 +185,7 @@ export default function DetailPembelian({
                                             Pembayaran Diproses oleh Midtrans
                                         </h3>
                                         <p className="mt-1 text-sm leading-relaxed text-[#3D4A3E]">
-                                            Silakan klik tombol "Lanjutkan ke
-                                            Pembayaran" di sebelah kanan. Anda
+                                            Silakan klik tombol "Bayar Sekarang" di sebelah kanan. Anda
                                             dapat memilih metode pembayaran
                                             (Virtual Account semua bank, GoPay,
                                             QRIS, atau Kartu Kredit) pada
@@ -156,6 +205,7 @@ export default function DetailPembelian({
                             </div>
                         </div>
 
+                        {/* Kolom Kanan: Ringkasan & Action */}
                         <div className="lg:col-span-1">
                             <div className="rounded-2xl border border-[#E4E2E1] bg-[#F6F3F2] p-6">
                                 <h2 className="text-xl font-bold text-[#1B1C1C]">
@@ -214,6 +264,7 @@ export default function DetailPembelian({
                                     </p>
                                 </div>
 
+                                {/* Kontrol Kuantitas */}
                                 <div className="mt-5 flex items-center justify-center gap-3">
                                     <button
                                         type="button"
@@ -237,11 +288,13 @@ export default function DetailPembelian({
                                 </div>
 
                                 <p className="mt-3 text-center text-sm text-[#6B7280]">
-                                    ID: {orderId}
+                                    ID: {transaction?.id || orderId}
                                 </p>
 
+                                {/* Tombol Bayar */}
                                 <button
                                     type="button"
+                                    onClick={handlePay}
                                     className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF8928] px-6 py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"
                                 >
                                     <svg
