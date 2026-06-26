@@ -1,10 +1,40 @@
 import { useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import DashboardLayout from '../Layouts/DashboardLayout';
 
-export default function Dashboard({ banners, events }) {
+export default function Dashboard({
+    banners,
+    events,
+    activeCourses = [],
+    chartData = [],
+    totalKursus = 0,
+    kursusBulanIni = 0,
+    totalJamBelajar = 0,
+    jamBelajarMingguIni = 0,
+    totalSertifikat = 0,
+    sertifikatProses = 0,
+}) {
     // State untuk Carousel
     const [currentIndex, setCurrentIndex] = useState(0);
+
+    const [voucherCode, setVoucherCode] = useState('');
+
+    const handleGabung = () => {
+        if (!voucherCode) {
+            alert('Masukkan kode voucher');
+            return;
+        }
+
+        router.post(route('pelatihan.voucher.klaim'), {
+            code: voucherCode
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                // Reset kolom input kalau berhasil
+                setVoucherCode('');
+            }
+        });
+    };
 
     // Auto-slide tiap 5 detik
     useEffect(() => {
@@ -26,11 +56,10 @@ export default function Dashboard({ banners, events }) {
                         banners.map((banner, index) => (
                             <div
                                 key={banner.id}
-                                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center px-10 ${
-                                    index === currentIndex
-                                        ? 'opacity-100 z-10'
-                                        : 'opacity-0 z-0'
-                                }`}
+                                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center px-10 ${index === currentIndex
+                                    ? 'opacity-100 z-10'
+                                    : 'opacity-0 z-0'
+                                    }`}
                             >
                                 {/* PANGGIL image_path BUKAN gambar */}
                                 <div
@@ -86,11 +115,10 @@ export default function Dashboard({ banners, events }) {
                                 <button
                                     key={index}
                                     onClick={() => setCurrentIndex(index)}
-                                    className={`transition-all duration-300 rounded-full ${
-                                        index === currentIndex
-                                            ? 'w-8 h-1.5 bg-[#006B32]'
-                                            : 'w-2 h-2 bg-white/40 hover:bg-white/80'
-                                    }`}
+                                    className={`transition-all duration-300 rounded-full ${index === currentIndex
+                                        ? 'w-8 h-1.5 bg-[#006B32]'
+                                        : 'w-2 h-2 bg-white/40 hover:bg-white/80'
+                                        }`}
                                 />
                             ))}
                         </div>
@@ -103,6 +131,7 @@ export default function Dashboard({ banners, events }) {
                     <div className="col-span-12 xl:col-span-8 flex flex-col gap-6">
                         {/* 2. STATS CARDS */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* ✅ KURSUS DIIKUTI — Pakai totalKursus & kursusBulanIni dari props */}
                             <Link
                                 href="/pelatihan"
                                 className="bg-white border border-[#E4E2E1] p-5 rounded-2xl shadow-sm flex items-center gap-4 transition-all hover:border-[#008740] hover:shadow-md cursor-pointer"
@@ -115,20 +144,27 @@ export default function Dashboard({ banners, events }) {
                                         KURSUS DIIKUTI
                                     </p>
                                     <p className="text-[28px] font-extrabold text-[#1B1C1C] leading-none mb-1">
-                                        14
+                                        {totalKursus}
                                     </p>
-                                    <p className="text-[10px] font-bold text-[#008740]">
-                                        +2 bulan ini
-                                    </p>
+                                    {kursusBulanIni > 0 ? (
+                                        <p className="text-[10px] font-bold text-[#008740]">
+                                            +{kursusBulanIni} bulan ini
+                                        </p>
+                                    ) : (
+                                        <p className="text-[10px] font-bold text-[#9CA3AF]">
+                                            Belum ada tambahan bulan ini
+                                        </p>
+                                    )}
                                 </div>
                             </Link>
 
+                            {/* ✅ JAM BELAJAR — Pakai totalJamBelajar & jamBelajarMingguIni dari props */}
                             <Link
-                                href="/statistik-waktu-belajar"
+                                href="/detail-aktivitas"
                                 className="bg-white border border-[#E4E2E1] p-5 rounded-2xl shadow-sm flex items-center gap-4 transition-all hover:border-[#008740] hover:shadow-md cursor-pointer"
                             >
-                                <div className="w-12 h-12 bg-[#FFF7ED] text-[#EA580C] rounded-full flex items-center justify-center text-2xl">
-                                    🕒
+                                <div className="w-12 h-12 bg-[#F0FDF4] text-[#16A34A] rounded-full flex items-center justify-center text-2xl">
+                                    ⏱️
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-bold text-[#6B7280] tracking-wider mb-1">
@@ -136,18 +172,25 @@ export default function Dashboard({ banners, events }) {
                                     </p>
                                     <div className="flex items-baseline gap-1 mb-1">
                                         <p className="text-[28px] font-extrabold text-[#1B1C1C] leading-none">
-                                            48
+                                            {totalJamBelajar}
                                         </p>
                                         <p className="text-sm font-bold text-[#1B1C1C]">
                                             h
                                         </p>
                                     </div>
-                                    <p className="text-[10px] font-bold text-[#008740]">
-                                        +5h minggu ini
-                                    </p>
+                                    {jamBelajarMingguIni > 0 ? (
+                                        <p className="text-[10px] font-bold text-[#008740]">
+                                            +{jamBelajarMingguIni}h minggu ini
+                                        </p>
+                                    ) : (
+                                        <p className="text-[10px] font-bold text-[#9CA3AF]">
+                                            Belum ada minggu ini
+                                        </p>
+                                    )}
                                 </div>
                             </Link>
 
+                            {/* ✅ SERTIFIKAT — Pakai totalSertifikat & sertifikatProses dari props */}
                             <Link
                                 href="/sertifikat"
                                 className="bg-white border border-[#E4E2E1] p-5 rounded-2xl shadow-sm flex items-center gap-4 transition-all hover:border-[#008740] hover:shadow-md cursor-pointer"
@@ -160,11 +203,17 @@ export default function Dashboard({ banners, events }) {
                                         SERTIFIKAT
                                     </p>
                                     <p className="text-[28px] font-extrabold text-[#1B1C1C] leading-none mb-1">
-                                        3
+                                        {totalSertifikat}
                                     </p>
-                                    <p className="text-[10px] font-bold text-[#B45309]">
-                                        1 dalam proses
-                                    </p>
+                                    {sertifikatProses > 0 ? (
+                                        <p className="text-[10px] font-bold text-[#B45309]">
+                                            {sertifikatProses} dalam proses
+                                        </p>
+                                    ) : (
+                                        <p className="text-[10px] font-bold text-[#9CA3AF]">
+                                            Tidak ada yang diproses
+                                        </p>
+                                    )}
                                 </div>
                             </Link>
                         </div>
@@ -176,18 +225,24 @@ export default function Dashboard({ banners, events }) {
                                     <span>🏢</span> Gabung Pelatihan Korporat
                                 </h3>
                                 <p className="text-xs text-[#6B7280] max-w-[300px]">
-                                    Masukkan kode akses dari perusahaan Anda
-                                    untuk mulai belajar.
+                                    Masukkan kode akses dari perusahaan Anda untuk mulai belajar.
                                 </p>
                             </div>
                             <div className="flex gap-3 w-full md:w-auto">
                                 <input
+                                    type="text"
+                                    value={voucherCode}
+                                    onChange={(e) => setVoucherCode(e.target.value)}
                                     className="border border-[#E4E2E1] px-4 py-3 rounded-lg w-full md:w-[240px] text-xs bg-[#FBF9F8] outline-none focus:border-[#008740]"
-                                    placeholder="CONTOH: CORP-2024-XXXX"
+                                    placeholder="CONTOH: CORP-2026-XXXX"
                                 />
-                                <Link href="/gabung-kelas" className="bg-[#FF8928] hover:bg-[#e67a22] text-white px-6 py-3 rounded-lg font-bold text-sm whitespace-nowrap flex items-center gap-2 transition-colors">
+                                <button
+                                    type="button"
+                                    onClick={handleGabung}
+                                    className="bg-[#FF8928] hover:bg-[#e67a22] text-white px-6 py-3 rounded-lg font-bold text-sm whitespace-nowrap flex items-center gap-2 transition-colors"
+                                >
                                     <span>🔗</span> Gabung
-                                </Link>
+                                </button>
                             </div>
                         </div>
 
@@ -196,78 +251,42 @@ export default function Dashboard({ banners, events }) {
                             <h3 className="font-bold text-[#1B1C1C] mb-6 flex items-center gap-2">
                                 <span>📖</span> Progress Kursus Aktif
                             </h3>
+
                             <div className="flex flex-col gap-6">
-                                <div>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <div className="flex items-center gap-3">
-                                            <span className="w-8 h-8 rounded bg-[#FBF9F8] flex items-center justify-center text-lg">
-                                                💰
-                                            </span>
-                                            <span className="text-sm font-bold text-[#1B1C1C]">
-                                                Literasi Keuangan Pensiun —
-                                                Modul 4
-                                            </span>
+                                {activeCourses && activeCourses.length > 0 ? (
+                                    activeCourses.map((course) => (
+                                        <div key={course.id}>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="w-8 h-8 rounded bg-[#FBF9F8] flex items-center justify-center text-lg shadow-sm border border-[#E4E2E1]/50">
+                                                        {course.emoji}
+                                                    </span>
+                                                    <span className="text-sm font-bold text-[#1B1C1C] line-clamp-1">
+                                                        {course.title}
+                                                    </span>
+                                                </div>
+                                                <span className={`text-sm font-bold ${course.percentColor}`}>
+                                                    {course.progress}%
+                                                </span>
+                                            </div>
+                                            <div className="w-full bg-[#F3F4F6] h-2 rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full rounded-full ${course.barColor} transition-all duration-500 ease-out`}
+                                                    style={{ width: `${course.progress}%` }}
+                                                ></div>
+                                            </div>
                                         </div>
-                                        <span className="text-sm font-bold text-[#008740]">
-                                            75%
-                                        </span>
+                                    ))
+                                ) : (
+                                    <div className="py-4 text-center">
+                                        <p className="text-sm font-medium text-[#6B7280]">
+                                            Belum ada kursus yang sedang aktif.
+                                        </p>
                                     </div>
-                                    <div className="w-full bg-[#F3F4F6] h-2 rounded-full overflow-hidden">
-                                        <div
-                                            className="bg-[#008740] h-full rounded-full"
-                                            style={{ width: '75%' }}
-                                        ></div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <div className="flex items-center gap-3">
-                                            <span className="w-8 h-8 rounded bg-[#FBF9F8] flex items-center justify-center text-lg">
-                                                🧠
-                                            </span>
-                                            <span className="text-sm font-bold text-[#1B1C1C]">
-                                                Psikologi Masa Pensiun — Modul 2
-                                            </span>
-                                        </div>
-                                        <span className="text-sm font-bold text-[#6B7280]">
-                                            46%
-                                        </span>
-                                    </div>
-                                    <div className="w-full bg-[#F3F4F6] h-2 rounded-full overflow-hidden">
-                                        <div
-                                            className="bg-[#9CA3AF] h-full rounded-full"
-                                            style={{ width: '46%' }}
-                                        ></div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <div className="flex items-center gap-3">
-                                            <span className="w-8 h-8 rounded bg-[#FBF9F8] flex items-center justify-center text-lg">
-                                                🏃
-                                            </span>
-                                            <span className="text-sm font-bold text-[#1B1C1C]">
-                                                Wellness & Kesehatan Senior —
-                                                Modul 1
-                                            </span>
-                                        </div>
-                                        <span className="text-sm font-bold text-[#B45309]">
-                                            26%
-                                        </span>
-                                    </div>
-                                    <div className="w-full bg-[#F3F4F6] h-2 rounded-full overflow-hidden">
-                                        <div
-                                            className="bg-[#B45309] h-full rounded-full"
-                                            style={{ width: '26%' }}
-                                        ></div>
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         </div>
 
-                        {/* 5. AKTIVITAS BELAJAR (CHART) */}
                         <Link
                             href="/detail-aktivitas"
                             className="group bg-white border border-[#E4E2E1] p-6 rounded-2xl shadow-sm transition hover:border-[#008740] hover:shadow-md"
@@ -276,15 +295,7 @@ export default function Dashboard({ banners, events }) {
                                 <span>📊</span> Aktivitas Belajar (7 Hari)
                             </h3>
                             <div className="flex items-end justify-between h-32 border-b border-[#E4E2E1] pb-2 relative px-4">
-                                {[
-                                    { day: 'Sen', val: 10, label: '2h' },
-                                    { day: 'Sel', val: 5, label: '1h' },
-                                    { day: 'Rab', val: 15, label: '3h' },
-                                    { day: 'Kam', val: 10, label: '2h' },
-                                    { day: 'Jum', val: 10, label: '2h' },
-                                    { day: 'Sab', val: 8, label: '1.5h' },
-                                    { day: 'Min', val: 3, label: '0.5h' },
-                                ].map((item, i) => (
+                                {chartData.map((item, i) => (
                                     <div
                                         key={i}
                                         className="flex flex-col items-center gap-2 relative group w-10"
@@ -294,10 +305,8 @@ export default function Dashboard({ banners, events }) {
                                         </span>
                                         <div
                                             className="w-full bg-[#008740] rounded-t-sm"
-                                            style={{
-                                                height: `${item.val * 4}px`,
-                                            }}
-                                        ></div>
+                                            style={{ height: `${item.val * 4}px` }}
+                                        />
                                         <div className="absolute -bottom-8 w-full text-center">
                                             <span className="text-[10px] font-bold text-[#9CA3AF]">
                                                 {item.day}
@@ -306,7 +315,7 @@ export default function Dashboard({ banners, events }) {
                                     </div>
                                 ))}
                             </div>
-                            <div className="h-8"></div>
+                            <div className="h-8" />
                         </Link>
                     </div>
 
@@ -362,13 +371,13 @@ export default function Dashboard({ banners, events }) {
                                                     🕐{' '}
                                                     {event.jam
                                                         ? event.jam.substring(
-                                                              0,
-                                                              5,
-                                                          )
+                                                            0,
+                                                            5,
+                                                        )
                                                         : ''}{' '}
                                                     WIB
                                                     {event.jenis_event ===
-                                                    'Online'
+                                                        'Online'
                                                         ? ' • 🎥 Live'
                                                         : ''}
                                                 </p>
@@ -378,7 +387,7 @@ export default function Dashboard({ banners, events }) {
                                 ) : (
                                     <div className="text-center py-4">
                                         <p className="text-xs text-[#6B7280] italic">
-                                            Belum ada event terdekat boss.
+                                            Belum ada event terdekat.
                                         </p>
                                     </div>
                                 )}

@@ -18,9 +18,13 @@ return new class extends Migration
             $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods')->nullOnDelete();
             
             $table->string('nomor_transaksi')->unique(); // Invoice: INV-20260522-XXX
-            $table->decimal('nominal', 15, 2);
+            $table->integer('jumlah_peserta')->default(1);
+            $table->decimal('harga_per_peserta', 15, 2)->default(0);
+            $table->decimal('nominal', 15, 2); // Ini total_harga
+            
             $table->enum('status', ['pending', 'success', 'failed', 'expired'])->default('pending');
-            $table->string('snap_token')->nullable(); // Kunci bypass Midtrans (Tambahan Wajib)
+            $table->string('snap_token')->nullable(); // Kunci bypass Midtrans
+            $table->string('snap_redirect_url')->nullable(); 
             $table->dateTime('batas_waktu');
             
             $table->timestamps();

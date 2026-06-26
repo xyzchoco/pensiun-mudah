@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Head, Link, usePage } from "@inertiajs/react";
+// 1. TAMBAHIN router DI IMPORT INERTIA
+import { Head, Link, usePage, router } from "@inertiajs/react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -15,6 +16,10 @@ import KurikulumSidebar from "@/Components/Pelatihan/KurikulumSidebar";
 
 export default function NontonMateri({ learning }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // 2. STATE BUAT LOADING TOMBOL
+  const [isCompleting, setIsCompleting] = useState(false);
+
   const { url } = usePage();
 
   const { course, modules, progress } = learning;
@@ -59,11 +64,36 @@ export default function NontonMateri({ learning }) {
     return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
   };
 
-  // DETEKTOR SAKTI: Cek aja kalau URL video-nya ada isinya, anggep itu video!
   const isVideo = activeMaterial?.type?.toLowerCase().includes('video') || activeMaterial?.video_url;
 
-  // Cari tau materi ini ada di modul mana (Buat nampilin Deskripsi Modul lu)
   const activeModule = modules.find(m => m.materials?.some(mat => mat.id === activeMaterial?.id));
+
+  // 3. BIKIN FUNGSI SAKTI BUAT NYATET PROGRES SEKALIGUS PINDAH HALAMAN
+  const handleSelesaiDanLanjut = () => {
+    setIsCompleting(true);
+
+    // Filter angka dari durasi (misal "15 Menit" jadi 15). Kalau kosong, kasih default 10 menit.
+    const durasiAngka = parseInt(activeMaterial?.duration) || 10;
+
+    router.post('/belajar/catat-progres', {
+      course_id: course.id,
+      module_id: activeModule?.id,
+      material_id: activeMaterial?.id,
+      durasi_menit: durasiAngka,
+    }, {
+      preserveScroll: true,
+      onSuccess: () => {
+        setIsCompleting(false);
+        // Kalau sukses nyatet ke DB, langsung gas pindah ke materi selanjutnya / kuis
+        router.visit(nextHref);
+      },
+      onError: () => {
+        setIsCompleting(false);
+        // Kalau lu pake toast hijau kemaren, ini bisa diganti toast merah
+        alert('Gagal mencatat progres, coba lagi bos.');
+      }
+    });
+  };
 
   return (
     <LearningLayout
@@ -124,7 +154,6 @@ export default function NontonMateri({ learning }) {
               {activeMaterial?.title || "Judul Materi"}
             </h1>
 
-            {/* MUNCULIN DESKRIPSI MODUL DI SINI BIAR KELIATAN */}
             {activeModule?.subtitle && (
               <p className="text-[#007A3D] font-medium mt-2 text-lg">
                 Modul: {activeModule.subtitle}
@@ -163,18 +192,22 @@ export default function NontonMateri({ learning }) {
             <div className="flex items-center justify-between gap-4">
               <Link
                 href={prevHref}
-                className="inline-flex min-w-[245px] items-center justify-center gap-3 rounded-lg border-2 border-[#00A553] px-6 py-4 font-extrabold text-[#00A553]"
+                className="inline-flex min-w-[245px] items-center justify-center gap-3 rounded-lg border-2 border-[#00A553] px-6 py-4 font-extrabold text-[#00A553] hover:bg-[#F0FDF4] transition-colors"
               >
                 <ArrowLeft className="h-5 w-5" />
                 Materi Sebelumnya
               </Link>
-              <Link
-                href={nextHref}
-                className="inline-flex min-w-[240px] items-center justify-center gap-3 rounded-lg bg-[#FF9200] px-6 py-4 font-extrabold text-white"
+
+              {/* 4. GANTI LINK "MATERI SELANJUTNYA" JADI TOMBOL PEMICU */}
+              <button
+                onClick={handleSelesaiDanLanjut}
+                disabled={isCompleting}
+                className={`inline-flex min-w-[240px] items-center justify-center gap-3 rounded-lg px-6 py-4 font-extrabold text-white transition-colors ${isCompleting ? 'bg-[#CC7500] cursor-not-allowed' : 'bg-[#FF9200] hover:bg-[#E58300]'
+                  }`}
               >
-                Materi Selanjutnya
+                {isCompleting ? 'Menyimpan...' : 'Selesai & Lanjut'}
                 <ArrowRight className="h-5 w-5" />
-              </Link>
+              </button>
             </div>
           </article>
         </main>
