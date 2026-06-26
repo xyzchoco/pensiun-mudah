@@ -97,15 +97,10 @@ export default function KorporatLayout({
     searchPlaceholder = 'Cari kursus, konsultan, webinar...',
     children,
 }) {
-<<<<<<< HEAD
-    const { auth } = usePage().props;
+    const { auth, flash } = usePage().props;  // ✅
     const user = auth?.user ?? {};
     const corporateProfile = user?.corporate_profile ?? {};
     const companyName = corporateProfile.nama_perusahaan || user.name || 'Korporat';
-=======
-    const { auth, flash } = usePage().props;
-    const user = auth?.user ?? { name: 'Budi Santoso' };
->>>>>>> 64b679d4e75d6445a78f01bc163062f64b2d3be4
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showToast, setShowToast] = useState(false);
 

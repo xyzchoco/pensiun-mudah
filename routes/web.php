@@ -267,6 +267,13 @@ Route::middleware(['auth'])->group(function () {
         })->name('korporat.pelatihan-dibeli');
 
         Route::get('/korporat/profil-perusahaan/edit', fn () => Inertia::render('Korporat/EditProfilPerusahaan', ['profile' => auth()->user()->corporateProfile]))->name('korporat.profil-perusahaan.edit');
+        Route::get('/korporat/pelatihan/{slug}/detail', function ($slug) {
+            $course = Course::with(['category', 'lessons'])->where('slug', $slug)->firstOrFail();
+            return Inertia::render('Korporat/DetailKelasKorporat', [
+                'course' => $course,
+                'backHref' => route('korporat.beli-pelatihan'),
+            ]);
+        })->name('korporat.pelatihan.detail-kelas');
         Route::get('/korporat/pelatihan/{slug}/pembelian-online', function ($slug, Request $request) {
             $course = Course::with('category')->where('slug', $slug)->firstOrFail();
             $quantity = max(1, (int) $request->query('qty', 1));

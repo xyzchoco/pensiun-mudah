@@ -1,26 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
 import KorporatLayout from '@/Layouts/KorporatLayout';
 
 export default function ProfilPerusahaan() {
-    // Mengambil data user yang sudah di-load dengan relasi corporateProfile di HandleInertiaRequests
-<<<<<<< HEAD
     const { auth } = usePage().props;
     const profile = auth?.user?.corporate_profile || {};
-=======
-    const { auth, flash } = usePage().props;
-    const profile = auth.user.corporate_profile || {};
-    const [showToast, setShowToast] = useState(false);
-
-    // Munculkan toast saat flash.success masuk (setelah redirect dari edit)
-    useEffect(() => {
-        if (flash?.success) {
-            setShowToast(true);
-            const timer = setTimeout(() => setShowToast(false), 4000);
-            return () => clearTimeout(timer);
-        }
-    }, [flash]);
->>>>>>> 64b679d4e75d6445a78f01bc163062f64b2d3be4
 
     const companyFields = [
         { label: 'Nama Perusahaan', value: profile.nama_perusahaan || '-', highlight: true, span: 1 },
@@ -36,27 +19,8 @@ export default function ProfilPerusahaan() {
             title="Profil Perusahaan - Pensiun Mudah"
             activeNav="profil"
         >
-            {/* POP-UP NOTIFIKASI HIJAU */}
-            {showToast && flash?.success && (
-                <div className="fixed top-5 right-5 z-[9999] flex items-center gap-3 rounded-xl border border-[#006B32] bg-[#E5F0E9] p-4 shadow-lg max-w-sm">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-white">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </div>
-                    <div className="flex-1">
-                        <p className="text-sm font-bold text-[#1B1C1C]">Berhasil!</p>
-                        <p className="mt-0.5 text-xs text-[#3D4A3E]">{flash.success}</p>
-                    </div>
-                    <button
-                        onClick={() => setShowToast(false)}
-                        className="ml-2 text-sm font-bold text-[#3D4A3E] hover:text-black"
-                        aria-label="Tutup notifikasi"
-                    >
-                        ✕
-                    </button>
-                </div>
-            )}
+            {/* Toast notifikasi sudah ditangani di KorporatLayout */}
+
             <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-10">
                 <h1 className="text-2xl font-bold text-[#1B1C1C] sm:text-3xl">
                     Profil Perusahaan
@@ -64,7 +28,6 @@ export default function ProfilPerusahaan() {
 
                 <div className="mt-6 rounded-2xl border border-[#E4E2E1] bg-white p-6 shadow-sm">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                        {/* Bagian foto/logo sudah dihapus total */}
                         <div>
                             <h2 className="text-xl font-bold text-[#1B1C1C]">
                                 {profile.nama_perusahaan || 'Nama Perusahaan Belum Diset'}
@@ -106,7 +69,6 @@ export default function ProfilPerusahaan() {
                     </div>
 
                     <div className="mt-8 flex flex-col gap-3 border-t border-[#E4E2E1] pt-6 sm:flex-row">
-                        {/* Di sini Anda bisa arahkan ke halaman Edit Profil Perusahaan */}
                         <Link
                             href="/korporat/profil-perusahaan/edit"
                             className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#FF8928] px-6 py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"

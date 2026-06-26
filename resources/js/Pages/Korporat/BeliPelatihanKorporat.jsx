@@ -102,6 +102,10 @@ function buildOnlinePurchaseHref(course, qty) {
     return `/korporat/pelatihan/${course.slug || course.id}/pembelian-online?qty=${qty}`;
 }
 
+function buildOnlineDetailHref(course) {
+    return `/korporat/pelatihan/${course.slug || course.id}/detail`;
+}
+
 function buildHybridPurchaseHref(course, qty) {
     const slug = course.slug || course.id;
     const params = new URLSearchParams();
@@ -272,13 +276,36 @@ function CourseCard({ course }) {
                 </div>
 
                 <div className="mt-4 flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={handleBeli} // <-- TAMBAHKAN INI
-                        className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
-                    >
-                        Beli ({qty})
-                    </button>
+                    {isOfflineClass ? (
+                        <Link
+                            href={buildScheduleHref(course, qty)}
+                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
+                        >
+                            Beli ({qty})
+                        </Link>
+                    ) : isOnlineClass ? (
+                        <Link
+                            href={buildOnlinePurchaseHref(course, qty)}
+                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
+                        >
+                            Beli ({qty})
+                        </Link>
+                    ) : isHybridClass ? (
+                        <Link
+                            href={buildHybridPurchaseHref(course, qty)}
+                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
+                        >
+                            Beli ({qty})
+                        </Link>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={handleBeli}
+                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
+                        >
+                            Beli ({qty})
+                        </button>
+                    )}
 
                     <div className="flex items-center gap-2">
                         <button
@@ -304,6 +331,13 @@ function CourseCard({ course }) {
                 {isOfflineClass ? (
                     <Link
                         href={buildOfflineDetailHref(course)}
+                        className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5"
+                    >
+                        Lihat Detail
+                    </Link>
+                ) : isOnlineClass ? (
+                    <Link
+                        href={buildOnlineDetailHref(course)}
                         className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5"
                     >
                         Lihat Detail
