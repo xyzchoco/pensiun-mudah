@@ -17,7 +17,10 @@ class Course extends Model
         'course_type',
         'price',
         'status',
-        'tipe_kelas'
+        'tipe_kelas',
+        'is_visible_publik',
+        'is_visible_korporat',
+        'is_visible_asn',
     ];
 
     public function category(): BelongsTo

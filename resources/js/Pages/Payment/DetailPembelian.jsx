@@ -6,13 +6,21 @@ import OrderSummaryCard from "@/Components/Payment/OrderSummaryCard";
 
 export default function DetailPembelian({ course, transaction, snapToken, midtransClientKey }) {
   const slug = course?.slug || course?.id || "manajemen-investasi-aman";
+
+  // Karena ini bisa diakses dari korporat, tombol kembalinya kita buat aman (bisa disesuaikan nanti)
   const backHref = "/beli-pelatihan";
+
+  // ========================================================
+  // TARIK DATA DINAMIS DARI TRANSAKSI (BUKAN CUMA DARI COURSE)
+  // ========================================================
+  const qty = transaction?.jumlah_peserta || 1;
+  const hargaSatuan = transaction?.harga_per_peserta || course?.price || 0;
+  const totalHargaKursus = transaction?.nominal || (hargaSatuan * qty);
 
   const courseUI = {
     badge: course?.category?.nama || "Kursus Populer",
     title: course?.title || "Judul Pelatihan",
     description: course?.description ? course.description.replace(/<[^>]*>?/gm, '') : "Deskripsi kursus.",
-    price: course?.price || 0,
     image: course?.thumbnail ? `/storage/${course.thumbnail.replace(/^public\//, '')}` : "/images/course-preview.png",
   };
 
@@ -27,7 +35,8 @@ export default function DetailPembelian({ course, transaction, snapToken, midtra
     }).format(angka);
   };
 
-  const totalBayar = (courseUI.price || 0) + serviceFee;
+  // TOTAL BAYAR SEKARANG MENGGUNAKAN NOMINAL DARI DATABASE
+  const totalBayar = totalHargaKursus + serviceFee;
 
   // Load Midtrans Snap
   useEffect(() => {
@@ -63,8 +72,11 @@ export default function DetailPembelian({ course, transaction, snapToken, midtra
     }
   };
 
+  // ========================================================
+  // RINGKASAN PESANAN DIBUAT DINAMIS MENAMPILKAN QUANTITY
+  // ========================================================
   const summaryItems = [
-    { label: "Harga Kursus", value: courseUI.price },
+    { label: `Harga Kursus (x${qty})`, value: totalHargaKursus },
     {
       label: "Biaya Layanan",
       value: serviceFee,
@@ -136,9 +148,18 @@ export default function DetailPembelian({ course, transaction, snapToken, midtra
                   <p className="mt-2 text-sm text-[#6B7280] leading-relaxed line-clamp-2">
                     {courseUI.description}
                   </p>
-                  <p className="mt-3 text-lg font-bold text-[#008740]">
-                    {formatRupiah(courseUI.price)}
-                  </p>
+
+                  {/* Harga di kiri dimodif dikit biar keliatan breakdown-nya */}
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <p className="text-lg font-bold text-[#008740]">
+                      {formatRupiah(totalHargaKursus)}
+                    </p>
+                    {qty > 1 && (
+                      <p className="text-xs font-semibold text-[#6B7280]">
+                        ({formatRupiah(hargaSatuan)} / lisensi)
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import KorporatLayout from '@/Layouts/KorporatLayout';
 
 const demoCourses = {
@@ -195,6 +195,13 @@ function CourseCard({ course }) {
 
     const totalPrice = (course.price || 0) * qty;
 
+    const handleBeli = () => {
+        router.get(route('payment.detail', {
+            slug: course.slug || course.id,
+            qty: qty
+        }));
+    };
+
     return (
         <div className="flex flex-col overflow-hidden rounded-2xl border border-[#E4E2E1] bg-white shadow-sm">
             <div className="relative flex h-40 items-center justify-center bg-gray-100 overflow-hidden">
@@ -265,36 +272,13 @@ function CourseCard({ course }) {
                 </div>
 
                 <div className="mt-4 flex items-center gap-3">
-                    {isOfflineClass ? (
-                        <Link
-                            href={buildScheduleHref(course, qty)}
-                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
-                        >
-                            Beli ({qty})
-                        </Link>
-                    ) : isOnlineClass ? (
-                        <Link
-                            href={buildOnlinePurchaseHref(course, qty)}
-                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
-                        >
-                            Beli ({qty})
-                        </Link>
-                    ) : isHybridClass ? (
-                        <Link
-                            href={buildHybridPurchaseHref(course, qty)}
-                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
-                        >
-                            Beli ({qty})
-                        </Link>
-                    ) : (
-                        <button
-                            type="button"
-                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
-                        >
-                            {/* Tombol beli menampilkan total harga jika ingin */}
-                            Beli ({qty})
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        onClick={handleBeli} // <-- TAMBAHKAN INI
+                        className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
+                    >
+                        Beli ({qty})
+                    </button>
 
                     <div className="flex items-center gap-2">
                         <button

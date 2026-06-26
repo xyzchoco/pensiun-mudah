@@ -96,9 +96,19 @@ export default function KorporatLayout({
     searchPlaceholder = 'Cari kursus, konsultan, webinar...',
     children,
 }) {
-    const { auth } = usePage().props;
+    const { auth, flash } = usePage().props;
     const user = auth?.user ?? { name: 'Budi Santoso' };
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [showToast, setShowToast] = useState(false);
+
+    // Munculkan toast setiap kali ada flash.success dari Laravel
+    useEffect(() => {
+        if (flash?.success) {
+            setShowToast(true);
+            const timer = setTimeout(() => setShowToast(false), 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
 
     // Tampilkan sidebar otomatis di layar besar
     useEffect(() => {
@@ -144,20 +154,18 @@ export default function KorporatLayout({
 
             {/* Backdrop - mobile & tablet */}
             <div
-                className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 lg:hidden ${
-                    sidebarOpen
+                className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 lg:hidden ${sidebarOpen
                         ? "opacity-100 pointer-events-auto"
                         : "opacity-0 pointer-events-none"
-                }`}
+                    }`}
                 onClick={() => setSidebarOpen(false)}
                 aria-hidden="true"
             />
 
             {/* Sidebar */}
             <aside
-                className={`fixed left-0 top-0 z-50 flex h-screen w-[288px] max-w-[85vw] flex-col bg-[#F6F3F2] border-r border-[#E4E2E1] py-4 transition-transform duration-300 ease-in-out ${
-                    sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                }`}
+                className={`fixed left-0 top-0 z-50 flex h-screen w-[288px] max-w-[85vw] flex-col bg-[#F6F3F2] border-r border-[#E4E2E1] py-4 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                    }`}
             >
                 <div className="flex items-center justify-between px-6 pb-8">
                     <Link href="/korporat/dashboard">
@@ -298,6 +306,28 @@ export default function KorporatLayout({
                             </div>
                         </header>
                     ) : null}
+
+                    {/* TOAST NOTIFIKASI HIJAU */}
+                    {showToast && flash?.success && (
+                        <div className="fixed top-5 right-5 z-[9999] flex items-center gap-3 rounded-xl border border-[#006B32] bg-[#E5F0E9] p-4 shadow-lg max-w-sm animate-[fadeInDown_0.3s_ease]">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-white">
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-sm font-bold text-[#1B1C1C]">Berhasil!</p>
+                                <p className="mt-0.5 text-xs text-[#3D4A3E]">{flash.success}</p>
+                            </div>
+                            <button
+                                onClick={() => setShowToast(false)}
+                                className="ml-2 text-sm font-bold text-[#3D4A3E] hover:text-black"
+                                aria-label="Tutup notifikasi"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )}
 
                     <main className="flex-1 overflow-y-auto">
                         {children}

@@ -6,34 +6,136 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\DashboardBanner;
 use App\Models\Webinar;
+use App\Models\Enrollment;
+use App\Models\LearningActivity;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use App\Models\LearningProgress;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         $user = Auth::user();
+        
         if (!$user->kategori_pensiun) {
             return redirect()->route('onboarding.kategori');
         }
 
-        $banners = DashboardBanner::where('is_active', true)->latest()->get(); 
-        $events = Webinar::where('is_published', true)->latest()->take(3)->get();
+        $banners = DashboardBanner::where('is_active', true)->latest()->get();
+        $events  = Webinar::where('is_published', true)->latest()->take(3)->get();
+
+        // 1. Tarik data enrollment aktif milik user (belum tamat, maks 3)
+        $activeCourses = Enrollment::with('course')
+            ->where('user_id', $user->user_id)
+            ->where('progress_persen', '<', 100)
+            ->latest('updated_at')
+            ->take(3)
+            ->get()
+            ->map(function ($enrollment) {
+                $progress = $enrollment->progress_persen;
+
+                // Warna bar & teks otomatis berdasarkan persentase
+                if ($progress >= 75) {
+                    $barColor     = 'bg-[#008740]';
+                    $percentColor = 'text-[#008740]';
+                } elseif ($progress >= 40) {
+                    $barColor     = 'bg-[#9CA3AF]';
+                    $percentColor = 'text-[#6B7280]';
+                } else {
+                    $barColor     = 'bg-[#B45309]';
+                    $percentColor = 'text-[#B45309]';
+                }
+
+                return [
+                    'id'           => $enrollment->id,
+                    'title'        => $enrollment->course->title,
+                    'progress'     => $progress,
+                    'barColor'     => $barColor,
+                    'percentColor' => $percentColor,
+                    'emoji'        => '📖',
+                ];
+            });
+
+        // 2. Grafik aktivitas belajar 7 hari terakhir dari database
+        $chartData = [];
+        $dayNames  = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date    = Carbon::today()->subDays($i);
+            $dayName = $dayNames[$date->dayOfWeek]; // 0=Min, 6=Sab
+
+            // Ambil aktivitas nyata dari database
+            $activity = LearningActivity::where('user_id', $user->user_id)
+                ->whereDate('tanggal', $date->format('Y-m-d'))
+                ->first();
+
+            // Durasi dalam jam, default 0 kalau belum ada
+            $hours = $activity ? round($activity->durasi_jam, 1) : 0;
+
+            // Tinggi bar UI (maks 20 agar tidak overflow)
+            $barHeight = min($hours * 5, 20);
+
+            $chartData[] = [
+                'day'   => $dayName,
+                'val'   => $barHeight,
+                'label' => $hours > 0 ? $hours . 'h' : '0h',
+            ];
+        }
+
+        // 3. Hitung Statistik Kursus
+        $totalKursus = Enrollment::where('user_id', $user->user_id)->count();
+
+        $kursusBulanIni = Enrollment::where('user_id', $user->user_id)
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+
+        // 4. Hitung Statistik Jam Belajar
+        $totalJamBelajar = round(LearningActivity::where('user_id', $user->user_id)->sum('durasi_jam'));
+        
+        $startOfWeek = now()->startOfWeek()->format('Y-m-d');
+        $jamBelajarMingguIni = round(LearningActivity::where('user_id', $user->user_id)
+            ->where('tanggal', '>=', $startOfWeek)
+            ->sum('durasi_jam'));
+
+        // 5. Hitung Statistik Sertifikat (Selesai & Dalam Proses)
+        $totalSertifikat = Enrollment::where('user_id', $user->user_id)
+            ->where('progress_persen', '>=', 100)
+            ->count();
+
+        $sertifikatProses = Enrollment::where('user_id', $user->user_id)
+            ->where('progress_persen', '>', 0)
+            ->where('progress_persen', '<', 100)
+            ->count();
+
+        // 6. Gabung semua variabel ke dalam satu array $data
         $data = [
-            'banners' => $banners,
-            'events'  => $events,
+            'banners'             => $banners,
+            'events'              => $events,
+            'activeCourses'       => $activeCourses,
+            'chartData'           => $chartData,
+            'totalKursus'         => $totalKursus,
+            'kursusBulanIni'      => $kursusBulanIni,
+            'totalJamBelajar'     => $totalJamBelajar,
+            'jamBelajarMingguIni' => $jamBelajarMingguIni,
+            'totalSertifikat'     => $totalSertifikat,
+            'sertifikatProses'    => $sertifikatProses,
         ];
 
+        // 7. Arahin halamannya sesuai kategori
         switch ($user->kategori_pensiun) {
             case 'korporat':
-                return redirect()->route('korporat.dashboard'); 
-                
+                // Kalau korporat ada dashboard sendiri
+                return redirect()->route('korporat.dashboard');
+
             case 'asn':
                 return Inertia::render('Asn/DashboardAsn', $data);
-                
+
             case 'publik':
             default:
-                return Inertia::render('Dashboard', $data); 
+                // Mengirim FULL $data ke halaman Dashboard publik
+                return Inertia::render('Dashboard', $data);
         }
     }
 }

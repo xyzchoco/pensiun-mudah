@@ -22,9 +22,13 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): Response
+    public function create()
     {
-        return Inertia::render('Auth/Register');
+        return Inertia::render('Auth/Register', [
+            'error'        => session('error'),
+            'google_name'  => session('google_name'),
+            'google_email' => session('google_email'),
+        ]);
     }
 
     /**

@@ -1,9 +1,15 @@
-import { useForm, Link } from '@inertiajs/react';
+import { useForm, Link, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
 
 export default function Register() {
+    // 1. Tangkap props dari Inertia (flash message & data google)
+    const { props } = usePage();
+    const { flash, google_name, google_email } = props;
+
+    // 2. Masukkan data Google ke default state form (kalau ada)
     const { data, setData, post, processing, errors } = useForm({
-        name: '',
-        email: '',
+        name: google_name || '',
+        email: google_email || '',
         whatsapp: '',
         password: '',
         password_confirmation: '',
@@ -28,6 +34,13 @@ export default function Register() {
                     <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-lg">Lengkapi data diri Anda untuk memulai perjalanan pembelajaran.</p>
                 </div>
 
+                {/* 3. Tampilkan Alert Error Jika Ada Flash Message */}
+                {(flash?.error || props.error) && (
+                    <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md font-['Atkinson_Hyperlegible'] font-bold">
+                        {flash?.error || props.error}
+                    </div>
+                )}
+
                 <form onSubmit={submit} className="flex flex-col gap-6">
                     {/* Nama */}
                     <div className="flex flex-col gap-2">
@@ -38,7 +51,6 @@ export default function Register() {
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
                         />
-                        {/* Pesan Error Nama */}
                         {errors.name ? (
                             <span className="text-red-500 text-sm font-semibold mt-1">{errors.name}</span>
                         ) : (
@@ -55,8 +67,9 @@ export default function Register() {
                             placeholder="contoh@email.com"
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
+                            readOnly={!!google_email} // Bikin readonly kalau datanya ditarik dari Google
+                            style={google_email ? { backgroundColor: '#F0EDED', color: '#6D7B6D' } : {}}
                         />
-                        {/* Pesan Error Email */}
                         {errors.email && <span className="text-red-500 text-sm font-semibold mt-1">{errors.email}</span>}
                     </div>
 
@@ -72,7 +85,6 @@ export default function Register() {
                                 onChange={(e) => setData('whatsapp', e.target.value)}
                             />
                         </div>
-                        {/* Pesan Error WA */}
                         {errors.whatsapp && <span className="text-red-500 text-sm font-semibold mt-1">{errors.whatsapp}</span>}
                     </div>
 
@@ -85,7 +97,6 @@ export default function Register() {
                             value={data.password}
                             onChange={(e) => setData('password', e.target.value)}
                         />
-                        {/* Pesan Error Password */}
                         {errors.password && <span className="text-red-500 text-sm font-semibold mt-1">{errors.password}</span>}
                     </div>
 
@@ -98,7 +109,6 @@ export default function Register() {
                             value={data.password_confirmation}
                             onChange={(e) => setData('password_confirmation', e.target.value)}
                         />
-                        {/* Pesan Error Confirm Password */}
                         {errors.password_confirmation && <span className="text-red-500 text-sm font-semibold mt-1">{errors.password_confirmation}</span>}
                     </div>
 

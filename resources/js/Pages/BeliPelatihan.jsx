@@ -72,7 +72,7 @@ export default function BeliPelatihan({ banners, categories, courses }) {
                             ))
                         ) : (
                             <div className="min-w-full shrink-0 relative h-[280px] md:h-[320px] bg-[#008740] flex items-center justify-center text-white rounded-[24px]">
-                                <p className="font-bold">Belum ada promo saat ini boss.</p>
+                                <p className="font-bold">Belum ada banner aktif.</p>
                             </div>
                         )}
                     </div>

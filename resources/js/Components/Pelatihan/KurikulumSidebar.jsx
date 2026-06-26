@@ -52,9 +52,8 @@ export default function KurikulumSidebar({
           return (
             <section key={module.id} className="border-t border-[#ECEDEA]">
               <div
-                className={`flex min-h-[82px] items-center justify-between px-4 py-4 font-bold ${
-                  isFirst ? "bg-[#E9F7EF] text-[#00A553]" : "text-[#344054]"
-                }`}
+                className={`flex min-h-[82px] items-center justify-between px-4 py-4 font-bold ${isFirst ? "bg-[#E9F7EF] text-[#00A553]" : "text-[#344054]"
+                  }`}
               >
                 <span className="max-w-[230px] leading-7">{module.title}</span>
                 {isFirst ? (
@@ -67,33 +66,47 @@ export default function KurikulumSidebar({
               {isFirst ? (
                 <div className="border-l-4 border-[#00A553]">
                   {(module.materials || []).map((material) => {
-                    const active =
-                      String(material.id) === String(activeMaterialId);
+                    const active = String(material.id) === String(activeMaterialId);
+
+                    // Logika penguncian materi
+                    const isLocked = !material.is_accessible;
+
                     return (
                       <Link
                         key={material.id}
-                        href={`/pelatihan/${courseId}/belajar?lesson=${material.id}`}
-                        className={`flex items-start gap-3 px-8 py-3 text-sm leading-6 ${
-                          active
+                        // Kalau terkunci, arahkan ke '#' saja biar link-nya mati
+                        href={isLocked ? '#' : `/pelatihan/${courseId}/belajar?lesson=${material.id}`}
+                        // Tambahin class cursor-not-allowed & opacity kalau terkunci
+                        className={`flex items-start gap-3 px-8 py-3 text-sm leading-6 transition-all ${active
                             ? "bg-[#F4FFF7] font-semibold text-[#00A553]"
                             : "text-[#475467] hover:bg-[#FBFAF8]"
-                        }`}
+                          } ${isLocked ? "opacity-50 cursor-not-allowed pointer-events-none" : ""}`}
+                        onClick={(e) => isLocked && e.preventDefault()}
                       >
                         <span className="mt-1">
-                          {materialIcon(material, active)}
+                          {/* Kalau terkunci, ganti ikon jadi Lock, kalau nggak, pakai fungsi icon lu */}
+                          {isLocked ? (
+                            <Lock className="h-4 w-4 text-[#9AA6A0]" />
+                          ) : (
+                            materialIcon(material, active)
+                          )}
                         </span>
-                        <span>{material.title}</span>
+                        <span className="flex-1 flex items-center justify-between">
+                          {material.title}
+                          {isLocked && <Lock className="h-3 w-3 ml-2 text-[#9AA6A0]" />}
+                        </span>
                       </Link>
                     );
                   })}
 
+                  {/* Tombol Quiz juga bisa lu kunci kalau mau */}
                   {module.quiz ? (
                     <Link
                       href={`/pelatihan/${courseId}/kuis`}
                       className="flex items-center gap-3 px-8 py-3 text-sm font-semibold text-[#FF8A00] hover:bg-[#FFF4E8]"
                     >
                       <HelpCircle className="h-4 w-4" />
-                      {module.quiz.title || "Quiz Modul 1"}
+                      {module.quiz.title || "Quiz Modul"}
                     </Link>
                   ) : null}
                 </div>
@@ -108,9 +121,8 @@ export default function KurikulumSidebar({
   return (
     <>
       <aside
-        className={`hidden shrink-0 border-r border-[#E1E2DF] bg-white transition-all duration-300 lg:fixed lg:bottom-0 lg:left-0 lg:top-[72px] lg:z-20 lg:block lg:h-[calc(100vh-72px)] ${
-          collapsed ? "lg:w-[72px]" : "lg:w-[320px] lg:overflow-y-auto"
-        }`}
+        className={`hidden shrink-0 border-r border-[#E1E2DF] bg-white transition-all duration-300 lg:fixed lg:bottom-0 lg:left-0 lg:top-[72px] lg:z-20 lg:block lg:h-[calc(100vh-72px)] ${collapsed ? "lg:w-[72px]" : "lg:w-[320px] lg:overflow-y-auto"
+          }`}
       >
         <div className="sticky top-0 z-10 flex justify-end border-b border-[#ECEDEA] bg-white px-4 py-3">
           <button
