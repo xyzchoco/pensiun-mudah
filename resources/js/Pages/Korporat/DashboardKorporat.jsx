@@ -10,13 +10,6 @@ const memberProgress = [
     ['EP', 'Eko Prasetyo', 68, 'bg-[#A8632A]', 'text-[#A8632A]'],
 ];
 
-// Mock data: Activities (Biarkan sementara)
-const activities = [
-    ['join', 'Budi bergabung ke Pelatihan Anda', '2 menit yang lalu'],
-    ['done', 'Dini menyelesaikan Kuis 1', '15 menit yang lalu'],
-    ['join', 'Eko bergabung ke Pelatihan Anda', '1 jam yang lalu'],
-];
-
 // Icon Component
 function CourseIcon() {
     // Icon default kalau ga ada gambar
@@ -28,7 +21,7 @@ function CourseIcon() {
 }
 
 // TAMBAHKAN purchasedCourses SEBAGAI PROPS DARI BACKEND DI SINI BOS
-export default function DashboardKorporat({ banners = [], events = [], purchasedCourses = [] }) {
+export default function DashboardKorporat({ banners = [], events = [], purchasedCourses = [], recentActivities = [], memberProgressData = [] }) {
     return (
         <KorporatLayout
             title="Dashboard HRD - Pensiun Mudah"
@@ -145,34 +138,45 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                     {/* Progress Section */}
                     <section className="rounded-2xl border border-[#E4E2E1] bg-white p-6 shadow-sm lg:col-span-2">
                         <h2 className="max-w-sm text-lg font-bold text-[#1B1C1C]">
-                            Progres Pelatihan Manajemen Keuangan Terbaru
+                            Progres Belajar Anggota Terbaru
                         </h2>
                         <div className="mt-5 flex items-center gap-4 border-b border-[#E4E2E1] pb-3 text-sm font-bold text-[#3D4A3E]">
-                            <span className="w-44">Nama Anggota</span>
+                            <span className="w-52">Nama Anggota</span>
                             <span>Progres Belajar</span>
                         </div>
                         <div className="divide-y divide-[#F0EDED]">
-                            {memberProgress.map(([initials, name, percent, barColor, percentColor]) => (
-                                <div key={name} className="flex items-center gap-4 py-3">
-                                    <div className="flex w-44 shrink-0 items-center gap-3">
-                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-xs font-bold text-white">
-                                            {initials}
-                                        </span>
-                                        <span className="font-semibold text-[#1B1C1C]">{name}</span>
-                                    </div>
-                                    <div className="flex flex-1 items-center gap-3">
-                                        <div className="h-2.5 flex-1 rounded-full bg-[#F0EDED]">
-                                            <div
-                                                className={`h-2.5 rounded-full ${barColor}`}
-                                                style={{ width: `${percent}%` }}
-                                            />
+                            {memberProgressData && memberProgressData.length > 0 ? (
+                                memberProgressData.map((data, index) => (
+                                    <div key={index} className="flex items-center gap-4 py-3">
+                                        <div className="flex w-52 shrink-0 items-center gap-3">
+                                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-xs font-bold text-white">
+                                                {data.initials}
+                                            </span>
+                                            <div>
+                                                <span className="block font-semibold text-[#1B1C1C]">{data.name}</span>
+                                                <span className="block text-[10px] text-[#6B7280] line-clamp-1" title={data.course}>
+                                                    {data.course}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <span className={`w-12 text-right font-bold ${percentColor}`}>
-                                            {percent}%
-                                        </span>
+                                        <div className="flex flex-1 items-center gap-3">
+                                            <div className="h-2.5 flex-1 rounded-full bg-[#F0EDED]">
+                                                <div
+                                                    className={`h-2.5 rounded-full ${data.barColor}`}
+                                                    style={{ width: `${data.percent}%` }}
+                                                />
+                                            </div>
+                                            <span className={`w-12 text-right font-bold ${data.percentColor}`}>
+                                                {data.percent}%
+                                            </span>
+                                        </div>
                                     </div>
+                                ))
+                            ) : (
+                                <div className="py-6 text-center">
+                                    <p className="text-sm font-semibold text-[#6B7280]">Belum ada anggota yang memulai pelatihan.</p>
                                 </div>
-                            ))}
+                            )}
                         </div>
                     </section>
 
@@ -227,20 +231,25 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                         <section className="rounded-2xl border border-[#E4E2E1] bg-white p-5 shadow-sm">
                             <h2 className="text-lg font-bold text-[#1B1C1C]">Aktivitas Terbaru</h2>
                             <div className="mt-4 space-y-4">
-                                {activities.map(([variant, text, time]) => (
-                                    <div key={`${variant}-${text}`} className="flex gap-3">
-                                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${variant === 'done'
-                                            ? 'bg-[#FCE9D8] text-[#FF8928]'
-                                            : 'bg-[#E5F0E9] text-[#006B32]'
-                                            }`}>
-                                            {variant === 'done' ? '✓' : '+'}
-                                        </span>
-                                        <div>
-                                            <p className="text-sm font-semibold text-[#1B1C1C]">{text}</p>
-                                            <p className="text-xs text-[#6B7280]">{time}</p>
+                                {/* 2. Cek apakah ada aktivitas, kalau kosong kasih pesan */}
+                                {recentActivities.length > 0 ? (
+                                    recentActivities.map((activity, index) => (
+                                        <div key={index} className="flex gap-3">
+                                            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${activity.variant === 'done'
+                                                ? 'bg-[#FCE9D8] text-[#FF8928]'
+                                                : 'bg-[#E5F0E9] text-[#006B32]'
+                                                }`}>
+                                                {activity.variant === 'done' ? '✓' : '+'}
+                                            </span>
+                                            <div>
+                                                <p className="text-sm font-semibold text-[#1B1C1C]">{activity.text}</p>
+                                                <p className="text-xs text-[#6B7280]">{activity.time}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-gray-500">Belum ada aktivitas dari karyawan.</p>
+                                )}
                             </div>
                         </section>
                     </aside>

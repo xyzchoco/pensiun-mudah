@@ -1,6 +1,7 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 
 function getInitials(name) {
+    if (!name) return 'H';
     return name
         .split(' ')
         .map((part) => part[0])
@@ -10,10 +11,19 @@ function getInitials(name) {
 }
 
 export default function HrdHeader({
-    userName = 'Doni',
-    userRole = 'HRD PT Mencari Cinta Sejati',
     searchPlaceholder = 'Cari anggota...',
 }) {
+    // Tangkap data auth dari global props Inertia
+    const { auth } = usePage().props;
+    const user = auth?.user;
+
+    // 1. Ambil nama perusahaan dari tabel corporate_profiles
+    // (Bisa juga fallback ke nama instansi kalau misal data profile belum lengkap)
+    const companyName = user?.corporate_profile?.nama_perusahaan || user?.instansi || 'Perusahaan Belum Diset';
+
+    // 2. Baris kedua nampilin teks HRD + Nama Asli User yang lagi login
+    const hrdName = user?.name ? `HRD - ${user.name}` : 'Akun HRD';
+
     return (
         <header className="flex h-16 items-center justify-between gap-4 border-b border-[#E4E2E1]/40 bg-white px-4 font-['Atkinson_Hyperlegible'] sm:h-20 sm:px-6 lg:px-10">
             <Link
@@ -52,13 +62,19 @@ export default function HrdHeader({
 
             <div className="flex shrink-0 items-center gap-3">
                 <div className="hidden text-right sm:block">
+                    {/* NAMA PERUSAHAAN (Bercetak Tebal) */}
                     <p className="text-sm font-bold text-[#1B1C1C]">
-                        {userName}
+                        {companyName}
                     </p>
-                    <p className="text-xs text-[#6B7280]">{userRole}</p>
+                    {/* NAMA HRD (Kecil Abu-abu) */}
+                    <p className="text-xs text-[#6B7280]">
+                        {hrdName}
+                    </p>
                 </div>
+
+                {/* LINGKARAN INISIAL DARI NAMA PERUSAHAAN */}
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#006B32] text-sm font-bold text-white">
-                    {getInitials(userName)}
+                    {getInitials(companyName)}
                 </div>
             </div>
         </header>

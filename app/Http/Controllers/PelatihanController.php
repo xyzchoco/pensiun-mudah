@@ -383,4 +383,45 @@ class PelatihanController extends Controller
 
         return back()->with('success', 'Kode berhasil diklaim, silakan cek menu pelatihan.');
     }
+
+    public function detailModul($slug)
+    {
+        $user = auth()->user();
+
+        // 1. Cari kelas berdasarkan slug
+        $course = Course::where('slug', $slug)->firstOrFail();
+
+        // 2. Cari voucher korporat milik perusahaan ini untuk kelas tersebut
+        $voucher = CorporateVoucher::where('corporate_user_id', $user->user_id)
+            ->where('course_id', $course->id)
+            ->firstOrFail();
+
+        // 3. Tarik data karyawan yang nge-redeem voucher ini, limit 5 per halaman
+        $redemptions = VoucherRedemption::with(['user'])
+            ->where('corporate_voucher_id', $voucher->id)
+            ->latest('redeemed_at')
+            ->paginate(5);
+
+        // 4. Format datanya untuk React (suntikkan progress dari tabel enrollment)
+        $redemptions->getCollection()->transform(function ($redemption) use ($course) {
+            $enrollment = Enrollment::where('user_id', $redemption->user_id)
+                ->where('course_id', $course->id)
+                ->first();
+
+            return [
+                'id'       => $redemption->id,
+                'name'     => $redemption->user->name,
+                'email'    => $redemption->user->email,
+                'progress' => $enrollment ? $enrollment->progress_persen : 0,
+            ];
+        });
+
+        // 5. Lempar ke React
+        return Inertia::render('Korporat/DetailModulKaryawan', [
+            'moduleName'   => $course->title,
+            'memberCount'  => $voucher->used_count,
+            'totalMembers' => $voucher->max_uses,
+            'employees'    => $redemptions, // Bawa data pagination lengkap
+        ]);
+    }
 }

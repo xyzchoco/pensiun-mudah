@@ -81,6 +81,8 @@ Route::post('/event/{slug}/register', function ($slug, Request $request) {
 Route::middleware(['auth'])->group(function () {
 
     // 1. AREA ONBOARDING
+    Route::post('/belajar/catat-progres', [\App\Http\Controllers\LearningController::class, 'catatProgres'])->name('belajar.catat');
+
     Route::get('/onboarding/pilih-kategori', fn () => Inertia::render('Onboarding/PilihKategori'))->name('onboarding.kategori');
     Route::post('/onboarding/kategori', function () {
         $kategori = request()->validate(['kategori' => ['required', 'in:publik,korporat,asn']])['kategori'];
@@ -146,10 +148,69 @@ Route::middleware(['auth'])->group(function () {
             ];
         });
 
+    // AMBIL DATA AKTIVITAS TERBARU DARI TABEL VOUCHER REDEMPTION
+    // Cari id voucher apa aja yang dimiliki perusahaan ini
+    $voucherIds = \App\Models\CorporateVoucher::where('corporate_user_id', $user->user_id)->pluck('id');
+
+    // Tarik 5 riwayat klaim terakhir berdasarkan voucher tersebut
+    $recentActivities = \App\Models\VoucherRedemption::with(['user', 'voucher.course'])
+        ->whereIn('corporate_voucher_id', $voucherIds)
+        ->latest('redeemed_at')
+        ->take(5)
+        ->get()
+        ->map(function ($redemption) {
+            // Gunakan Carbon untuk bikin teks "5 menit yang lalu" otomatis!
+            \Carbon\Carbon::setLocale('id'); // Pastikan bahasa Indonesia
+            $timeAgo = \Carbon\Carbon::parse($redemption->redeemed_at)->diffForHumans();
+
+            return [
+                'variant' => 'join',
+                'text'    => $redemption->user->name . ' bergabung ke ' . $redemption->voucher->course->title,
+                'time'    => $timeAgo,
+            ];
+        });
+
+    // AMBIL DATA PROGRES BELAJAR KARYAWAN
+    $memberProgressData = \App\Models\VoucherRedemption::with(['user', 'voucher.course'])
+        ->whereIn('corporate_voucher_id', $voucherIds)
+        ->latest('redeemed_at')
+        ->take(5) // Ambil 5 progres terbaru
+        ->get()
+        ->map(function ($redemption) {
+            // Cari data progres di tabel enrollment
+            $enrollment = \App\Models\Enrollment::where('user_id', $redemption->user_id)
+                ->where('course_id', $redemption->voucher->course_id)
+                ->first();
+
+            $progress = $enrollment ? $enrollment->progress_persen : 0;
+            $name = $redemption->user->name;
+
+            // Bikin inisial nama (misal: Agus Setiawan -> AS)
+            $initials = collect(explode(' ', $name))
+                ->map(fn($p) => substr($p, 0, 1))
+                ->take(2)
+                ->implode('');
+
+            // Tentukan warna bar otomatis berdasarkan persentase
+            $colorClass     = $progress >= 80 ? 'bg-[#00A553]'   : ($progress >= 40 ? 'bg-[#FF8928]'   : 'bg-[#A8632A]');
+            $textColorClass = $progress >= 80 ? 'text-[#00A553]' : ($progress >= 40 ? 'text-[#FF8928]' : 'text-[#A8632A]');
+
+            return [
+                'initials'     => strtoupper($initials),
+                'name'         => $name,
+                'course'       => $redemption->voucher->course->title,
+                'percent'      => $progress,
+                'barColor'     => $colorClass,
+                'percentColor' => $textColorClass,
+            ];
+        });
+
     return Inertia::render('Korporat/DashboardKorporat', [
-        'banners' => \App\Models\DashboardBanner::where('is_active', true)->latest()->get(),
-        'events'  => \App\Models\Webinar::where('is_published', true)->latest()->take(3)->get(),
-        'purchasedCourses' => $purchasedCourses, // Lempar datanya ke React
+        'banners'            => \App\Models\DashboardBanner::where('is_active', true)->latest()->get(),
+        'events'             => \App\Models\Webinar::where('is_published', true)->latest()->take(3)->get(),
+        'purchasedCourses'   => $purchasedCourses,
+        'recentActivities'   => $recentActivities,
+        'memberProgressData' => $memberProgressData, // Lempar ke React
     ]);
 })->name('korporat.dashboard');
 
@@ -179,11 +240,36 @@ Route::middleware(['auth'])->group(function () {
             return back()->with('message', 'Profil berhasil diperbarui!');
         })->name('korporat.profil-perusahaan.update');
 
+        Route::put('/korporat/profil-perusahaan/update', [\App\Http\Controllers\CorporateProfileController::class, 'update'])->name('korporat.profil.update');
+
+        Route::get('/korporat/pelatihan-dibeli', function () {
+            $user = auth()->user();
+
+            // Ambil SEMUA data voucher/kelas yang dibeli oleh korporat ini
+            $purchasedCourses = \App\Models\CorporateVoucher::with('course')
+                ->where('corporate_user_id', $user->user_id)
+                ->latest()
+                ->get()
+                ->map(function ($voucher) {
+                    return [
+                        'id' => $voucher->course->id,
+                        'title' => $voucher->course->title,
+                        'slug' => $voucher->course->slug,
+                        'thumbnail' => $voucher->course->thumbnail,
+                        'used_count' => $voucher->used_count,
+                        'max_uses' => $voucher->max_uses,
+                    ];
+                });
+
+            return Inertia::render('Korporat/PelatihanDibeli', [
+                'purchasedCourses' => $purchasedCourses
+            ]);
+        })->name('korporat.pelatihan-dibeli');
+
         Route::get('/korporat/profil-perusahaan/edit', fn () => Inertia::render('Korporat/EditProfilPerusahaan', ['profile' => auth()->user()->corporateProfile]))->name('korporat.profil-perusahaan.edit');
         Route::get('/korporat/pelatihan/{slug}', [PelatihanController::class, 'show'])->name('korporat.pelatihan.detail');
-        Route::get('/korporat/pelatihan-dibeli', fn () => Inertia::render('Korporat/PelatihanDibeli'))->name('korporat.pelatihan-dibeli');
         Route::get('/korporat/pembayaran-berhasil', fn () => Inertia::render('Korporat/PembayaranBerhasilKorporat'))->name('korporat.pembayaran-berhasil');
-        Route::get('/korporat/modul/{slug}', fn ($slug) => Inertia::render('Korporat/DetailModulKaryawan', ['moduleName' => $slug]))->name('korporat.modul.detail');
+        Route::get('/korporat/modul/{slug}', [PelatihanController::class, 'detailModul'])->name('korporat.modul.detail');
         Route::get('/korporat/pilih-jadwal', fn () => Inertia::render('Korporat/PilihJadwal'))->name('korporat.pilih-jadwal');
 
         // Dashboard & Pelatihan Umum
@@ -292,7 +378,7 @@ Route::middleware(['auth'])->group(function () {
         // Profile & Misc
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::get('/profile/edit', fn () => Inertia::render('Profile/Edit'))->name('profile.edit.detail');
-        Route::get('/detail-aktivitas', fn () => Inertia::render('DetailAktivitasPelatihan'))->name('detail-aktivitas');
+        Route::get('/detail-aktivitas', [App\Http\Controllers\LearningController::class, 'detailAktivitas'])->middleware(['auth'])->name('detail-aktivitas');
         Route::get('/gabung-kelas', fn () => Inertia::render('GabungKelas'))->name('gabung-kelas');
         Route::get('/statistik-waktu-belajar', fn () => Inertia::render('StatistikWaktuBelajar'))->name('statistik-waktu');
         Route::get('/statistik-waktu', fn () => redirect()->route('statistik-waktu'));
