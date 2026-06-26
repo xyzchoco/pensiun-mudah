@@ -472,6 +472,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pelatihan/{id}/kuis', [PelatihanController::class, 'kuis'])->name('pelatihan.kuis');
         Route::get('/pelatihan/kuis/{id}', fn ($id) => redirect()->route('pelatihan.kuis', $id));
         Route::get('/pelatihan/{id}/kuis/hasil', [PelatihanController::class, 'hasilKuis'])->name('pelatihan.hasil-kuis');
+        Route::post('/pelatihan/{id}/kuis/selesai', [PelatihanController::class, 'selesaiKuis'])->name('pelatihan.kuis.selesai');
         Route::get('/pelatihan/hasil-kuis/{id}', fn ($id) => redirect()->route('pelatihan.hasil-kuis', $id));
 
         // Profile & Misc

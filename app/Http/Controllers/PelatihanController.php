@@ -126,6 +126,50 @@ class PelatihanController extends Controller
         ]);
     }
 
+    public function selesaiKuis(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        $enrollment = $this->activeEnrollment($id);
+        if ($enrollment instanceof \Illuminate\Http\RedirectResponse) {
+            return $enrollment;
+        }
+
+        $request->validate([
+            'module_id' => 'required|integer',
+            'quiz_id'   => 'required|integer',
+            'score'     => 'required|numeric|min:0|max:100',
+        ]);
+
+        // Catat penyelesaian kuis di learning_progress (material_id null = ini record kuis)
+        $existing = \App\Models\LearningProgress::where([
+            'user_id'   => $user->user_id,
+            'course_id' => $id,
+            'module_id' => $request->module_id,
+        ])->whereNull('material_id')->first();
+
+        if ($existing) {
+            $existing->is_completed = true;
+            $existing->persentase = $request->score;
+            $existing->last_accessed = now();
+            $existing->save();
+        } else {
+            \App\Models\LearningProgress::create([
+                'user_id'        => $user->user_id,
+                'course_id'      => $id,
+                'module_id'      => $request->module_id,
+                'material_id'    => null, // null = ini record kuis, bukan materi
+                'is_completed'   => true,
+                'persentase'     => $request->score,
+                'durasi_belajar' => 0,
+                'last_accessed'  => now(),
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Kuis berhasil diselesaikan!');
+    }
+
+
     public function myCourses()
     {
         $user = Auth::user();
@@ -255,10 +299,11 @@ class PelatihanController extends Controller
 
     private function modulePayload(Course $course, array $completedMaterialIds): array
     {
-        return $course->modules->values()->map(function ($module, $moduleIndex) use ($completedMaterialIds) {
+        $sortedModules = $course->modules->sortBy('urutan')->values();
+
+        return $sortedModules->map(function ($module, $moduleIndex) use ($sortedModules, $completedMaterialIds) {
             $quiz = $module->quizzes->first();
             
-            // 👇 UDAH DIBALIKIN JADI materials 👇
             $materials = $module->materials->values()->map(function ($material) use ($completedMaterialIds) {
                 return [
                     'id' => $material->id,
@@ -271,11 +316,40 @@ class PelatihanController extends Controller
                 ];
             })->all();
 
+            // Logika penguncian dinamis:
+            // Modul pertama (index 0) selalu terbuka.
+            // Modul berikutnya terbuka jika SEMUA materi modul sebelumnya sudah selesai
+            // DAN kuis modul sebelumnya sudah dikerjakan (jika ada kuis).
+            $isLocked = false;
+            if ($moduleIndex > 0) {
+                $prevModule = $sortedModules[$moduleIndex - 1];
+
+                // Cek apakah SEMUA materi modul sebelumnya sudah done
+                $prevMaterialIds = $prevModule->materials->pluck('id')->all();
+                $allPrevMaterialsDone = empty($prevMaterialIds) || 
+                    collect($prevMaterialIds)->every(fn ($id) => in_array((int) $id, $completedMaterialIds, true));
+
+                // Cek apakah kuis modul sebelumnya sudah dikerjakan
+                $prevQuiz = $prevModule->quizzes->first();
+                $prevQuizDone = true; // Default true kalau modul sebelumnya ga punya kuis
+                if ($prevQuiz) {
+                    // Cek di learning_progress: record kuis ditandai dengan material_id = NULL
+                    $prevQuizDone = DB::table('learning_progress')
+                        ->where('user_id', auth()->id())
+                        ->where('module_id', $prevModule->id)
+                        ->whereNull('material_id')
+                        ->where('is_completed', true)
+                        ->exists();
+                }
+
+                $isLocked = !($allPrevMaterialsDone && $prevQuizDone);
+            }
+
             return [
                 'id' => $module->id,
                 'title' => $module->judul,
                 'subtitle' => $module->deskripsi,
-                'locked' => (bool) $module->is_locked && $moduleIndex > 0,
+                'locked' => $isLocked,
                 
                 'materials' => $materials, 
                 'lessons' => $materials, // Tetap dibiarkan jaga-jaga kalau frontend nyari nama ini
@@ -311,9 +385,10 @@ class PelatihanController extends Controller
             return [];
         }
 
-        return DB::table('material_user') 
+        return DB::table('learning_progress') 
             ->where('user_id', $userId)
-            ->whereIn('material_id', $materialIds) 
+            ->whereIn('material_id', $materialIds)
+            ->where('is_completed', true)
             ->pluck('material_id')
             ->map(fn ($id) => (int) $id)
             ->all();

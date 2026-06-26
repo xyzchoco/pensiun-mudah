@@ -29,9 +29,29 @@ export default function Kuis({ learning }) {
   const progressStep = Math.min(Math.max(questionNumber, 3), totalQuestions);
   const isFinishStep = questionNumber >= 3;
 
+  // Cari modul yang punya kuis ini
+  const activeModule = modules.find(m => m.quiz?.id === quiz.id);
+
   const handlePrimary = () => {
     if (isFinishStep) {
-      router.visit(`/pelatihan/${course.id}/kuis/hasil`);
+      // Hitung skor berdasarkan jawaban
+      const score = 80; // TODO: hitung real score dari jawaban user
+
+      // POST hasil kuis ke backend sebelum pindah ke halaman hasil
+      router.post(`/pelatihan/${course.id}/kuis/selesai`, {
+        module_id: activeModule?.id,
+        quiz_id: quiz.id,
+        score: score,
+      }, {
+        preserveScroll: true,
+        onSuccess: () => {
+          router.visit(`/pelatihan/${course.id}/kuis/hasil`);
+        },
+        onError: () => {
+          // Kalau gagal POST, tetap lanjut ke hasil
+          router.visit(`/pelatihan/${course.id}/kuis/hasil`);
+        }
+      });
       return;
     }
     const next = questionNumber + 1;

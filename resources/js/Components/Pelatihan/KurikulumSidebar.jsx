@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "@inertiajs/react";
 import {
   CheckCircle2,
@@ -29,6 +29,29 @@ export default function KurikulumSidebar({
 }) {
   const [open, setOpen] = useState(false);
 
+  // Cari modul mana yang mengandung materi aktif, defaultnya modul pertama yang tidak terkunci
+  const activeModuleIndex = modules.findIndex(m =>
+    (m.materials || []).some(mat => String(mat.id) === String(activeMaterialId))
+  );
+
+  const [expandedModuleId, setExpandedModuleId] = useState(() => {
+    if (activeModuleIndex >= 0) return modules[activeModuleIndex].id;
+    const firstUnlocked = modules.find(m => !m.locked);
+    return firstUnlocked ? firstUnlocked.id : modules[0]?.id;
+  });
+
+  // Update expanded module saat activeMaterialId berubah
+  useEffect(() => {
+    if (activeModuleIndex >= 0) {
+      setExpandedModuleId(modules[activeModuleIndex].id);
+    }
+  }, [activeMaterialId]);
+
+  const toggleModule = (moduleId, isLocked) => {
+    if (isLocked) return;
+    setExpandedModuleId(prev => prev === moduleId ? null : moduleId);
+  };
+
   const body = (
     <>
       <div className="px-4 py-5">
@@ -47,59 +70,65 @@ export default function KurikulumSidebar({
       </div>
 
       <nav>
-        {modules.map((module, index) => {
-          const isFirst = index === 0;
+        {modules.map((module) => {
+          const isLocked = module.locked;
+          const isExpanded = expandedModuleId === module.id;
+
+          // Cek apakah semua materi di modul ini sudah selesai
+          const allDone = (module.materials || []).length > 0 &&
+            (module.materials || []).every(m => m.done);
+
           return (
             <section key={module.id} className="border-t border-[#ECEDEA]">
-              <div
-                className={`flex min-h-[82px] items-center justify-between px-4 py-4 font-bold ${isFirst ? "bg-[#E9F7EF] text-[#00A553]" : "text-[#344054]"
-                  }`}
+              <button
+                type="button"
+                onClick={() => toggleModule(module.id, isLocked)}
+                className={`flex w-full min-h-[82px] items-center justify-between px-4 py-4 font-bold text-left transition-colors ${
+                  isLocked
+                    ? "text-[#9AA6A0] cursor-not-allowed"
+                    : isExpanded
+                      ? "bg-[#E9F7EF] text-[#00A553]"
+                      : allDone
+                        ? "text-[#00A553] hover:bg-[#F0FDF4]"
+                        : "text-[#344054] hover:bg-[#FBFAF8]"
+                }`}
+                disabled={isLocked}
               >
                 <span className="max-w-[230px] leading-7">{module.title}</span>
-                {isFirst ? (
-                  <ChevronDown className="h-5 w-5 text-[#00A553]" />
+                {isLocked ? (
+                  <Lock className="h-4 w-4 text-[#9AA6A0] shrink-0" />
+                ) : isExpanded ? (
+                  <ChevronDown className="h-5 w-5 text-[#00A553] shrink-0" />
+                ) : allDone ? (
+                  <CheckCircle2 className="h-5 w-5 text-[#00A96B] shrink-0" />
                 ) : (
-                  <Lock className="h-4 w-4 text-[#9AA6A0]" />
+                  <ChevronRight className="h-5 w-5 text-[#9AA6A0] shrink-0" />
                 )}
-              </div>
+              </button>
 
-              {isFirst ? (
+              {isExpanded && !isLocked ? (
                 <div className="border-l-4 border-[#00A553]">
                   {(module.materials || []).map((material) => {
                     const active = String(material.id) === String(activeMaterialId);
 
-                    // Logika penguncian materi
-                    const isLocked = !material.is_accessible;
-
                     return (
                       <Link
                         key={material.id}
-                        // Kalau terkunci, arahkan ke '#' saja biar link-nya mati
-                        href={isLocked ? '#' : `/pelatihan/${courseId}/belajar?lesson=${material.id}`}
-                        // Tambahin class cursor-not-allowed & opacity kalau terkunci
+                        href={`/pelatihan/${courseId}/belajar?lesson=${material.id}`}
                         className={`flex items-start gap-3 px-8 py-3 text-sm leading-6 transition-all ${active
                             ? "bg-[#F4FFF7] font-semibold text-[#00A553]"
                             : "text-[#475467] hover:bg-[#FBFAF8]"
-                          } ${isLocked ? "opacity-50 cursor-not-allowed pointer-events-none" : ""}`}
-                        onClick={(e) => isLocked && e.preventDefault()}
+                          }`}
                       >
                         <span className="mt-1">
-                          {/* Kalau terkunci, ganti ikon jadi Lock, kalau nggak, pakai fungsi icon lu */}
-                          {isLocked ? (
-                            <Lock className="h-4 w-4 text-[#9AA6A0]" />
-                          ) : (
-                            materialIcon(material, active)
-                          )}
+                          {materialIcon(material, active)}
                         </span>
-                        <span className="flex-1 flex items-center justify-between">
-                          {material.title}
-                          {isLocked && <Lock className="h-3 w-3 ml-2 text-[#9AA6A0]" />}
-                        </span>
+                        <span className="flex-1">{material.title}</span>
                       </Link>
                     );
                   })}
 
-                  {/* Tombol Quiz juga bisa lu kunci kalau mau */}
+                  {/* Tombol Quiz */}
                   {module.quiz ? (
                     <Link
                       href={`/pelatihan/${courseId}/kuis`}
