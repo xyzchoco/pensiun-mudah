@@ -4,7 +4,7 @@ import KorporatLayout from '@/Layouts/KorporatLayout';
 export default function ProfilPerusahaan() {
     // Mengambil data user yang sudah di-load dengan relasi corporateProfile di HandleInertiaRequests
     const { auth } = usePage().props;
-    const profile = auth.user.corporate_profile || {};
+    const profile = auth?.user?.corporate_profile || {};
 
     const companyFields = [
         { label: 'Nama Perusahaan', value: profile.nama_perusahaan || '-', highlight: true, span: 1 },
@@ -19,7 +19,6 @@ export default function ProfilPerusahaan() {
         <KorporatLayout
             title="Profil Perusahaan - Pensiun Mudah"
             activeNav="profil"
-            showHeader={false}
         >
             <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-10">
                 <h1 className="text-2xl font-bold text-[#1B1C1C] sm:text-3xl">

@@ -147,6 +147,7 @@ export default function LearningLayout({
   showHeaderBack = false,
   alignHeaderContentLeft = false,
   withFooter = true,
+  footerWrapperClassName = "",
 }) {
   return (
     <div className="min-h-screen bg-[#FBFAF8] text-[#1F1F1F] font-['Atkinson_Hyperlegible']">
@@ -156,7 +157,11 @@ export default function LearningLayout({
         alignContentLeft={alignHeaderContentLeft}
       />
       {children}
-      {withFooter ? <LearningFooter /> : null}
+      {withFooter ? (
+        <div className={footerWrapperClassName}>
+          <LearningFooter />
+        </div>
+      ) : null}
     </div>
   );
 }

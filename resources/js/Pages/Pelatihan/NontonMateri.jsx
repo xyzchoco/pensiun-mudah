@@ -66,7 +66,14 @@ export default function NontonMateri({ learning }) {
   const activeModule = modules.find(m => m.materials?.some(mat => mat.id === activeMaterial?.id));
 
   return (
-    <LearningLayout showHeaderBack alignHeaderContentLeft backHref="/pelatihan">
+    <LearningLayout
+      showHeaderBack
+      alignHeaderContentLeft
+      backHref="/pelatihan"
+      footerWrapperClassName={`transition-[padding] duration-300 ${
+        sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[320px]"
+      }`}
+    >
       <Head title={`${activeMaterial?.title || "Materi"} - Pensiun Mudah`} />
 
       <div

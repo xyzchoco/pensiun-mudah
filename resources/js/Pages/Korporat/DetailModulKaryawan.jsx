@@ -1,6 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
-import HrdHeader from '@/Components/Korporat/HrdHeader';
-import Footer from '@/Components/Footer';
+import { Link } from '@inertiajs/react';
+import KorporatLayout from '@/Layouts/KorporatLayout';
 
 const employees = [
     {
@@ -121,11 +120,11 @@ export default function DetailModulKaryawan({
     backHref = '/korporat/pelatihan-dibeli',
 }) {
     return (
-        <div className="flex min-h-screen flex-col bg-[#FBF9F8] font-['Atkinson_Hyperlegible']">
-            <Head title={moduleName + ' - Pensiun Mudah'} />
-            <HrdHeader />
-
-            <main className="flex-1">
+        <KorporatLayout
+            title={moduleName + ' - Pensiun Mudah'}
+            activeNav="dashboard"
+            searchPlaceholder="Cari anggota..."
+        >
                 <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-10">
                     <Link
                         href={backHref}
@@ -253,9 +252,6 @@ export default function DetailModulKaryawan({
                         </p>
                     </div>
                 </div>
-            </main>
-
-            <Footer />
-        </div>
+        </KorporatLayout>
     );
 }

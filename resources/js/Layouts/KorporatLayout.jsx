@@ -24,8 +24,9 @@ const navItems = [
 ];
 
 function getInitials(name) {
-    return name
+    return (name || 'PM')
         .split(' ')
+        .filter(Boolean)
         .map((part) => part[0])
         .join('')
         .slice(0, 2)
@@ -97,7 +98,9 @@ export default function KorporatLayout({
     children,
 }) {
     const { auth } = usePage().props;
-    const user = auth?.user ?? { name: 'Budi Santoso' };
+    const user = auth?.user ?? {};
+    const corporateProfile = user?.corporate_profile ?? {};
+    const companyName = corporateProfile.nama_perusahaan || user.name || 'Korporat';
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     // Tampilkan sidebar otomatis di layar besar
@@ -106,18 +109,6 @@ export default function KorporatLayout({
             setSidebarOpen(true);
         }
     }, []);
-
-    const brand = (
-        <Link href="/korporat/dashboard" className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#006B32] text-sm font-extrabold text-white">
-                PM
-            </span>
-            <span className="font-['Atkinson_Hyperlegible'] text-lg font-extrabold">
-                <span className="text-[#006B32]">PENSIUN</span>
-                <span className="text-[#FF8928]">MUDAH</span>
-            </span>
-        </Link>
-    );
 
     const sidebarNav = (
         <nav className="space-y-1 px-4">
@@ -193,7 +184,7 @@ export default function KorporatLayout({
             </aside>
 
             <div
-                className={`min-h-screen transition-all duration-300 ${sidebarOpen ? "lg:pl-72" : "lg:pl-0"}`}
+                className={`min-h-screen flex-1 transition-all duration-300 ${sidebarOpen ? "lg:pl-72" : "lg:pl-0"}`}
             >
                 <div className="flex-1 flex flex-col h-full">
                     {showHeader ? (
@@ -281,19 +272,22 @@ export default function KorporatLayout({
 
                                     <div className="w-px h-8 bg-[#E4E2E1] hidden sm:block" />
 
-                                    <div className="flex items-center gap-2 sm:gap-3">
+                                    <Link
+                                        href="/korporat/profil-perusahaan"
+                                        className="flex items-center gap-2 rounded-lg p-1 transition-colors hover:bg-[#F0EDED] sm:gap-3"
+                                    >
                                         <div className="text-right hidden sm:block">
                                             <p className="font-['Atkinson_Hyperlegible'] font-bold text-sm text-[#1B1C1C]">
-                                                {user.name}
+                                                {companyName}
                                             </p>
                                             <p className="font-['Atkinson_Hyperlegible'] font-semibold text-[10px] tracking-wider uppercase text-[#006B32]">
-                                                Premium Member
+                                                Akun Korporat
                                             </p>
                                         </div>
                                         <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#006B32] border-2 border-[#006B32]/20 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                                            {getInitials(user.name)}
+                                            {getInitials(companyName)}
                                         </div>
-                                    </div>
+                                    </Link>
                                 </div>
                             </div>
                         </header>
