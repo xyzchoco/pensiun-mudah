@@ -6,25 +6,25 @@ const navItems = [
     {
         key: 'dashboard',
         label: 'Dashboard',
-        href: '/korporat/dashboard',
+        href: '/instansi/dashboard',
         icon: 'grid',
     },
     {
         key: 'beli',
         label: 'Beli Pelatihan',
-        href: '/korporat/beli-pelatihan',
+        href: '/instansi/beli-pelatihan',
         icon: 'bag',
     },
     {
         key: 'anggota',
         label: 'Anggota',
-        href: '/korporat/anggota',
+        href: '/instansi/anggota',
         icon: 'users',
     },
     {
         key: 'profil',
         label: 'Profil Perusahaan',
-        href: '/korporat/profil-perusahaan',
+        href: '/instansi/profil-perusahaan',
         icon: 'user',
     },
 ];
@@ -113,17 +113,19 @@ function NavIcon({ name }) {
     );
 }
 
-export default function KorporatLayout({
+export default function InstansiLayout({
     title = 'Pensiun Mudah',
     activeNav = 'dashboard',
     showHeader = true,
+    showSidebar = true,
     searchPlaceholder = 'Cari kursus, konsultan, webinar...',
     children,
 }) {
-    const { auth, flash } = usePage().props;  // ✅
+    const { auth, flash } = usePage().props; // ✅
     const user = auth?.user ?? {};
     const corporateProfile = user?.corporate_profile ?? {};
-    const companyName = corporateProfile.nama_perusahaan || user.name || 'Korporat';
+    const companyName =
+        corporateProfile.nama_perusahaan || user.name || 'Instansi';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showToast, setShowToast] = useState(false);
 
@@ -138,7 +140,7 @@ export default function KorporatLayout({
 
     // Tampilkan sidebar otomatis di layar besar
     useEffect(() => {
-        if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+        if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
             setSidebarOpen(true);
         }
     }, []);
@@ -166,30 +168,35 @@ export default function KorporatLayout({
         <div className="flex min-h-screen bg-[#FBF9F8] font-['Atkinson_Hyperlegible']">
             <Head title={title} />
 
-            {/* Backdrop - mobile & tablet */}
+            {showSidebar && (
+<>
+{/* Backdrop - mobile & tablet */}
             <div
-                className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 lg:hidden ${sidebarOpen
-                    ? "opacity-100 pointer-events-auto"
-                    : "opacity-0 pointer-events-none"
-                    }`}
+                className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 lg:hidden ${
+                    sidebarOpen
+                        ? 'opacity-100 pointer-events-auto'
+                        : 'opacity-0 pointer-events-none'
+                }`}
                 onClick={() => setSidebarOpen(false)}
                 aria-hidden="true"
             />
 
             {/* Sidebar */}
             <aside
-                className={`fixed left-0 top-0 z-50 flex h-screen w-[288px] max-w-[85vw] flex-col bg-[#F6F3F2] border-r border-[#E4E2E1] py-4 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                    }`}
+                className={`fixed left-0 top-0 z-50 flex h-screen w-[288px] max-w-[85vw] flex-col bg-[#F6F3F2] border-r border-[#E4E2E1] py-4 transition-transform duration-300 ease-in-out ${
+                    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                }`}
             >
                 <div className="flex items-center justify-between px-6 pb-8">
-                    <Link href="/korporat/dashboard">
+                    <Link href="/instansi/dashboard">
                         <img
                             src="/images/logo.png"
                             alt="Pensiun Mudah"
                             className="h-12 sm:h-14 w-auto"
                         />
                     </Link>
-                    <button
+                    {showSidebar && (
+                                <button
                         type="button"
                         onClick={() => setSidebarOpen(false)}
                         className="p-2 rounded-lg text-[#3D4A3E] hover:bg-white/60 transition-colors lg:hidden"
@@ -209,55 +216,66 @@ export default function KorporatLayout({
                             />
                         </svg>
                     </button>
+                                )}
                 </div>
 
                 {sidebarNav}
             </aside>
 
+            </>
+)}
             <div
-                className={`min-h-screen flex-1 transition-all duration-300 ${sidebarOpen ? "lg:pl-72" : "lg:pl-0"}`}
+                className={`min-h-screen flex-1 transition-all duration-300 ${(sidebarOpen && showSidebar) ? 'lg:pl-72' : 'lg:pl-0'}`}
             >
                 <div className="flex-1 flex flex-col h-full">
                     {showHeader ? (
                         <header className="sticky top-0 z-30 flex items-center justify-between h-16 sm:h-20 px-4 sm:px-6 lg:px-10 bg-white border-b border-[#E4E2E1]/30 shrink-0 gap-4">
                             <div className="flex items-center gap-3 min-w-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setSidebarOpen((prev) => !prev)}
-                                    className="p-2 rounded-lg text-[#3D4A3E] hover:bg-[#F0EDED] transition-colors shrink-0"
-                                    aria-label={sidebarOpen ? "Sembunyikan sidebar" : "Tampilkan sidebar"}
-                                    aria-expanded={sidebarOpen}
-                                >
-                                    {sidebarOpen ? (
-                                        <svg
-                                            className="w-6 h-6"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M6 18L18 6M6 6l12 12"
-                                            />
-                                        </svg>
-                                    ) : (
-                                        <svg
-                                            className="w-6 h-6"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M4 6h16M4 12h16M4 18h16"
-                                            />
-                                        </svg>
-                                    )}
-                                </button>
+                                {showSidebar && (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setSidebarOpen((prev) => !prev)
+                                        }
+                                        className="p-2 rounded-lg text-[#3D4A3E] hover:bg-[#F0EDED] transition-colors shrink-0"
+                                        aria-label={
+                                            sidebarOpen
+                                                ? 'Sembunyikan sidebar'
+                                                : 'Tampilkan sidebar'
+                                        }
+                                        aria-expanded={sidebarOpen}
+                                    >
+                                        {sidebarOpen ? (
+                                            <svg
+                                                className="w-6 h-6"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    d="M6 18L18 6M6 6l12 12"
+                                                />
+                                            </svg>
+                                        ) : (
+                                            <svg
+                                                className="w-6 h-6"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    d="M4 6h16M4 12h16M4 18h16"
+                                                />
+                                            </svg>
+                                        )}
+                                    </button>
+                                )}
                                 <h1 className="font-['Atkinson_Hyperlegible'] font-bold text-lg sm:text-xl text-[#1B1C1C] truncate">
                                     {title}
                                 </h1>
@@ -304,7 +322,7 @@ export default function KorporatLayout({
                                     <div className="w-px h-8 bg-[#E4E2E1] hidden sm:block" />
 
                                     <Link
-                                        href="/korporat/profil-perusahaan"
+                                        href="/instansi/profil-perusahaan"
                                         className="flex items-center gap-2 rounded-lg p-1 transition-colors hover:bg-[#F0EDED] sm:gap-3"
                                     >
                                         <div className="text-right hidden sm:block">
@@ -312,7 +330,7 @@ export default function KorporatLayout({
                                                 {companyName}
                                             </p>
                                             <p className="font-['Atkinson_Hyperlegible'] font-semibold text-[10px] tracking-wider uppercase text-[#006B32]">
-                                                Akun Korporat
+                                                Akun Instansi
                                             </p>
                                         </div>
                                         <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#006B32] border-2 border-[#006B32]/20 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
@@ -328,13 +346,27 @@ export default function KorporatLayout({
                     {showToast && flash?.success && (
                         <div className="fixed top-5 right-5 z-[9999] flex items-center gap-3 rounded-xl border border-[#006B32] bg-[#E5F0E9] p-4 shadow-lg max-w-sm animate-[fadeInDown_0.3s_ease]">
                             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-white">
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                <svg
+                                    className="h-4 w-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="3"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M5 13l4 4L19 7"
+                                    />
                                 </svg>
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm font-bold text-[#1B1C1C]">Berhasil!</p>
-                                <p className="mt-0.5 text-xs text-[#3D4A3E]">{flash.success}</p>
+                                <p className="text-sm font-bold text-[#1B1C1C]">
+                                    Berhasil!
+                                </p>
+                                <p className="mt-0.5 text-xs text-[#3D4A3E]">
+                                    {flash.success}
+                                </p>
                             </div>
                             <button
                                 onClick={() => setShowToast(false)}

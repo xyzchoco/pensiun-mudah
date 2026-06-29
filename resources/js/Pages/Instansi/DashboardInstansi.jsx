@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import KorporatLayout from '@/Layouts/KorporatLayout';
+import InstansiLayout from '@/Layouts/InstansiLayout';
 
 // Mock data: Progress (Biarkan sementara kalau belum ada tabelnya)
 const memberProgress = [
@@ -14,29 +14,53 @@ const memberProgress = [
 function CourseIcon() {
     // Icon default kalau ga ada gambar
     return (
-        <svg className="h-10 w-10 opacity-80" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        <svg
+            className="h-10 w-10 opacity-80"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+            />
         </svg>
     );
 }
 
 // TAMBAHKAN purchasedCourses SEBAGAI PROPS DARI BACKEND DI SINI BOS
-export default function DashboardKorporat({ banners = [], events = [], purchasedCourses = [], recentActivities = [], memberProgressData = [] }) {
+export default function DashboardInstansi({
+    banners = [],
+    events = [],
+    purchasedCourses = [],
+    recentActivities = [],
+    memberProgressData = [],
+}) {
     return (
-        <KorporatLayout
+        <InstansiLayout
             title="Dashboard HRD - Pensiun Mudah"
             activeNav="dashboard"
             searchPlaceholder="Cari anggota..."
         >
             <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10">
-
                 {/* Banner Section */}
                 {banners.length > 0 ? (
                     banners.map((banner) => (
                         <section
                             key={banner.id}
                             className="relative overflow-hidden rounded-2xl px-6 py-10 text-white sm:px-10 sm:py-14 mb-6 bg-cover bg-center"
-                            style={banner.image_path ? { backgroundImage: `url(/storage/${banner.image_path})` } : { backgroundImage: 'linear-gradient(to right, #1B5036, #10251B)' }}
+                            style={
+                                banner.image_path
+                                    ? {
+                                          backgroundImage: `url(/storage/${banner.image_path})`,
+                                      }
+                                    : {
+                                          backgroundImage:
+                                              'linear-gradient(to right, #1B5036, #10251B)',
+                                      }
+                            }
                         >
                             <div className="absolute inset-0 bg-black/40"></div>
 
@@ -45,10 +69,14 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                                     {banner.title || 'Spesial Kelas MPP'}
                                 </h1>
                                 <p className="mt-2 max-w-md text-white/90">
-                                    {banner.description || 'Voucher Potongan 200rb khusus untuk pendaftaran bulan ini.'}
+                                    {banner.description ||
+                                        'Voucher Potongan 200rb khusus untuk pendaftaran bulan ini.'}
                                 </p>
                                 <Link
-                                    href={banner.link_url || "/korporat/beli-pelatihan"}
+                                    href={
+                                        banner.link_url ||
+                                        '/instansi/beli-pelatihan'
+                                    }
                                     className="mt-6 inline-flex rounded-full bg-[#FF8928] px-6 py-3 font-bold text-white transition-colors hover:bg-[#F57F1E]"
                                 >
                                     Gunakan Kode
@@ -63,10 +91,11 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                             Spesial Kelas MPP
                         </h1>
                         <p className="mt-2 max-w-md text-white/90">
-                            Voucher Potongan 200rb khusus untuk pendaftaran bulan ini.
+                            Voucher Potongan 200rb khusus untuk pendaftaran
+                            bulan ini.
                         </p>
                         <Link
-                            href="/korporat/beli-pelatihan"
+                            href="/instansi/beli-pelatihan"
                             className="mt-6 inline-flex rounded-full bg-[#FF8928] px-6 py-3 font-bold text-white transition-colors hover:bg-[#F57F1E]"
                         >
                             Gunakan Kode
@@ -80,7 +109,7 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                         Pelatihan Yang Pernah Dibeli
                     </h2>
                     <Link
-                        href="/korporat/pelatihan-dibeli"
+                        href="/instansi/pelatihan-dibeli"
                         className="text-sm font-bold text-[#006B32]"
                     >
                         Lihat Semua
@@ -93,7 +122,13 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                         purchasedCourses.map((course, index) => (
                             <Link
                                 key={index}
-                                href={`/korporat/modul/${course.slug || course.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')}`}
+                                href={`/instansi/modul/${
+                                    course.slug ||
+                                    course.title
+                                        .toLowerCase()
+                                        .replace(/[^a-z0-9]+/g, '-')
+                                        .replace(/(^-|-$)+/g, '')
+                                }`}
                                 className="group flex flex-col overflow-hidden rounded-2xl border border-[#E4E2E1] bg-white shadow-sm hover:shadow-md hover:border-[#006B32] transition-all cursor-pointer"
                             >
                                 {/* Nampilin Thumbnail Asli kalau ada */}
@@ -106,15 +141,23 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                                 ) : (
                                     <div
                                         className="flex h-32 items-center justify-center text-white"
-                                        style={{ backgroundColor: course.category_color || '#006B32' }}
+                                        style={{
+                                            backgroundColor:
+                                                course.category_color ||
+                                                '#006B32',
+                                        }}
                                     >
                                         <CourseIcon />
                                     </div>
                                 )}
 
                                 <div className="flex flex-1 flex-col p-5">
-                                    <h3 className="font-bold text-[#1B1C1C] line-clamp-2 group-hover:text-[#006B32] transition-colors">{course.title}</h3>
-                                    <p className="mt-1 text-sm text-[#3D4A3E] line-clamp-2">{course.desc}</p>
+                                    <h3 className="font-bold text-[#1B1C1C] line-clamp-2 group-hover:text-[#006B32] transition-colors">
+                                        {course.title}
+                                    </h3>
+                                    <p className="mt-1 text-sm text-[#3D4A3E] line-clamp-2">
+                                        {course.desc}
+                                    </p>
 
                                     <div className="mt-auto pt-4 flex items-center justify-between">
                                         <span className="rounded-md bg-[#E5F0E9] px-2.5 py-1 text-xs font-bold text-[#006B32]">
@@ -122,7 +165,8 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                                         </span>
                                         <span className="text-xs font-semibold text-[#6B7280]">
                                             {/* Ini yang nge-define member yang udah join! */}
-                                            {course.used_count} / {course.max_uses} Terpakai
+                                            {course.used_count} /{' '}
+                                            {course.max_uses} Terpakai
                                         </span>
                                     </div>
                                 </div>
@@ -130,7 +174,9 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                         ))
                     ) : (
                         <div className="col-span-full rounded-2xl border-2 border-dashed border-[#E4E2E1] py-10 text-center">
-                            <p className="text-sm font-semibold text-[#6B7280]">Perusahaan Anda belum membeli pelatihan apapun.</p>
+                            <p className="text-sm font-semibold text-[#6B7280]">
+                                Perusahaan Anda belum membeli pelatihan apapun.
+                            </p>
                         </div>
                     )}
                 </div>
@@ -146,16 +192,25 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                             <span>Progres Belajar</span>
                         </div>
                         <div className="divide-y divide-[#F0EDED]">
-                            {memberProgressData && memberProgressData.length > 0 ? (
+                            {memberProgressData &&
+                            memberProgressData.length > 0 ? (
                                 memberProgressData.map((data, index) => (
-                                    <div key={index} className="flex items-center gap-4 py-3">
+                                    <div
+                                        key={index}
+                                        className="flex items-center gap-4 py-3"
+                                    >
                                         <div className="flex w-52 shrink-0 items-center gap-3">
                                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-xs font-bold text-white">
                                                 {data.initials}
                                             </span>
                                             <div>
-                                                <span className="block font-semibold text-[#1B1C1C]">{data.name}</span>
-                                                <span className="block text-[10px] text-[#6B7280] line-clamp-1" title={data.course}>
+                                                <span className="block font-semibold text-[#1B1C1C]">
+                                                    {data.name}
+                                                </span>
+                                                <span
+                                                    className="block text-[10px] text-[#6B7280] line-clamp-1"
+                                                    title={data.course}
+                                                >
                                                     {data.course}
                                                 </span>
                                             </div>
@@ -164,10 +219,14 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                                             <div className="h-2.5 flex-1 rounded-full bg-[#F0EDED]">
                                                 <div
                                                     className={`h-2.5 rounded-full ${data.barColor}`}
-                                                    style={{ width: `${data.percent}%` }}
+                                                    style={{
+                                                        width: `${data.percent}%`,
+                                                    }}
                                                 />
                                             </div>
-                                            <span className={`w-12 text-right font-bold ${data.percentColor}`}>
+                                            <span
+                                                className={`w-12 text-right font-bold ${data.percentColor}`}
+                                            >
                                                 {data.percent}%
                                             </span>
                                         </div>
@@ -175,7 +234,10 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                                 ))
                             ) : (
                                 <div className="py-6 text-center">
-                                    <p className="text-sm font-semibold text-[#6B7280]">Belum ada anggota yang memulai pelatihan.</p>
+                                    <p className="text-sm font-semibold text-[#6B7280]">
+                                        Belum ada anggota yang memulai
+                                        pelatihan.
+                                    </p>
                                 </div>
                             )}
                         </div>
@@ -184,16 +246,26 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                     <aside className="space-y-6">
                         {/* Event Section */}
                         <section className="rounded-2xl border border-[#E4E2E1] bg-white p-5 shadow-sm">
-                            <h2 className="font-bold text-[#1B1C1C]">Event Terbaru</h2>
+                            <h2 className="font-bold text-[#1B1C1C]">
+                                Event Terbaru
+                            </h2>
                             <div className="mt-4 space-y-4">
                                 {events.length > 0 ? (
                                     events.map((event) => {
-                                        const isOnline = event.jenis_event === 'Online';
-                                        const tagColor = isOnline ? 'bg-[#E5F0E9] text-[#006B32]' : 'bg-[#FEE2E2] text-[#DC2626]';
-                                        const eventTag = isOnline ? 'Seminar Online' : 'Workshop Offline';
+                                        const isOnline =
+                                            event.jenis_event === 'Online';
+                                        const tagColor = isOnline
+                                            ? 'bg-[#E5F0E9] text-[#006B32]'
+                                            : 'bg-[#FEE2E2] text-[#DC2626]';
+                                        const eventTag = isOnline
+                                            ? 'Seminar Online'
+                                            : 'Workshop Offline';
 
                                         return (
-                                            <div key={event.id} className="flex gap-3">
+                                            <div
+                                                key={event.id}
+                                                className="flex gap-3"
+                                            >
                                                 {event.image_path ? (
                                                     <img
                                                         src={`/storage/${event.image_path}`}
@@ -205,19 +277,29 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                                                 )}
 
                                                 <div>
-                                                    <span className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-bold ${tagColor}`}>
+                                                    <span
+                                                        className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-bold ${tagColor}`}
+                                                    >
                                                         {eventTag}
                                                     </span>
-                                                    <p className="mt-1 text-sm font-bold text-[#1B1C1C] line-clamp-1">{event.judul}</p>
+                                                    <p className="mt-1 text-sm font-bold text-[#1B1C1C] line-clamp-1">
+                                                        {event.judul}
+                                                    </p>
                                                     <p className="text-xs text-[#6B7280]">
-                                                        {event.jam || 'TBA'} {isOnline && event.lokasi_link ? ` · Live Zoom` : ''}
+                                                        {event.jam || 'TBA'}{' '}
+                                                        {isOnline &&
+                                                        event.lokasi_link
+                                                            ? ` · Live Zoom`
+                                                            : ''}
                                                     </p>
                                                 </div>
                                             </div>
                                         );
                                     })
                                 ) : (
-                                    <p className="text-sm text-gray-500">Belum ada event saat ini.</p>
+                                    <p className="text-sm text-gray-500">
+                                        Belum ada event saat ini.
+                                    </p>
                                 )}
                             </div>
                             <Link
@@ -230,32 +312,45 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
 
                         {/* Recent Activities Section */}
                         <section className="rounded-2xl border border-[#E4E2E1] bg-white p-5 shadow-sm">
-                            <h2 className="text-lg font-bold text-[#1B1C1C]">Aktivitas Terbaru</h2>
+                            <h2 className="text-lg font-bold text-[#1B1C1C]">
+                                Aktivitas Terbaru
+                            </h2>
                             <div className="mt-4 space-y-4">
                                 {/* 2. Cek apakah ada aktivitas, kalau kosong kasih pesan */}
                                 {recentActivities.length > 0 ? (
                                     recentActivities.map((activity, index) => (
                                         <div key={index} className="flex gap-3">
-                                            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${activity.variant === 'done'
-                                                ? 'bg-[#FCE9D8] text-[#FF8928]'
-                                                : 'bg-[#E5F0E9] text-[#006B32]'
-                                                }`}>
-                                                {activity.variant === 'done' ? '✓' : '+'}
+                                            <span
+                                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                                                    activity.variant === 'done'
+                                                        ? 'bg-[#FCE9D8] text-[#FF8928]'
+                                                        : 'bg-[#E5F0E9] text-[#006B32]'
+                                                }`}
+                                            >
+                                                {activity.variant === 'done'
+                                                    ? '✓'
+                                                    : '+'}
                                             </span>
                                             <div>
-                                                <p className="text-sm font-semibold text-[#1B1C1C]">{activity.text}</p>
-                                                <p className="text-xs text-[#6B7280]">{activity.time}</p>
+                                                <p className="text-sm font-semibold text-[#1B1C1C]">
+                                                    {activity.text}
+                                                </p>
+                                                <p className="text-xs text-[#6B7280]">
+                                                    {activity.time}
+                                                </p>
                                             </div>
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-sm text-gray-500">Belum ada aktivitas dari karyawan.</p>
+                                    <p className="text-sm text-gray-500">
+                                        Belum ada aktivitas dari karyawan.
+                                    </p>
                                 )}
                             </div>
                         </section>
                     </aside>
                 </div>
             </div>
-        </KorporatLayout>
+        </InstansiLayout>
     );
 }

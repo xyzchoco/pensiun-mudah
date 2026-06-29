@@ -59,7 +59,7 @@ const UpdatePasswordForm = forwardRef(function UpdatePasswordForm({ className = 
     return (
         <section className={className}>
             <form onSubmit={updatePassword} className="space-y-6">
-                <div className="grid gap-4 lg:grid-cols-3">
+                <div className="space-y-5">
                     <div className="space-y-2">
                         <InputLabel
                             htmlFor="current_password"
@@ -74,7 +74,7 @@ const UpdatePasswordForm = forwardRef(function UpdatePasswordForm({ className = 
                                 setData('current_password', e.target.value)
                             }
                             type="password"
-                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-[#F8F9F7] px-4 py-3 text-sm text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
+                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-white px-4 py-3 text-sm text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
                             autoComplete="current-password"
                         />
 
@@ -93,7 +93,7 @@ const UpdatePasswordForm = forwardRef(function UpdatePasswordForm({ className = 
                             value={data.password}
                             onChange={(e) => setData('password', e.target.value)}
                             type="password"
-                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-[#F8F9F7] px-4 py-3 text-sm text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
+                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-white px-4 py-3 text-sm text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
                             autoComplete="new-password"
                         />
 
@@ -113,7 +113,7 @@ const UpdatePasswordForm = forwardRef(function UpdatePasswordForm({ className = 
                                 setData('password_confirmation', e.target.value)
                             }
                             type="password"
-                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-[#F8F9F7] px-4 py-3 text-sm text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
+                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-white px-4 py-3 text-sm text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
                             autoComplete="new-password"
                         />
 

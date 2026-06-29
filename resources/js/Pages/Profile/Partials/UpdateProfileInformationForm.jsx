@@ -44,7 +44,7 @@ const UpdateProfileInformation = forwardRef(function UpdateProfileInformation({
 
                         <TextInput
                             id="name"
-                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-[#F8F9F7] px-4 py-4 text-base text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
+                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-white px-4 py-3 text-base text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
                             required
@@ -61,7 +61,7 @@ const UpdateProfileInformation = forwardRef(function UpdateProfileInformation({
                         <TextInput
                             id="email"
                             type="email"
-                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-[#F8F9F7] px-4 py-4 text-base text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
+                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-white px-4 py-3 text-base text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
                             required
@@ -74,14 +74,17 @@ const UpdateProfileInformation = forwardRef(function UpdateProfileInformation({
                     <div className="space-y-3">
                         <InputLabel htmlFor="whatsapp" value="Nomor Telepon (WhatsApp)" />
 
-                        <TextInput
-                            id="whatsapp"
-                            type="tel"
-                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-[#F8F9F7] px-4 py-4 text-base text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
-                            value={data.whatsapp}
-                            onChange={(e) => setData('whatsapp', e.target.value)}
-                            autoComplete="tel"
-                        />
+                        <div className="flex mt-1 rounded-xl border border-[#DDE6DF] bg-white focus-within:border-[#006B32] focus-within:ring-1 focus-within:ring-[#006B3222] overflow-hidden">
+                            <span className="flex items-center px-4 text-base font-semibold text-[#1B1C1C] border-r border-[#DDE6DF] bg-[#F8F9F7]">+62</span>
+                            <input
+                                id="whatsapp"
+                                type="tel"
+                                className="block w-full bg-transparent px-4 py-3 text-base text-[#1B1C1C] border-0 outline-none focus:ring-0"
+                                value={data.whatsapp}
+                                onChange={(e) => setData('whatsapp', e.target.value)}
+                                autoComplete="tel"
+                            />
+                        </div>
 
                         <InputError className="mt-2" message={errors.whatsapp} />
                     </div>
@@ -92,7 +95,7 @@ const UpdateProfileInformation = forwardRef(function UpdateProfileInformation({
                         <TextInput
                             id="tanggal_lahir"
                             type="date"
-                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-[#F8F9F7] px-4 py-4 text-base text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
+                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-white px-4 py-3 text-base text-[#1B1C1C] focus:border-[#006B32] focus:ring-[#006B3222]"
                             value={data.tanggal_lahir ?? ''}
                             onChange={(e) => setData('tanggal_lahir', e.target.value)}
                             autoComplete="bday"
@@ -108,7 +111,7 @@ const UpdateProfileInformation = forwardRef(function UpdateProfileInformation({
                             id="kategori_pensiun"
                             value={data.kategori_pensiun ?? ''}
                             onChange={(e) => setData('kategori_pensiun', e.target.value)}
-                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-[#F8F9F7] px-4 py-4 text-base text-[#1B1C1C] focus:border-[#006B32] focus:outline-none focus:ring-[#006B3222]"
+                            className="mt-1 block w-full rounded-xl border border-[#DDE6DF] bg-white px-4 py-3 text-base text-[#1B1C1C] focus:border-[#006B32] focus:outline-none focus:ring-[#006B3222]"
                         >
                             <option value="">Pilih Kategori</option>
                             <option value="Pensiunan PNS">Pensiunan PNS</option>

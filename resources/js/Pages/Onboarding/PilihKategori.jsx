@@ -19,7 +19,6 @@ const categories = [
         title: 'ASN/TNI/Polri',
         desc: 'Untuk anggota TNI dan POLRI yang memasuki masa purna tugas.',
         icon: 'shield',
-        disabled: true,
     },
 ];
 
@@ -89,8 +88,22 @@ export default function PilihKategori() {
         (category) => category.id === selected,
     );
 
+    // ASN/TNI/Polri langsung diarahkan ke halaman Verifikasi Instansi.
+    const goToInstansiVerifikasi = () => {
+        router.get('/instansi/verifikasi');
+    };
+
+    const handleSelect = (category) => {
+        setSelected(category.id);
+    };
+
     const handleSubmit = () => {
-        if (!selectedCategory || selectedCategory.disabled) return;
+        if (!selectedCategory) return;
+
+        if (selected === 'asn') {
+            goToInstansiVerifikasi();
+            return;
+        }
 
         router.post('/onboarding/kategori', {
             kategori: selected,
@@ -126,23 +139,15 @@ export default function PilihKategori() {
                     <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
                         {categories.map((category) => {
                             const active = selected === category.id;
-                            const disabled = category.disabled;
                             return (
                                 <button
                                     key={category.id}
                                     type="button"
-                                    onClick={() => {
-                                        if (!disabled) {
-                                            setSelected(category.id);
-                                        }
-                                    }}
-                                    disabled={disabled}
+                                    onClick={() => handleSelect(category)}
                                     className={
-                                        disabled
-                                            ? 'flex cursor-not-allowed flex-col items-center rounded-2xl border border-[#E4E2E1] bg-[#F6F3F2] p-6 text-center opacity-60'
-                                            : active
-                                                ? 'flex flex-col items-center rounded-2xl border-2 border-[#006B32] bg-white p-6 text-center'
-                                                : 'flex flex-col items-center rounded-2xl border border-[#E4E2E1] bg-white p-6 text-center hover:border-[#006B32]/40'
+                                        active
+                                            ? 'flex flex-col items-center rounded-2xl border-2 border-[#006B32] bg-white p-6 text-center'
+                                            : 'flex flex-col items-center rounded-2xl border border-[#E4E2E1] bg-white p-6 text-center transition-colors hover:border-[#006B32]/40'
                                     }
                                 >
                                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F0EDED] text-[#3D4A3E]">
@@ -154,11 +159,6 @@ export default function PilihKategori() {
                                     <span className="mt-2 text-sm text-[#3D4A3E]">
                                         {category.desc}
                                     </span>
-                                    {disabled ? (
-                                        <span className="mt-3 rounded-full bg-[#E4E2E1] px-3 py-1 text-xs font-bold text-[#6B7280]">
-                                            Belum tersedia
-                                        </span>
-                                    ) : null}
                                 </button>
                             );
                         })}
@@ -168,7 +168,7 @@ export default function PilihKategori() {
                         <button
                             type="button"
                             onClick={handleSubmit}
-                            disabled={!selectedCategory || selectedCategory.disabled}
+                            disabled={!selectedCategory}
                             className="flex w-full max-w-md items-center justify-center gap-2 rounded-lg bg-[#FF8928] px-6 py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E] disabled:cursor-not-allowed disabled:bg-[#C9C7C5]"
                         >
                             Masuk Sekarang
