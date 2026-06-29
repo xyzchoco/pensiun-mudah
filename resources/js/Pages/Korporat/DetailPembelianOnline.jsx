@@ -17,7 +17,7 @@ function stripHtml(value) {
     return String(value || '').replace(/<[^>]*>?/gm, '');
 }
 
-export default function DetailPembelian({
+export default function DetailPembelianOnline({
     course = null,
     transaction = null,
     snapToken,
@@ -31,57 +31,87 @@ export default function DetailPembelian({
     orderId = 'IND-0001-2025',
     backHref = '/korporat/beli-pelatihan',
 }) {
-    // Inisialisasi state Qty (prioritas dari data transaction, lalu prop quantity)
     const [qty, setQty] = useState(transaction?.jumlah_peserta || Math.max(1, Number(quantity) || 1));
+    const activeToken = snapToken || transaction?.snap_token;
 
-    // Load Midtrans Snap Script
     useEffect(() => {
-        if (!midtransClientKey) return;
+        if (!midtransClientKey || !activeToken) return;
 
-        const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js"; // Ganti ke app.midtrans.com untuk Production
-        const script = document.createElement('script');
-        script.src = snapScript;
-        script.setAttribute('data-client-key', midtransClientKey);
-        script.async = true;
-        document.body.appendChild(script);
+        const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
+        let script = document.querySelector(`script[src="${snapScript}"]`);
 
-        return () => { document.body.removeChild(script); };
-    }, [midtransClientKey]);
+        if (!script) {
+            script = document.createElement('script');
+            script.src = snapScript;
+            script.setAttribute('data-client-key', midtransClientKey);
+            script.async = true;
+            document.body.appendChild(script);
+        }
+    }, [midtransClientKey, activeToken]);
+
+    // KUNCI SINKRONISASI INSTAN TANPA LOADING KEDIP BOS
+    const updateQuantityInBackend = (newQty) => {
+        if (!course?.slug) return;
+
+        // Update state di frontend dulu secara instan biar angka langsung berubah di layar
+        setQty(newQty);
+
+        // Arahkan ke backend di latar belakang (background request)
+        router.get(
+            `/korporat/pelatihan/${course.slug}/pembelian-online`,
+            { qty: newQty },
+            {
+                preserveState: true,  // Pertahankan state komponen agar React gak reload
+                preserveScroll: true, // Kunci posisi scroll biar gak lompat ke atas halaman
+                only: ['transaction', 'snapToken'], // HANYA perbarui data token & invoice dari Laravel (Parsial)
+                showProgress: false,  // MATIKAN loading bar garis biru di bagian atas layar
+            }
+        );
+    };
+
+    const increment = () => {
+        const newQty = qty + 1;
+        updateQuantityInBackend(newQty);
+    };
+
+    const decrement = () => {
+        if (qty > 1) {
+            const newQty = qty - 1;
+            updateQuantityInBackend(newQty);
+        }
+    };
 
     const handlePay = () => {
-        if (window.snap && snapToken) {
-            window.snap.pay(snapToken, {
+        if (window.snap && activeToken) {
+            window.snap.pay(activeToken, {
                 onSuccess(result) {
                     router.get(
                         `/payment/finish?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}&flag=success`
                     );
                 },
-
                 onPending(result) {
                     router.get(
                         `/payment/finish?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}`
                     );
                 },
-
                 onError() {
                     alert("Pembayaran gagal.");
                 },
-
                 onClose() {
                     console.log("Popup ditutup");
                 },
             });
+        } else {
+            alert("Sistem pembayaran belum siap atau token kedaluwarsa. Mohon tunggu sebentar.");
         }
     };
 
-    // Helper data
     const courseTitle = course?.title || title;
     const courseDescription = stripHtml(course?.description) || description;
-    const coursePrice = course?.price ?? 199000;
+    const coursePrice = transaction?.harga_per_peserta || course?.price || 199000;
     const subtotal = coursePrice * qty;
 
-    const coursePriceLabel = course ? formatRupiah(coursePrice) : price;
-    // Menggunakan perhitungan dinamis agar harga total berubah saat Qty ditambah/dikurang
+    const coursePriceLabel = formatRupiah(coursePrice);
     const totalLabel = formatRupiah(subtotal);
 
     const thumbnail = course?.thumbnail
@@ -93,12 +123,9 @@ export default function DetailPembelian({
         { id: 'layanan', label: 'Biaya Layanan', value: 'Gratis', accent: true },
     ];
 
-    const decrement = () => setQty((prev) => (prev > 1 ? prev - 1 : 1));
-    const increment = () => setQty((prev) => prev + 1);
-
     return (
         <div className="flex min-h-screen flex-col bg-[#FBF9F8] font-['Atkinson_Hyperlegible']">
-            <Head title={`${courseTitle} - Detail Pembelian`} />
+            <Head title={`${courseTitle} - Detail Pembelian Korporat`} />
             <PaymentHeader />
 
             <main className="flex-1">
@@ -107,28 +134,17 @@ export default function DetailPembelian({
                         href={backHref}
                         className="inline-flex items-center gap-2 font-bold text-[#006B32] transition-opacity hover:opacity-80"
                     >
-                        <svg
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19 12H5M12 19l-7-7 7-7"
-                            />
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" />
                         </svg>
                         Kembali ke Beli Pelatihan
                     </Link>
 
                     <h1 className="mt-4 text-3xl font-bold text-[#1B1C1C]">
-                        Detail Pembelian
+                        Detail Pembelian Korporat
                     </h1>
 
                     <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-                        {/* Kolom Kiri: Detail Kursus & Midtrans Info */}
                         <div className="space-y-6 lg:col-span-2">
                             <div className="rounded-2xl border border-[#E4E2E1] bg-white p-5 shadow-sm">
                                 <div className="flex flex-col gap-5 sm:flex-row">
@@ -152,7 +168,7 @@ export default function DetailPembelian({
                                             {courseDescription}
                                         </p>
                                         <p className="mt-4 text-2xl font-bold text-[#006B32]">
-                                            {coursePriceLabel}
+                                            {coursePriceLabel} <span className="text-sm font-normal text-gray-500">/ lisensi karyawan</span>
                                         </p>
                                     </div>
                                 </div>
@@ -161,43 +177,21 @@ export default function DetailPembelian({
                             <div className="rounded-2xl border border-[#E4E2E1] bg-white p-5 shadow-sm">
                                 <div className="flex gap-4">
                                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E5F0E9] text-[#006B32]">
-                                        <svg
-                                            className="h-5 w-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M12 3l7 3v6c0 4-3 6.5-7 9-4-2.5-7-5-7-9V6l7-3z"
-                                            />
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M9 12l2 2 4-4"
-                                            />
+                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l7 3v6c0 4-3 6.5-7 9-4-2.5-7-5-7-9V6l7-3z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" />
                                         </svg>
                                     </span>
                                     <div>
                                         <h3 className="font-bold text-[#1B1C1C]">
-                                            Pembayaran Diproses oleh Midtrans
+                                            Pembayaran Khusus Korporat via Midtrans
                                         </h3>
                                         <p className="mt-1 text-sm leading-relaxed text-[#3D4A3E]">
-                                            Silakan klik tombol "Bayar Sekarang" di sebelah kanan. Anda
-                                            dapat memilih metode pembayaran
-                                            (Virtual Account semua bank, GoPay,
-                                            QRIS, atau Kartu Kredit) pada
-                                            jendela aman yang akan muncul
-                                            berikutnya.
+                                            Setiap perubahan jumlah lisensi karyawan akan memperbarui nominal aman secara real-time ke server Midtrans. Kuota voucher perusahaan Anda otomatis bertambah setelah pembayaran sukses.
                                         </p>
                                         <div className="mt-4 flex flex-wrap gap-3">
                                             {paymentMethods.map((method) => (
-                                                <span
-                                                    key={method}
-                                                    className="h-7 w-14 rounded bg-[#F0EDED]"
-                                                />
+                                                <span key={method} className="h-7 w-14 rounded bg-[#F0EDED]" />
                                             ))}
                                         </div>
                                     </div>
@@ -205,7 +199,6 @@ export default function DetailPembelian({
                             </div>
                         </div>
 
-                        {/* Kolom Kanan: Ringkasan & Action */}
                         <div className="lg:col-span-1">
                             <div className="rounded-2xl border border-[#E4E2E1] bg-[#F6F3F2] p-6">
                                 <h2 className="text-xl font-bold text-[#1B1C1C]">
@@ -216,16 +209,8 @@ export default function DetailPembelian({
                                     {summaryRows.map((row) => (
                                         <div key={row.id}>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-[#3D4A3E]">
-                                                    {row.label}
-                                                </span>
-                                                <span
-                                                    className={
-                                                        row.accent
-                                                            ? 'font-bold text-[#006B32]'
-                                                            : 'font-bold text-[#1B1C1C]'
-                                                    }
-                                                >
+                                                <span className="text-[#3D4A3E]">{row.label}</span>
+                                                <span className={row.accent ? 'font-bold text-[#006B32]' : 'font-bold text-[#1B1C1C]'}>
                                                     {row.value}
                                                 </span>
                                             </div>
@@ -244,27 +229,15 @@ export default function DetailPembelian({
                                 </div>
 
                                 <div className="mt-5 flex items-start gap-2 rounded-xl bg-[#E5F0E9] p-4">
-                                    <svg
-                                        className="mt-0.5 h-5 w-5 shrink-0 text-[#006B32]"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M9 12l2 2 4-4"
-                                        />
+                                    <svg className="mt-0.5 h-5 w-5 shrink-0 text-[#006B32]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" />
                                         <circle cx="12" cy="12" r="9" />
                                     </svg>
-                                    <p className="text-sm font-semibold text-[#006B32]">
-                                        Transaksi aman & terenkripsi. Akses
-                                        kursus selamanya setelah pembayaran.
+                                    <p className="text-xs font-semibold text-[#006B32]">
+                                        Setiap penambahan kuota akan menambah kode lisensi (`max_uses`) yang dapat langsung dibagikan ke karyawan Anda.
                                     </p>
                                 </div>
 
-                                {/* Kontrol Kuantitas */}
                                 <div className="mt-5 flex items-center justify-center gap-3">
                                     <button
                                         type="button"
@@ -288,34 +261,17 @@ export default function DetailPembelian({
                                 </div>
 
                                 <p className="mt-3 text-center text-sm text-[#6B7280]">
-                                    ID: {transaction?.id || orderId}
+                                    Invoice: {transaction?.nomor_transaksi || orderId}
                                 </p>
 
-                                {/* Tombol Bayar */}
                                 <button
                                     type="button"
                                     onClick={handlePay}
                                     className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF8928] px-6 py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"
                                 >
-                                    <svg
-                                        className="h-5 w-5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <rect
-                                            x="5"
-                                            y="11"
-                                            width="14"
-                                            height="9"
-                                            rx="2"
-                                        />
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M8 11V8a4 4 0 018 0v3"
-                                        />
+                                    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <rect x="5" y="11" width="14" height="9" rx="2" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 11V8a4 4 0 018 0v3" />
                                     </svg>
                                     Bayar Sekarang
                                 </button>
