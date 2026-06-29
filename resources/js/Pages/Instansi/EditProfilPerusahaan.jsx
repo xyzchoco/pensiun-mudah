@@ -1,6 +1,6 @@
 import { Link, usePage, useForm } from '@inertiajs/react';
 import { useRef, useState } from 'react';
-import KorporatLayout from '@/Layouts/KorporatLayout';
+import InstansiLayout from '@/Layouts/InstansiLayout';
 
 const categoryOptions = [
     'Teknologi & Informasi',
@@ -21,7 +21,7 @@ export default function EditProfilPerusahaan({ profile = {} }) {
         _method: 'PUT',
         nama_perusahaan: corporateProfile.nama_perusahaan || '',
         kategori_bisnis: corporateProfile.kategori_bisnis || categoryOptions[0],
-       
+
         email_bisnis: corporateProfile.email_bisnis || '',
         no_telepon: corporateProfile.no_telepon || '',
         alamat_kantor: corporateProfile.alamat_kantor || '',
@@ -32,13 +32,13 @@ export default function EditProfilPerusahaan({ profile = {} }) {
         e.preventDefault();
 
         // Tembak ke route laravel
-        post('/korporat/profil-perusahaan/update', {
+        post('/instansi/profil-perusahaan/update', {
             preserveScroll: true,
         });
     };
 
     return (
-        <KorporatLayout title="Edit Profil Perusahaan" activeNav="profil">
+        <InstansiLayout title="Edit Profil Perusahaan" activeNav="profil">
             <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-10">
                 <nav className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[#3D4A3E]">
                     <span>Pengaturan</span>
@@ -48,87 +48,164 @@ export default function EditProfilPerusahaan({ profile = {} }) {
                     <span className="text-[#006B32]">Edit</span>
                 </nav>
 
-                <h1 className="mt-3 text-3xl font-bold text-[#1B1C1C]">Edit Profil Perusahaan</h1>
-                <p className="mt-2 text-[#3D4A3E]">Perbarui informasi entitas bisnis Anda untuk keperluan administrasi dan laporan.</p>
+                <h1 className="mt-3 text-3xl font-bold text-[#1B1C1C]">
+                    Edit Profil Perusahaan
+                </h1>
+                <p className="mt-2 text-[#3D4A3E]">
+                    Perbarui informasi entitas bisnis Anda untuk keperluan
+                    administrasi dan laporan.
+                </p>
 
                 {/* BUNGKUS DENGAN FORM */}
-                <form onSubmit={handleSubmit} className="mt-6 rounded-2xl border border-[#E4E2E1] bg-white p-6 shadow-sm sm:p-8">
-
+                <form
+                    onSubmit={handleSubmit}
+                    className="mt-6 rounded-2xl border border-[#E4E2E1] bg-white p-6 shadow-sm sm:p-8"
+                >
 
 
                     <div className="grid gap-6 sm:grid-cols-2">
                         {/* NAMA PERUSAHAAN */}
                         <div>
-                            <label className="text-sm font-bold text-[#1B1C1C]" htmlFor="nama">Nama Perusahaan</label>
+                            <label
+                                className="text-sm font-bold text-[#1B1C1C]"
+                                htmlFor="nama"
+                            >
+                                Nama Perusahaan
+                            </label>
                             <input
                                 id="nama"
                                 type="text"
                                 value={data.nama_perusahaan}
-                                onChange={(e) => setData('nama_perusahaan', e.target.value)}
+                                onChange={(e) =>
+                                    setData('nama_perusahaan', e.target.value)
+                                }
                                 className={`mt-2 w-full rounded-lg border bg-white px-4 py-3 text-[#1B1C1C] outline-none focus:ring-2 ${errors.nama_perusahaan ? 'border-red-500 focus:ring-red-500/20' : 'border-[#E4E2E1] focus:border-[#006B32] focus:ring-[#006B32]/20'}`}
                             />
-                            {errors.nama_perusahaan && <p className="mt-1 text-xs text-red-500">{errors.nama_perusahaan}</p>}
+                            {errors.nama_perusahaan && (
+                                <p className="mt-1 text-xs text-red-500">
+                                    {errors.nama_perusahaan}
+                                </p>
+                            )}
                         </div>
 
                         {/* KATEGORI BISNIS */}
                         <div>
-                            <label className="text-sm font-bold text-[#1B1C1C]" htmlFor="kategori">Kategori Bisnis</label>
+                            <label
+                                className="text-sm font-bold text-[#1B1C1C]"
+                                htmlFor="kategori"
+                            >
+                                Kategori Bisnis
+                            </label>
                             <div className="relative mt-2">
                                 <select
                                     id="kategori"
                                     value={data.kategori_bisnis}
-                                    onChange={(e) => setData('kategori_bisnis', e.target.value)}
+                                    onChange={(e) =>
+                                        setData(
+                                            'kategori_bisnis',
+                                            e.target.value,
+                                        )
+                                    }
                                     className="w-full appearance-none rounded-lg border border-[#E4E2E1] bg-white px-4 py-3 pr-10 text-[#1B1C1C] outline-none focus:border-[#006B32] focus:ring-2 focus:ring-[#006B32]/20"
                                 >
                                     {categoryOptions.map((option) => (
-                                        <option key={option} value={option}>{option}</option>
+                                        <option key={option} value={option}>
+                                            {option}
+                                        </option>
                                     ))}
                                 </select>
                                 {/* Ikon Panah Bawah */}
-                                <svg className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[#3D4A3E]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 9l4 4 4-4" /></svg>
+                                <svg
+                                    className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[#3D4A3E]"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M8 9l4 4 4-4"
+                                    />
+                                </svg>
                             </div>
-                            {errors.kategori_bisnis && <p className="mt-1 text-xs text-red-500">{errors.kategori_bisnis}</p>}
+                            {errors.kategori_bisnis && (
+                                <p className="mt-1 text-xs text-red-500">
+                                    {errors.kategori_bisnis}
+                                </p>
+                            )}
                         </div>
-
-                   
 
                         {/* EMAIL BISNIS */}
                         <div>
-                            <label className="text-sm font-bold text-[#1B1C1C]" htmlFor="email">Email Bisnis</label>
+                            <label
+                                className="text-sm font-bold text-[#1B1C1C]"
+                                htmlFor="email"
+                            >
+                                Email Bisnis
+                            </label>
                             <input
                                 id="email"
                                 type="email"
                                 value={data.email_bisnis}
-                                onChange={(e) => setData('email_bisnis', e.target.value)}
+                                onChange={(e) =>
+                                    setData('email_bisnis', e.target.value)
+                                }
                                 className={`mt-2 w-full rounded-lg border bg-white px-4 py-3 text-[#1B1C1C] outline-none focus:ring-2 ${errors.email_bisnis ? 'border-red-500' : 'border-[#E4E2E1] focus:border-[#006B32] focus:ring-[#006B32]/20'}`}
                             />
-                            {errors.email_bisnis && <p className="mt-1 text-xs text-red-500">{errors.email_bisnis}</p>}
+                            {errors.email_bisnis && (
+                                <p className="mt-1 text-xs text-red-500">
+                                    {errors.email_bisnis}
+                                </p>
+                            )}
                         </div>
 
                         {/* TELEPON */}
                         <div>
-                            <label className="text-sm font-bold text-[#1B1C1C]" htmlFor="telepon">Nomor Telepon</label>
+                            <label
+                                className="text-sm font-bold text-[#1B1C1C]"
+                                htmlFor="telepon"
+                            >
+                                Nomor Telepon
+                            </label>
                             <input
                                 id="telepon"
                                 type="tel"
                                 value={data.no_telepon}
-                                onChange={(e) => setData('no_telepon', e.target.value)}
+                                onChange={(e) =>
+                                    setData('no_telepon', e.target.value)
+                                }
                                 className="mt-2 w-full rounded-lg border border-[#E4E2E1] bg-white px-4 py-3 text-[#1B1C1C] outline-none focus:border-[#006B32] focus:ring-2 focus:ring-[#006B32]/20"
                             />
-                            {errors.no_telepon && <p className="mt-1 text-xs text-red-500">{errors.no_telepon}</p>}
+                            {errors.no_telepon && (
+                                <p className="mt-1 text-xs text-red-500">
+                                    {errors.no_telepon}
+                                </p>
+                            )}
                         </div>
 
                         {/* ALAMAT */}
                         <div className="sm:col-span-2">
-                            <label className="text-sm font-bold text-[#1B1C1C]" htmlFor="alamat">Alamat Kantor Pusat</label>
+                            <label
+                                className="text-sm font-bold text-[#1B1C1C]"
+                                htmlFor="alamat"
+                            >
+                                Alamat Kantor Pusat
+                            </label>
                             <textarea
                                 id="alamat"
                                 rows={4}
                                 value={data.alamat_kantor}
-                                onChange={(e) => setData('alamat_kantor', e.target.value)}
+                                onChange={(e) =>
+                                    setData('alamat_kantor', e.target.value)
+                                }
                                 className="mt-2 w-full resize-none rounded-lg border border-[#E4E2E1] bg-white px-4 py-3 text-[#1B1C1C] outline-none focus:border-[#006B32] focus:ring-2 focus:ring-[#006B32]/20"
                             />
-                            {errors.alamat_kantor && <p className="mt-1 text-xs text-red-500">{errors.alamat_kantor}</p>}
+                            {errors.alamat_kantor && (
+                                <p className="mt-1 text-xs text-red-500">
+                                    {errors.alamat_kantor}
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -136,7 +213,7 @@ export default function EditProfilPerusahaan({ profile = {} }) {
 
                     <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
                         <Link
-                            href="/korporat/profil-perusahaan"
+                            href="/instansi/profil-perusahaan"
                             className="rounded-lg border border-[#006B32] px-6 py-3 text-center font-bold text-[#006B32] transition-colors hover:bg-[#F0EDED]"
                         >
                             Batal
@@ -151,6 +228,6 @@ export default function EditProfilPerusahaan({ profile = {} }) {
                     </div>
                 </form>
             </div>
-        </KorporatLayout>
+        </InstansiLayout>
     );
 }

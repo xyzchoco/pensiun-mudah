@@ -20,6 +20,20 @@ Route::get('/', function () {
 
 Route::get('/pelatihan/{slug}', [PelatihanController::class, 'show'])->name('pelatihan.detail');
 
+Route::get('/event-landing/{slug}', function ($slug) {
+    $event = Webinar::where('is_published', true)
+        ->get()
+        ->first(fn($w) => \Illuminate\Support\Str::slug($w->judul) === $slug);
+
+    abort_unless($event, 404);
+
+    return Inertia::render('Landing/DetailEventLanding', [
+        'event' => $event,
+    ]);
+})->name('event-landing.detail');
+
+Route::get('/katalog-pelatihan', fn () => Inertia::render('Landing/KatalogPelatihanLanding'))->name('katalog-pelatihan.landing');
+
 // ==========================================
 // WEBHOOK MIDTRANS
 // ==========================================
@@ -232,6 +246,7 @@ Route::middleware(['auth'])->group(function () {
             ]);
         })->name('korporat.beli-pelatihan');
 
+        Route::get('/korporat/anggota', fn () => Inertia::render('Korporat/AnggotaKorporat'))->name('korporat.anggota');
         Route::get('/korporat/profil-perusahaan', fn () => Inertia::render('Korporat/ProfilPerusahaan'))->name('korporat.profil-perusahaan');
         Route::post('/korporat/profil-perusahaan/update', function (Request $request) {
             $data = $request->validate([
@@ -370,7 +385,8 @@ Route::middleware(['auth'])->group(function () {
             ]);
         })->name('korporat.pilih-jadwal');
         Route::get('/korporat/modul/{slug}', [PelatihanController::class, 'detailModul'])->name('korporat.modul.detail');
-        Route::get('/korporat/pilih-jadwal', fn () => Inertia::render('Korporat/PilihJadwal'))->name('korporat.pilih-jadwal');
+        Route::get('/korporat/pilih-jadwal-hybrid', fn () => Inertia::render('Korporat/PilihJadwalHybrid'))->name('korporat.pilih-jadwal-hybrid');
+        Route::get('/korporat/jadwal-berhasil', fn () => Inertia::render('Korporat/JadwalBerhasil'))->name('korporat.jadwal-berhasil');
 
         // Dashboard & Pelatihan Umum
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -488,3 +504,4 @@ Route::middleware(['auth'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
+require __DIR__.'/instansi.php';

@@ -31,64 +31,67 @@ export default function Edit({ mustVerifyEmail, status }) {
 
             <div className="pb-10">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
-                    <div>
-                        <h1 className="text-2xl font-semibold text-[#1B1C1C]">Pengaturan Profil</h1>
-                        <p className="mt-3 text-sm text-[#4B5563] leading-relaxed">
-                            Kelola informasi pribadi Anda untuk mendapatkan pengalaman belajar yang dipersonalisasi sesuai dengan kebutuhan masa pensiun Anda.
-                        </p>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h1 className="text-[28px] font-bold text-[#1B1C1C]">Pengaturan Profil</h1>
+                            <p className="mt-2 text-sm text-[#4B5563]">
+                                Kelola informasi pribadi Anda untuk mendapatkan pengalaman belajar yang dipersonalisasi sesuai dengan kebutuhan masa pensiun Anda.
+                            </p>
+                        </div>
+                        <Link href={route('logout')} method="post" as="button" className="flex items-center gap-2 rounded-lg border border-[#EF4444] bg-white px-5 py-2.5 text-sm font-semibold text-[#EF4444] shadow-sm hover:bg-red-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Logout
+                        </Link>
                     </div>
                     
                     {/* Bagian Atas: Sidebar (Kiri) dan Informasi Pribadi (Kanan) */}
                     <div className="grid grid-cols-[320px_minmax(520px,720px)] gap-6 items-stretch">
                         
                         {/* Sidebar Profil */}
-                        <aside className="h-full rounded-[24px] border border-[#D9E6D5] bg-white p-6 shadow-sm">
+                        <aside className="h-full rounded-xl border border-[#DDE6DF] bg-white p-8 shadow-sm">
                             <div className="flex flex-col items-center text-center">
                                 <div className="relative mb-5">
-                                    <div className="relative inline-flex h-36 w-36 items-center justify-center rounded-full border-4 border-[#1E6A32] bg-[#F5F9F6]">
+                                    <div className="relative inline-flex h-[130px] w-[130px] items-center justify-center rounded-full border-[3px] border-[#006B32] p-1">
                                         <img
                                             src={user.profile_photo_url ?? '/images/avatar.png'}
                                             alt={user.name}
-                                            className="h-32 w-32 rounded-full object-cover"
+                                            className="h-full w-full rounded-full object-cover"
                                         />
                                     </div>
-                                    <button type="button" className="absolute bottom-0 right-0 flex h-10 w-10 items-center justify-center rounded-full border border-white bg-[#FF8928] text-white shadow-lg">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V7.414A2 2 0 0017.414 6L14 2.586A2 2 0 0012.586 2H4z" />
-                                            <path d="M8 7a1 1 0 011-1h2a1 1 0 011 1v3h2.5a.5.5 0 01.5.5V14a1 1 0 01-1 1H5.5a.5.5 0 01-.5-.5V10.5a.5.5 0 01.5-.5H8V7z" />
+                                    <button type="button" className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[#FF8928] text-white shadow-sm hover:bg-[#e07720]">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 0011.586 3H8.414a1 1 0 00-.707.293L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" />
                                         </svg>
                                     </button>
                                 </div>
-                                <h2 className="text-xl font-semibold text-[#1B1C1C]">{user.name}</h2>
-                                <span className="mt-3 inline-flex rounded-full bg-[#FF8928] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-                                    Premium Member
-                                </span>
+                                <h2 className="text-[22px] font-bold text-[#1B1C1C]">{user.name}</h2>
 
-                                <div className="mt-4 grid gap-3 w-full text-left text-sm">
-                                    <div className="rounded-2xl border border-[#D9E6D5] px-4 py-3">
-                                        <p className="text-[10px] uppercase tracking-[0.32em] text-[#6B7280]">Member Sejak</p>
-                                        <p className="mt-1 font-semibold text-[#1B1C1C]">{memberSince}</p>
+                                <div className="my-6 w-full border-t border-[#DDE6DF]"></div>
+
+                                <div className="w-full space-y-4 px-2 text-sm">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-semibold text-[#4B5563]">Member Sejak</span>
+                                        <span className="font-bold text-[#1B1C1C]">{memberSince}</span>
                                     </div>
-                                    <div className="rounded-2xl border border-[#D9E6D5] px-4 py-3">
-                                        <p className="text-[10px] uppercase tracking-[0.32em] text-[#6B7280]">Kursus Selesai</p>
-                                        <p className="mt-1 font-semibold text-[#1B1C1C]">{completedCourses} Materi</p>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-semibold text-[#4B5563]">Kursus Selesai</span>
+                                        <span className="font-bold text-[#1B1C1C]">{completedCourses} Materi</span>
                                     </div>
                                 </div>
                             </div>
                         </aside>
 
                         {/* Form Informasi Pribadi (Kanan) */}
-                        <section className="h-full flex flex-col rounded-[24px] border border-[#D9E6D5] bg-white shadow-sm overflow-hidden">
-                            <div className="border-b border-[#D9E6D5] bg-[#F4FBF0] px-8 py-5 flex items-center gap-3">
-                                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#E8F5E9] text-[#0F6B31]">
+                        <section className="h-full flex flex-col rounded-xl border border-[#DDE6DF] bg-white shadow-sm">
+                            <div className="border-b border-[#DDE6DF] bg-[#F8F9F7] px-6 py-4 flex items-center gap-2 rounded-t-xl">
+                                <span className="inline-flex h-6 w-6 items-center justify-center text-[#006B32]">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M9.243 3.26a1 1 0 00-1.486.872v1.12a1 1 0 001 1h1.486a1 1 0 001-1V4.132a1 1 0 00-1.486-.872L9.243 3.26z" />
-                                        <path fillRule="evenodd" d="M3 8.5A4.5 4.5 0 017.5 4h5A4.5 4.5 0 0117 8.5v6A4.5 4.5 0 0112.5 19h-5A4.5 4.5 0 013 14.5v-6zm4.5-2.5a2.5 2.5 0 00-2.45 2h9.9a2.5 2.5 0 00-2.45-2h-5z" clipRule="evenodd" />
+                                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                                     </svg>
                                 </span>
-                                <div>
-                                    <h3 className="text-xl font-semibold text-[#1B1C1C]">Informasi Pribadi</h3>
-                                </div>
+                                <h3 className="text-base font-bold text-[#006B32]">Informasi Pribadi</h3>
                             </div>
                             <div className="p-6 flex-grow">
                                 <UpdateProfileInformationForm ref={profileFormRef} mustVerifyEmail={mustVerifyEmail} status={status} />
@@ -97,14 +100,14 @@ export default function Edit({ mustVerifyEmail, status }) {
                     </div>
 
                     {/* Bagian Bawah: Ubah Kata Sandi (Full Width) */}
-                    <section className="rounded-[24px] border border-[#D9E6D5] bg-white shadow-sm overflow-hidden">
-                        <div className="border-b border-[#D9E6D5] bg-[#F4FBF0] px-6 py-4 flex items-center gap-3">
-                            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#E8F5E9] text-[#0F6B31]">
+                    <section className="rounded-xl border border-[#DDE6DF] bg-white shadow-sm">
+                        <div className="border-b border-[#DDE6DF] bg-[#F8F9F7] px-6 py-4 flex items-center gap-2 rounded-t-xl">
+                            <span className="inline-flex h-6 w-6 items-center justify-center text-[#006B32]">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M13 7V6a3 3 0 10-6 0v1H5a1 1 0 00-1 1v8a1 1 0 001 1h10a1 1 0 001-1V8a1 1 0 00-1-1h-2zm-6 0V6a1 1 0 112 0v1H7zm3 4a2 2 0 11-4 0 2 2 0 014 0z" clipRule="evenodd" />
+                                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                                 </svg>
                             </span>
-                            <h3 className="text-lg font-semibold text-[#1B1C1C]">Ubah Kata Sandi</h3>
+                            <h3 className="text-base font-bold text-[#006B32]">Ubah Kata Sandi</h3>
                         </div>
                         <div className="p-6">
                             <UpdatePasswordForm ref={passwordFormRef} className="" />
@@ -112,30 +115,21 @@ export default function Edit({ mustVerifyEmail, status }) {
                     </section>
 
                     {/* Footer: Tombol Aksi */}
-                    <div className="flex justify-between items-center py-4">
-                        
-                        {/* Tombol Keluar diubah menjadi komponen Link dari Inertia */}
-                        <Link 
-                            href={route('logout')} 
-                            method="post" 
-                            as="button" 
-                            className="text-[#EF4444] font-semibold border-2 border-[#EF4444] px-8 py-2.5 rounded-xl hover:bg-red-50 transition"
+                    <div className="flex justify-between items-center py-4 mt-6">
+                        <button className="px-10 py-3 rounded-lg border-2 border-[#006B32] text-[#006B32] font-bold hover:bg-[#f0f7f2] transition">
+                            Batalkan
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSaveAll}
+                            className="flex items-center gap-2 px-8 py-3 rounded-lg bg-[#FF8928] text-white font-bold shadow hover:bg-[#e07720] transition"
                         >
-                            Keluar
-                        </Link>
-                        
-                        <div className="flex gap-4">
-                            <button className="px-8 py-2.5 rounded-xl border border-[#0F6B31] text-[#0F6B31] font-semibold hover:bg-green-50 transition">
-                                Batalkan
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleSaveAll}
-                                className="px-8 py-2.5 rounded-xl bg-[#FF8928] text-white font-semibold shadow-md hover:bg-[#e07720] transition"
-                            >
-                                Simpan Perubahan
-                            </button>
-                        </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z" />
+                                <path d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2V5h8a2 2 0 00-2-2H5z" />
+                            </svg>
+                            Simpan Perubahan
+                        </button>
                     </div>
 
                 </div>

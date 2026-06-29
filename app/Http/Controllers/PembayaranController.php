@@ -293,9 +293,20 @@ class PembayaranController extends Controller
                 'transaction' => $transaction,
                 'voucher' => $voucher,
             ]);
+        } else if ($user && $user->kategori_pensiun === 'asn') {
+            $voucher = \App\Models\CorporateVoucher::where('corporate_user_id', $user->user_id)
+                ->where('course_id', $course->id)
+                ->latest()
+                ->first();
+
+            return Inertia::render('Instansi/PembayaranBerhasilInstansi', [
+                'course' => $course,
+                'transaction' => $transaction,
+                'voucher' => $voucher,
+            ]);
         }
 
-        // Lempar ke halaman sukses umum (Publik / ASN)
+        // Lempar ke halaman sukses umum (Publik)
         return Inertia::render('Payment/PembayaranBerhasil', [
             'course' => $course,
             'transaction' => $transaction,
@@ -416,13 +427,16 @@ class PembayaranController extends Controller
             ]);
         }
 
-        return Inertia::render('Korporat/DetailPembelianOnline',[
-            'course'=>$course,
-            'transaction'=>$transaction,
-            'snapToken'=>$snapToken,
-            'midtransClientKey'=>env('MIDTRANS_CLIENT_KEY'),
-            'quantity'=>$jumlahPeserta,
-            'backHref'=>route('korporat.pelatihan.detail',$course->slug),
+        $viewFolder = $user->kategori_pensiun === 'asn' ? 'Instansi' : 'Korporat';
+        $routeName  = $user->kategori_pensiun === 'asn' ? 'instansi.pelatihan.detail' : 'korporat.pelatihan.detail';
+
+        return Inertia::render("{$viewFolder}/DetailPembelianOnline", [
+            'course' => $course,
+            'transaction' => $transaction,
+            'snapToken' => $snapToken,
+            'midtransClientKey' => env('MIDTRANS_CLIENT_KEY'),
+            'quantity' => $jumlahPeserta,
+            'backHref' => route($routeName, $course->slug),
         ]);
     }
 }
