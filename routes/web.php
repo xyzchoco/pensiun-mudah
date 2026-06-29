@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\{ProfileController, HomeController, CourseController, DashboardController, PelatihanController, PembayaranController};
+use App\Http\Controllers\{ProfileController, HomeController, CourseController, QuizController, DashboardController, PelatihanController, PembayaranController};
 use App\Models\{LandingPage, Webinar, User, CourseCategory, Course, DashboardBanner};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Route, Auth};
@@ -90,6 +90,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/belajar/catat-progres', [\App\Http\Controllers\LearningController::class, 'catatProgres'])->name('belajar.catat');
 
     Route::get('/onboarding/pilih-kategori', fn () => Inertia::render('Onboarding/PilihKategori'))->name('onboarding.kategori');
+
     Route::post('/onboarding/kategori', function () {
         $kategori = request()->validate(['kategori' => ['required', 'in:publik,korporat,asn']])['kategori'];
         if ($kategori === 'korporat') {

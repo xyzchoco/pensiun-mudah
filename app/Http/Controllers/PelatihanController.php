@@ -116,57 +116,151 @@ class PelatihanController extends Controller
     public function hasilKuis($id)
     {
         $enrollment = $this->activeEnrollment($id);
-
         if ($enrollment instanceof \Illuminate\Http\RedirectResponse) {
             return $enrollment;
         }
 
+        // Baca dari session dulu
+        $quizResult = session()->get('last_quiz_result');
+
+        // Fallback: ambil dari DB jika session kosong (misal setelah refresh)
+        if (!$quizResult) {
+            $latestUserQuiz = DB::table('quiz_user')
+                ->join('quizzes', 'quizzes.id', '=', 'quiz_user.quiz_id')
+                ->join('modules', 'modules.id', '=', 'quizzes.module_id')
+                ->where('modules.course_id', $id)
+                ->where('quiz_user.user_id', $enrollment->user_id)
+                ->select('quiz_user.*', 'quizzes.nilai_lulus', 'quizzes.is_final')
+                ->latest('quiz_user.updated_at')
+                ->first();
+
+            if ($latestUserQuiz) {
+                $dbTotal        = DB::table('quiz_questions')->where('quiz_id', $latestUserQuiz->quiz_id)->count();
+                $dbCorrectCount = (int) round(($latestUserQuiz->score / 100) * ($dbTotal ?: 1));
+
+                $quizResult = [
+                    'score'              => (int)$latestUserQuiz->score,
+                    'passing_score'      => (int)$latestUserQuiz->nilai_lulus,
+                    'is_final'           => (bool)$latestUserQuiz->is_final,
+                    'total_questions'    => $dbTotal ?: 4,
+                    'correct_count'      => $dbCorrectCount,
+                    'time_taken_minutes' => 0,
+                    'wrong_questions'    => [],
+                ];
+            } else {
+                $quizResult = [
+                    'score'              => 0,
+                    'passing_score'      => 70,
+                    'is_final'           => false,
+                    'total_questions'    => 4,
+                    'correct_count'      => 0,
+                    'time_taken_minutes' => 0,
+                    'wrong_questions'    => [],
+                ];
+            }
+        }
+
         return Inertia::render('Pelatihan/HasilKuis', [
-            'learning' => $this->learningPayload($enrollment),
+            'learning'   => $this->learningPayload($enrollment),
+            'quizResult' => $quizResult,  // ✅ Sekarang dikirim!
         ]);
     }
 
     public function selesaiKuis(Request $request, $id)
     {
         $user = Auth::user();
-
         $enrollment = $this->activeEnrollment($id);
         if ($enrollment instanceof \Illuminate\Http\RedirectResponse) {
             return $enrollment;
         }
 
-        $request->validate([
-            'module_id' => 'required|integer',
-            'quiz_id'   => 'required|integer',
-            'score'     => 'required|numeric|min:0|max:100',
-        ]);
+        session()->forget('last_quiz_result');
 
-        // Catat penyelesaian kuis di learning_progress (material_id null = ini record kuis)
-        $existing = \App\Models\LearningProgress::where([
-            'user_id'   => $user->user_id,
-            'course_id' => $id,
-            'module_id' => $request->module_id,
-        ])->whereNull('material_id')->first();
+        $quizId       = $request->input('quiz_id');
+        $answersRecap = $request->input('answers_recap', []);
 
-        if ($existing) {
-            $existing->is_completed = true;
-            $existing->persentase = $request->score;
-            $existing->last_accessed = now();
-            $existing->save();
-        } else {
-            \App\Models\LearningProgress::create([
-                'user_id'        => $user->user_id,
-                'course_id'      => $id,
-                'module_id'      => $request->module_id,
-                'material_id'    => null, // null = ini record kuis, bukan materi
-                'is_completed'   => true,
-                'persentase'     => $request->score,
-                'durasi_belajar' => 0,
-                'last_accessed'  => now(),
-            ]);
+        // Hitung total soal dari DB
+        $totalQuestions = DB::table('quiz_questions')
+            ->where('quiz_id', $quizId)
+            ->count();
+        if ($totalQuestions === 0) {
+            $totalQuestions = count($answersRecap) ?: 1;
         }
 
-        return redirect()->back()->with('success', 'Kuis berhasil diselesaikan!');
+        $correctCount   = 0;
+        $wrongQuestions = [];
+        $indexNoSoal    = 1;
+
+        foreach ($answersRecap as $recap) {
+            $userAnswer = $recap['user_answer'] ?? null;
+
+            if (!empty($userAnswer)) {
+                $checkOption = DB::table('quiz_options')
+                    ->where('quiz_question_id', $recap['question_id'])
+                    ->where('teks_opsi', $userAnswer)
+                    ->first();
+
+                if ($checkOption && (bool)$checkOption->is_correct === true) {
+                    $correctCount++;
+                } else {
+                    $wrongQuestions[] = $indexNoSoal;
+                }
+            } else {
+                $wrongQuestions[] = $indexNoSoal;
+            }
+
+            $indexNoSoal++;
+        }
+
+        $finalScore = (int) round(($correctCount / $totalQuestions) * 100);
+
+        $quizData     = DB::table('quizzes')->where('id', $quizId)->first();
+        $passingScore = $quizData ? (int)$quizData->nilai_lulus : 70;
+        $isFinal      = $quizData ? (bool)$quizData->is_final : false;
+        $timeTaken    = (int)$request->input('time_taken_minutes', 0);
+
+        // Simpan ke quiz_user
+        DB::table('quiz_user')->updateOrInsert(
+            ['user_id' => $user->user_id, 'quiz_id' => $quizId],
+            [
+                'score'      => $finalScore,
+                'is_passed'  => $finalScore >= $passingScore,
+                'updated_at' => now(),
+            ]
+        );
+
+        // Catat juga ke learning_progress (supaya modul berikutnya unlock)
+        $moduleId = $quizData ? $quizData->module_id : null;
+        if ($moduleId) {
+            \App\Models\LearningProgress::updateOrCreate(
+                [
+                    'user_id'     => $user->user_id,
+                    'course_id'   => $id,
+                    'module_id'   => $moduleId,
+                    'material_id' => null,
+                ],
+                [
+                    'is_completed' => true,
+                    'persentase'   => $finalScore,
+                    'last_accessed'=> now(),
+                ]
+            );
+        }
+
+        // Simpan ke session untuk ditampilkan di HasilKuis
+        session()->put('last_quiz_result', [
+            'quiz_id'            => $quizId,
+            'score'              => $finalScore,
+            'passing_score'      => $passingScore,
+            'is_final'           => $isFinal,
+            'total_questions'    => $totalQuestions,
+            'correct_count'      => $correctCount,
+            'time_taken_minutes' => $timeTaken,
+            'wrong_questions'    => $wrongQuestions,
+        ]);
+
+        // ✅ Redirect ke halaman hasil
+        return redirect("/pelatihan/{$id}/kuis/hasil");
     }
 
 
