@@ -307,9 +307,11 @@ class PembayaranController extends Controller
     // =================================================================
     public function webhook(Request $request)
     {
-        // Nanti kita racik logika notifikasinya di sini
-        // Sementara kasih respons OK dulu biar server Midtrans seneng
-        return response()->json(['status' => 'ok']);
+        \Log::info('MIDTRANS WEBHOOK', $request->all());
+
+        return response()->json([
+            'status' => 'ok'
+        ]);
     }
 
     private function learningRouteParams(Course $course): array

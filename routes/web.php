@@ -20,7 +20,13 @@ Route::get('/', function () {
 
 Route::get('/pelatihan/{slug}', [PelatihanController::class, 'show'])->name('pelatihan.detail');
 
+// ==========================================
+// WEBHOOK MIDTRANS
+// ==========================================
+Route::post('/midtrans/notification', [PembayaranController::class, 'webhook']);
+
 Route::get('/auth/google/redirect', fn () => Socialite::driver('google')->redirect())->name('google.redirect');
+
 Route::get('/auth/google/callback', function () {
     $googleUser = Socialite::driver('google')->user();
     
