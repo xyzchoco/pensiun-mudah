@@ -146,8 +146,8 @@ export default function KorporatLayout({
             {/* Backdrop - mobile & tablet */}
             <div
                 className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 lg:hidden ${sidebarOpen
-                        ? "opacity-100 pointer-events-auto"
-                        : "opacity-0 pointer-events-none"
+                    ? "opacity-100 pointer-events-auto"
+                    : "opacity-0 pointer-events-none"
                     }`}
                 onClick={() => setSidebarOpen(false)}
                 aria-hidden="true"

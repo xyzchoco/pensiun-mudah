@@ -10,6 +10,7 @@ use App\Models\Enrollment;
 use Illuminate\Support\Facades\Auth;
 use Midtrans\Config;
 use Midtrans\Snap;
+use Illuminate\Support\Str;
 use App\Models\CorporateVoucher;
 
 class PembayaranController extends Controller
@@ -95,6 +96,8 @@ class PembayaranController extends Controller
         Config::$isSanitized = true;
         Config::$is3ds = true;
 
+        
+
         // 5. CEK TRANSAKSI PENDING
         $pendingTransaction = Transaction::where('user_id', $user->user_id)
             ->where('course_id', $course->id)
@@ -103,6 +106,7 @@ class PembayaranController extends Controller
 
         // PENTING: Pastikan qty yang dibeli SAMA dengan qty di transaksi pending. 
         // Kalau beda (misal awalnya klik beli 1, terus balik lagi klik beli 5), batalkan yang lama!
+
         if ($pendingTransaction && $pendingTransaction->snap_token && now()->lessThan($pendingTransaction->batas_waktu) && $pendingTransaction->jumlah_peserta === $jumlahPeserta) {
             $snapToken = $pendingTransaction->snap_token;
             $transaction = $pendingTransaction;
@@ -135,11 +139,6 @@ class PembayaranController extends Controller
                     'unit'     => 'minute',
                     'duration' => 3 
                 ],
-                'callbacks' => [
-                    'finish'  => 'http://127.0.0.1:8000/payment/finish',
-                    'error'   => 'http://127.0.0.1:8000/payment/finish',
-                    'pending' => 'http://127.0.0.1:8000/payment/finish',
-                ]
             ];
 
             $snapToken = Snap::getSnapToken($params);
@@ -194,14 +193,20 @@ class PembayaranController extends Controller
             return redirect()->route('payment.success', $course->slug);
         }
 
-        if (
-            $transactionStatus === 'settlement' || 
-            $transactionStatus === 'capture' || 
-            $statusCode == 200 || 
-            $request->query('flag') === 'success'
+       if (
+            in_array($transactionStatus, ['settlement','capture'])
+            || $request->query('flag') === 'success'
         ) {
             
             $transaction->update(['status' => 'success']);
+            Transaction::where('user_id', $transaction->user_id)
+                ->where('course_id', $transaction->course_id)
+                ->where('status', 'pending')
+                ->where('id', '!=', $transaction->id)
+                ->update([
+                    'status' => 'failed'
+                ]);
+
             $buyer = \App\Models\User::find($transaction->user_id);
 
             // LOGIKA KORPORAT
@@ -327,5 +332,95 @@ class PembayaranController extends Controller
             ->flatMap(fn ($module) => $module->materials)
             ->first()
             ?->id;
+    }
+
+    public function checkoutKorporat(Request $request, $slug)
+    {
+        $user = Auth::user();
+
+        $course = Course::where('slug', $slug)->firstOrFail();
+
+        $jumlahPeserta = max(1, (int) $request->query('qty', 1));
+
+        $hargaPerPeserta = (int) $course->price;
+
+        $nominalTotal = $hargaPerPeserta * $jumlahPeserta;
+
+        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+
+        $pendingTransaction = Transaction::where('user_id', $user->user_id)
+        ->where('course_id', $course->id)
+        ->where('status', 'pending')
+        ->where('batas_waktu', '>', now())
+        ->latest()
+        ->first();
+
+        if (
+            $pendingTransaction &&
+            $pendingTransaction->snap_token &&
+            now()->lessThan($pendingTransaction->batas_waktu) &&
+            $pendingTransaction->jumlah_peserta == $jumlahPeserta
+        ) {
+
+            $transaction = $pendingTransaction;
+            $snapToken = $transaction->snap_token;
+
+        } else {
+
+            if ($pendingTransaction) {
+                $pendingTransaction->update([
+                    'status' => 'failed'
+                ]);
+            }
+
+            $orderId = 'INV-' . date('Ymd') . '-' . rand(1000, 9999);
+
+            $params = [
+                'transaction_details' => [
+                    'order_id' => $orderId,
+                    'gross_amount' => $nominalTotal,
+                ],
+                'customer_details' => [
+                    'first_name' => $user->name,
+                    'email' => $user->email,
+                ],
+                'item_details' => [[
+                    'id' => $course->id,
+                    'price' => $hargaPerPeserta,
+                    'quantity' => $jumlahPeserta,
+                    'name' => mb_substr($course->title,0,49),
+                ]],
+                'expiry' => [
+                    'unit'=>'minute',
+                    'duration'=>3,
+                ]
+            ];
+
+            $snapToken = Snap::getSnapToken($params);
+
+            $transaction = Transaction::create([
+                'user_id'=>$user->user_id,
+                'course_id'=>$course->id,
+                'nomor_transaksi'=>$orderId,
+                'jumlah_peserta'=>$jumlahPeserta,
+                'harga_per_peserta'=>$hargaPerPeserta,
+                'nominal'=>$nominalTotal,
+                'status'=>'pending',
+                'snap_token'=>$snapToken,
+                'batas_waktu'=>now()->addMinutes(3),
+            ]);
+        }
+
+        return Inertia::render('Korporat/DetailPembelianOnline',[
+            'course'=>$course,
+            'transaction'=>$transaction,
+            'snapToken'=>$snapToken,
+            'midtransClientKey'=>env('MIDTRANS_CLIENT_KEY'),
+            'quantity'=>$jumlahPeserta,
+            'backHref'=>route('korporat.pelatihan.detail',$course->slug),
+        ]);
     }
 }

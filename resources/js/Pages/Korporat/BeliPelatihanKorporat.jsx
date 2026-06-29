@@ -1,99 +1,27 @@
 import { useState } from 'react';
-import { Link, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import KorporatLayout from '@/Layouts/KorporatLayout';
 
-const demoCourses = {
-    offline: [
-        {
-            id: 'demo-offline-1',
-            title: 'Workshop Persiapan Karier Setelah Pensiun',
-            description: 'Kelas tatap muka untuk menyusun rencana aktivitas, jejaring, dan peluang kerja setelah masa pensiun.',
-            tipe_kelas: 'Offline',
-            location: 'Jakarta Training Center',
-            time: '2 hari, 09.00 - 15.00 WIB',
-            price: 750000,
-            rating: '4.8',
-            reviews: '86',
-            isDemo: true,
-            category: {
-                nama: 'Offline',
-                warna_bg_icon: '#006B32',
-                warna_teks_icon: '#FFFFFF',
-            },
-        },
-        {
-            id: 'demo-offline-2',
-            title: 'Pelatihan Wirausaha Lokal untuk Karyawan MPP',
-            description: 'Sesi praktik langsung untuk memvalidasi ide usaha, menghitung modal, dan membuat rencana penjualan.',
-            tipe_kelas: 'Offline',
-            location: 'Bandung Learning Hub',
-            time: '1 hari, 08.30 - 16.00 WIB',
-            price: 650000,
-            rating: '4.9',
-            reviews: '74',
-            isDemo: true,
-            category: {
-                nama: 'Offline',
-                warna_bg_icon: '#006B32',
-                warna_teks_icon: '#FFFFFF',
-            },
-        },
-    ],
-    hybrid: [
-        {
-            id: 'demo-hybrid-1',
-            title: 'Program Hybrid Literasi Keuangan Pensiun',
-            description: 'Gabungan sesi online dan tatap muka untuk menyusun anggaran, investasi dasar, dan dana darurat.',
-            tipe_kelas: 'Hybrid',
-            location: 'Online + Surabaya Class Point',
-            time: '3 sesi online, 1 sesi offline',
-            price: 900000,
-            rating: '4.9',
-            reviews: '112',
-            isDemo: true,
-            category: {
-                nama: 'Hybrid',
-                warna_bg_icon: '#A8632A',
-                warna_teks_icon: '#FFFFFF',
-            },
-        },
-        {
-            id: 'demo-hybrid-2',
-            title: 'Hybrid Coaching Produktivitas Masa Pensiun',
-            description: 'Pendampingan kombinasi webinar dan klinik tatap muka untuk membangun rutinitas produktif.',
-            tipe_kelas: 'Hybrid',
-            location: 'Online + Yogyakarta Workshop Room',
-            time: '4 minggu pendampingan',
-            price: 1200000,
-            rating: '4.7',
-            reviews: '59',
-            isDemo: true,
-            category: {
-                nama: 'Hybrid',
-                warna_bg_icon: '#A8632A',
-                warna_teks_icon: '#FFFFFF',
-            },
-        },
-    ],
-};
-
+// --- HELPER UTAMA ---
 const getClassType = (type) => String(type || '').trim().toLowerCase();
 
+const formatPrice = (price) => {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
+    }).format(price || 0);
+};
+
+// --- HELPER URL (DINAMIS DARI DATABASE) ---
 function buildScheduleHref(course, qty) {
     const params = new URLSearchParams();
-
     params.set('course_id', course.id);
-    params.set('title', course.title || 'Kelas Offline Korporat');
     params.set('qty', qty);
-    params.set('price', course.price || 0);
 
-    if (course.location) {
-        params.set('location', course.location);
-    }
-
-    if (course.time) {
-        params.set('time', course.time);
-    }
+    // Tambahan data jika tersedia dari database
+    if (course.location) params.set('location', course.location);
+    if (course.time) params.set('time', course.time);
 
     return `/korporat/pilih-jadwal?${params.toString()}`;
 }
@@ -102,60 +30,23 @@ function buildOnlinePurchaseHref(course, qty) {
     return `/korporat/pelatihan/${course.slug || course.id}/pembelian-online?qty=${qty}`;
 }
 
+function buildHybridPurchaseHref(course, qty) {
+    return `/korporat/pelatihan-hybrid/${course.slug || course.id}/pembelian?qty=${qty}`;
+}
+
+function buildOfflineDetailHref(course) {
+    return `/korporat/pelatihan-offline/${course.slug || course.id}`;
+}
+
 function buildOnlineDetailHref(course) {
     return `/korporat/pelatihan/${course.slug || course.id}/detail`;
 }
 
-function buildHybridPurchaseHref(course, qty) {
-    const slug = course.slug || course.id;
-    const params = new URLSearchParams();
-
-    params.set('qty', qty);
-
-    if (course.isDemo) {
-        params.set('title', course.title || 'Kelas Hybrid Korporat');
-        params.set('description', course.description || '');
-        params.set('price', course.price || 0);
-    }
-
-    return `/korporat/pelatihan-hybrid/${slug}/pembelian?${params.toString()}`;
-}
-
-function buildOfflineDetailHref(course) {
-    const slug = course.slug || course.id;
-
-    if (!course.isDemo) {
-        return `/korporat/pelatihan-offline/${slug}`;
-    }
-
-    const params = new URLSearchParams();
-    params.set('title', course.title || 'Kelas Offline Korporat');
-    params.set('description', course.description || '');
-    params.set('location', course.location || '');
-    params.set('time', course.time || '');
-    params.set('price', course.price || 0);
-
-    return `/korporat/pelatihan-offline/${slug}?${params.toString()}`;
-}
-
 function buildHybridDetailHref(course) {
-    const slug = course.slug || course.id;
-
-    if (!course.isDemo) {
-        return `/korporat/pelatihan-hybrid/${slug}`;
-    }
-
-    const params = new URLSearchParams();
-    params.set('title', course.title || 'Kelas Hybrid Korporat');
-    params.set('description', course.description || '');
-    params.set('location', course.location || '');
-    params.set('time', course.time || '');
-    params.set('price', course.price || 0);
-
-    return `/korporat/pelatihan-hybrid/${slug}?${params.toString()}`;
+    return `/korporat/pelatihan-hybrid/${course.slug || course.id}`;
 }
 
-// Komponen Ikon untuk Kategori Kelas
+// --- KOMPONEN IKON ---
 function SectionIcon({ name }) {
     if (name === 'laptop') {
         return (
@@ -181,21 +72,13 @@ function SectionIcon({ name }) {
     );
 }
 
-// Komponen Kartu Pelatihan (Dinamis)
+// --- KOMPONEN KARTU KURSUS ---
 function CourseCard({ course }) {
     const [qty, setQty] = useState(1);
     const classType = getClassType(course.tipe_kelas);
     const isOfflineClass = classType === 'offline';
     const isOnlineClass = classType === 'online';
     const isHybridClass = classType === 'hybrid';
-
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0
-        }).format(price || 0);
-    };
 
     const totalPrice = (course.price || 0) * qty;
 
@@ -208,8 +91,9 @@ function CourseCard({ course }) {
 
     return (
         <div className="flex flex-col overflow-hidden rounded-2xl border border-[#E4E2E1] bg-white shadow-sm">
+
+            {/* THUMBNAIL */}
             <div className="relative flex h-40 items-center justify-center bg-gray-100 overflow-hidden">
-                {/* GANTI 'thumbnail' DENGAN NAMA KOLOM GAMBAR ANDA JIKA BERBEDA */}
                 {course.thumbnail ? (
                     <img src={`/storage/${course.thumbnail}`} alt={course.title} className="object-cover w-full h-full" />
                 ) : (
@@ -220,7 +104,7 @@ function CourseCard({ course }) {
                     </div>
                 )}
 
-                {/* Menampilkan ID Kategori sementara. Jika tabel direlasikan, gunakan course.category.name */}
+                {/* LABEL KATEGORI */}
                 {course.category && (
                     <span
                         className="absolute left-3 top-3 rounded-md px-2.5 py-1 text-xs font-bold uppercase shadow-md"
@@ -234,13 +118,12 @@ function CourseCard({ course }) {
                 )}
             </div>
 
+            {/* KONTEN DETAIL */}
             <div className="flex flex-1 flex-col p-5">
-                {/* GANTI 'judul' MENJADI 'title' */}
                 <h3 className="font-bold text-[#1B1C1C] line-clamp-2">{course.title}</h3>
-
-                {/* GANTI 'deskripsi' MENJADI 'description' */}
                 <p className="mt-1 text-sm text-[#3D4A3E] line-clamp-2">{course.description || 'Deskripsi pelatihan belum tersedia.'}</p>
 
+                {/* INFO LOKASI JIKA ADA */}
                 {course.location && (
                     <p className="mt-3 flex items-center gap-1.5 text-sm text-[#3D4A3E]">
                         <svg className="h-4 w-4 text-[#006B32] shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -251,6 +134,7 @@ function CourseCard({ course }) {
                     </p>
                 )}
 
+                {/* INFO WAKTU JIKA ADA */}
                 {course.time && (
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-[#3D4A3E]">
                         <svg className="h-4 w-4 text-[#006B32] shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -261,12 +145,11 @@ function CourseCard({ course }) {
                     </p>
                 )}
 
+                {/* HARGA & RATING */}
                 <div className="mt-3 flex items-center justify-between">
                     <span className="text-lg font-bold text-[#006B32]">
-                        {/* Menampilkan total harga yang sudah dikalikan qty */}
                         {totalPrice === 0 ? 'Gratis' : formatPrice(totalPrice)}
                     </span>
-
                     <span className="flex items-center gap-1 text-sm font-semibold text-[#A8632A]">
                         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2l3 6.5 7 .6-5.3 4.6 1.6 6.8L12 17l-6.9 3.5 1.6-6.8L1.4 9.1l7-.6L12 2z" />
@@ -275,85 +158,54 @@ function CourseCard({ course }) {
                     </span>
                 </div>
 
+                {/* TOMBOL BELI & KUANTITAS */}
                 <div className="mt-4 flex items-center gap-3">
                     {isOfflineClass ? (
-                        <Link
-                            href={buildScheduleHref(course, qty)}
-                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
-                        >
+                        <Link href={buildScheduleHref(course, qty)} className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]">
                             Beli ({qty})
                         </Link>
                     ) : isOnlineClass ? (
-                        <Link
-                            href={buildOnlinePurchaseHref(course, qty)}
-                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
-                        >
+                        <Link href={buildOnlinePurchaseHref(course, qty)} className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]">
                             Beli ({qty})
                         </Link>
                     ) : isHybridClass ? (
-                        <Link
-                            href={buildHybridPurchaseHref(course, qty)}
-                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
-                        >
+                        <Link href={buildHybridPurchaseHref(course, qty)} className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-center text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]">
                             Beli ({qty})
                         </Link>
                     ) : (
-                        <button
-                            type="button"
-                            onClick={handleBeli}
-                            className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]"
-                        >
+                        <button type="button" onClick={handleBeli} className="flex-1 rounded-lg bg-[#FF8928] px-4 py-2.5 text-sm font-bold leading-tight text-white transition-colors hover:bg-[#F57F1E]">
                             Beli ({qty})
                         </button>
                     )}
 
                     <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setQty(Math.max(1, qty - 1))}
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E4E2E1] font-bold text-[#3D4A3E] hover:bg-[#F0EDED]"
-                        >
+                        <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E4E2E1] font-bold text-[#3D4A3E] hover:bg-[#F0EDED]">
                             -
                         </button>
                         <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF8928] font-bold text-white">
                             {qty}
                         </span>
-                        <button
-                            type="button"
-                            onClick={() => setQty(qty + 1)}
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E4E2E1] font-bold text-[#3D4A3E] hover:bg-[#F0EDED]"
-                        >
+                        <button type="button" onClick={() => setQty(qty + 1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#E4E2E1] font-bold text-[#3D4A3E] hover:bg-[#F0EDED]">
                             +
                         </button>
                     </div>
                 </div>
 
+                {/* TOMBOL DETAIL KELAS */}
                 {isOfflineClass ? (
-                    <Link
-                        href={buildOfflineDetailHref(course)}
-                        className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5"
-                    >
+                    <Link href={buildOfflineDetailHref(course)} className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5">
                         Lihat Detail
                     </Link>
                 ) : isOnlineClass ? (
-                    <Link
-                        href={buildOnlineDetailHref(course)}
-                        className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5"
-                    >
+                    <Link href={buildOnlineDetailHref(course)} className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5">
                         Lihat Detail
                     </Link>
                 ) : isHybridClass ? (
-                    <Link
-                        href={buildHybridDetailHref(course)}
-                        className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5"
-                    >
+                    <Link href={buildHybridDetailHref(course)} className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5">
                         Lihat Detail
                     </Link>
                 ) : (
-                    <Link
-                        href={`/korporat/pelatihan/${course.slug || course.id}`}
-                        className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5"
-                    >
+                    <Link href={`/korporat/pelatihan/${course.slug || course.id}`} className="mt-3 block w-full rounded-lg border-2 border-[#006B32] py-2.5 text-center font-bold text-[#006B32] transition-colors hover:bg-[#006B32]/5">
                         Lihat Detail
                     </Link>
                 )}
@@ -362,15 +214,15 @@ function CourseCard({ course }) {
     );
 }
 
-// HALAMAN UTAMA
+// --- HALAMAN UTAMA ---
 export default function BeliPelatihanKorporat({ banners = [], courses = [] }) {
 
+    // PEMISAHAN KURSUS BERDASARKAN TIPE KELAS DINAMIS
     const onlineCourses = courses.filter(c => getClassType(c.tipe_kelas) === 'online');
     const offlineCourses = courses.filter(c => getClassType(c.tipe_kelas) === 'offline');
     const hybridCourses = courses.filter(c => getClassType(c.tipe_kelas) === 'hybrid');
-    const displayOfflineCourses = offlineCourses.length > 0 ? offlineCourses : demoCourses.offline;
-    const displayHybridCourses = hybridCourses.length > 0 ? hybridCourses : demoCourses.hybrid;
 
+    // KONFIGURASI SECTION RENDER
     const sections = [
         {
             key: 'online',
@@ -382,23 +234,24 @@ export default function BeliPelatihanKorporat({ banners = [], courses = [] }) {
             key: 'offline',
             label: 'Kelas Offline',
             icon: 'people',
-            courses: displayOfflineCourses,
+            courses: offlineCourses, // Sekarang full dinamis dari DB
         },
         {
             key: 'hybrid',
             label: 'Kelas Hybrid',
             icon: 'layers',
-            courses: displayHybridCourses,
+            courses: hybridCourses, // Sekarang full dinamis dari DB
         }
     ];
 
+    // HANYA TAMPILKAN SECTION YANG ADA ISINYA
     const visibleSections = sections.filter(section => section.courses.length > 0);
 
     return (
         <KorporatLayout title="Beli Pelatihan - Pensiun Mudah" activeNav="beli">
             <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10">
 
-                {/* --- BAGIAN BANNER DYNAMIC --- */}
+                {/* BANNER DINAMIS */}
                 {banners.length > 0 ? (
                     banners.map((banner) => (
                         <section
@@ -446,7 +299,7 @@ export default function BeliPelatihanKorporat({ banners = [], courses = [] }) {
                     </p>
                 </div>
 
-                {/* --- MENAMPILKAN KURSUS BERDASARKAN KATEGORI --- */}
+                {/* RENDER KARTU KURSUS BERDASARKAN KATEGORI */}
                 {visibleSections.map((section) => (
                     <section key={section.key} className="mt-8">
                         <h2 className="flex items-center gap-2 text-lg font-bold text-[#1B1C1C]">
@@ -463,7 +316,7 @@ export default function BeliPelatihanKorporat({ banners = [], courses = [] }) {
                     </section>
                 ))}
 
-                {/* Jika tidak ada satupun pelatihan */}
+                {/* FALLBACK JIKA KOSONG */}
                 {visibleSections.length === 0 && (
                     <div className="mt-12 text-center py-10 border-2 border-dashed border-[#E4E2E1] rounded-2xl">
                         <p className="text-[#6B7280] font-semibold text-lg">Belum ada kelas online, offline, atau hybrid yang tersedia saat ini.</p>
