@@ -76,4 +76,9 @@ class User extends Authenticatable implements FilamentUser
     {
         $this->attributes['user_id'] = $value;
     }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class, 'user_id', 'user_id');
+    }
 }

@@ -18,24 +18,28 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         
-        if (!$user->kategori_pensiun) {
-            return redirect()->route('onboarding.kategori');
-        }
+        $user = Auth::user();
+        $kategoriUser = $user ? trim(strtolower($user->kategori_pensiun)) : null;
 
         $banners = DashboardBanner::where('is_active', true)->latest()->get();
         $events  = Webinar::where('is_published', true)->latest()->take(3)->get();
 
-        // 1. Tarik data enrollment aktif milik user (belum tamat, maks 3)
-        $activeCourses = Enrollment::with('course')
-            ->where('user_id', $user->user_id)
+        // 1. FIX JITU: Tarik data enrollment aktif (HANYA yang kategori kursusnya COCOK dengan kategori user)
+        $activeCourses = Enrollment::where('user_id', $user->user_id)
             ->where('progress_persen', '<', 100)
+            ->whereHas('course', function ($query) use ($kategoriUser) {
+                $query->where('is_visible_' . $kategoriUser, true);
+            })
+            ->with('course') // Load data kursusnya setelah difilter ketat
             ->latest('updated_at')
             ->take(3)
             ->get()
             ->map(function ($enrollment) {
+                // Jika data relasi kosong/terhapus, beri proteksi agar tidak error objek kosong
+                if (!$enrollment->course) return null;
+
                 $progress = $enrollment->progress_persen;
 
-                // Warna bar & teks otomatis berdasarkan persentase
                 if ($progress >= 75) {
                     $barColor     = 'bg-[#008740]';
                     $percentColor = 'text-[#008740]';
@@ -55,7 +59,9 @@ class DashboardController extends Controller
                     'percentColor' => $percentColor,
                     'emoji'        => '📖',
                 ];
-            });
+            })
+            ->filter() // Membuang nilai null jika ada data relasi yang miss
+            ->values();
 
         // 2. Grafik aktivitas belajar 7 hari terakhir dari database
         $chartData = [];

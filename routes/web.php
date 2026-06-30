@@ -226,14 +226,14 @@ Route::middleware(['auth'])->group(function () {
             ];
         });
 
-    return Inertia::render('Korporat/DashboardKorporat', [
-        'banners'            => \App\Models\DashboardBanner::where('is_active', true)->latest()->get(),
-        'events'             => \App\Models\Webinar::where('is_published', true)->latest()->take(3)->get(),
-        'purchasedCourses'   => $purchasedCourses,
-        'recentActivities'   => $recentActivities,
-        'memberProgressData' => $memberProgressData, // Lempar ke React
-    ]);
-})->name('korporat.dashboard');
+            return Inertia::render('Korporat/DashboardKorporat', [
+                'banners'            => \App\Models\DashboardBanner::where('is_active', true)->latest()->get(),
+                'events'             => \App\Models\Webinar::where('is_published', true)->latest()->take(3)->get(),
+                'purchasedCourses'   => $purchasedCourses,
+                'recentActivities'   => $recentActivities,
+                'memberProgressData' => $memberProgressData, // Lempar ke React
+            ]);
+        })->name('korporat.dashboard');
 
         Route::get('/korporat/beli-pelatihan', function () {
             return Inertia::render('Korporat/BeliPelatihanKorporat', [
@@ -287,6 +287,13 @@ Route::middleware(['auth'])->group(function () {
                 'purchasedCourses' => $purchasedCourses
             ]);
         })->name('korporat.pelatihan-dibeli');
+
+        // Notification
+        Route::get('/notifikasi', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifikasi.index');
+
+        Route::post('/notifikasi/{id}/baca', [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('notifikasi.baca');
+
+        Route::post('/notifikasi/baca-semua', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifikasi.baca-semua');
 
         Route::get('/korporat/profil-perusahaan/edit', fn () => Inertia::render('Korporat/EditProfilPerusahaan', ['profile' => auth()->user()->corporateProfile]))->name('korporat.profil-perusahaan.edit');
         Route::get('/korporat/pelatihan/{slug}/detail', function ($slug) {

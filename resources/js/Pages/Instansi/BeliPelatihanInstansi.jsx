@@ -350,13 +350,13 @@ export default function BeliPelatihanInstansi({ banners = [], courses = [] }) {
             key: 'offline',
             label: 'Kelas Offline',
             icon: 'people',
-            courses: offlineCourses, // Sekarang full dinamis dari DB
+            courses: offlineCourses,
         },
         {
             key: 'hybrid',
             label: 'Kelas Hybrid',
             icon: 'layers',
-            courses: hybridCourses, // Sekarang full dinamis dari DB
+            courses: hybridCourses,
         },
     ];
 
@@ -377,12 +377,12 @@ export default function BeliPelatihanInstansi({ banners = [], courses = [] }) {
                             style={
                                 banner.image_path
                                     ? {
-                                          backgroundImage: `url(/storage/${banner.image_path})`,
-                                      }
+                                        backgroundImage: `url(/storage/${banner.image_path})`,
+                                    }
                                     : {
-                                          backgroundImage:
-                                              'linear-gradient(to right, #1B5036, #10251B)',
-                                      }
+                                        backgroundImage:
+                                            'linear-gradient(to right, #1B5036, #10251B)',
+                                    }
                             }
                         >
                             <div className="absolute inset-0 bg-black/40"></div>

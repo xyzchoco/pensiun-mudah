@@ -51,28 +51,28 @@ export default function Dashboard({
 
             <div className="flex flex-col gap-6 pb-10">
                 {/* 1. HERO BANNER */}
-                <div className="relative bg-[#368E5E] rounded-2xl overflow-hidden h-[240px] flex items-center shadow-sm w-full">
+                <div className="relative w-full max-w-none h-[320px] rounded-3xl overflow-hidden flex items-center
+                    bg-gradient-to-r from-[#006B32] to-[#008740]
+                    shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)]">
                     {banners && banners.length > 0 ? (
                         banners.map((banner, index) => (
                             <div
                                 key={banner.id}
-                                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center px-10 ${index === currentIndex
-                                    ? 'opacity-100 z-10'
-                                    : 'opacity-0 z-0'
-                                    }`}
+                                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out
+                                flex items-center px-12 pr-64 py-12`}
                             >
                                 {/* PANGGIL image_path BUKAN gambar */}
                                 <div
-                                    className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-60"
+                                    className="absolute inset-0 bg-cover bg-center opacity-40"
                                     style={{
                                         backgroundImage: banner.image_path
                                             ? `url('/storage/${banner.image_path.replace(/^public\//, '')}')`
                                             : "url('/images/hero-dashboard-bg.png')",
                                     }}
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#206941] via-[#2D7A4D]/80 to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#006B32]/90 to-[#008740]/70" />
 
-                                <div className="relative z-20 max-w-lg flex flex-col items-start text-white">
+                                <div className="relative z-20 max-w-[500px] flex flex-col items-start text-white">
                                     {/* Nampilin Badge Promo (kalau diisi admin) */}
                                     {banner.promo_badge && (
                                         <span className="bg-[#FF8928] text-white text-[10px] font-bold px-2 py-1 rounded w-fit mb-2">
@@ -81,12 +81,27 @@ export default function Dashboard({
                                     )}
 
                                     {/* PANGGIL title BUKAN judul */}
-                                    <h2 className="text-[32px] font-bold mb-2 leading-tight">
+                                    <h2 className="
+                                        font-['Public_Sans']
+                                        font-bold
+                                        text-[40px]
+                                        leading-[48px]
+                                        mb-3
+                                    ">
                                         {banner.title}
                                     </h2>
 
                                     {/* PANGGIL description BUKAN deskripsi */}
-                                    <p className="text-sm opacity-90 mb-6 font-['Atkinson_Hyperlegible'] leading-relaxed">
+                                    <p
+                                        className="
+                                        font-['Atkinson_Hyperlegible']
+                                        font-normal
+                                        text-base
+                                        leading-7
+                                        text-white/90
+                                        mb-8
+                                        max-w-[520px]
+                                    ">
                                         {banner.description}
                                     </p>
 
@@ -94,7 +109,18 @@ export default function Dashboard({
                                     {banner.button_text && (
                                         <Link
                                             href={banner.target_url || '#'}
-                                            className="bg-[#FF8928] hover:bg-[#e67a22] text-white px-6 py-3 rounded-lg font-bold text-sm transition-all shadow-md"
+                                            className="
+                                            bg-[#FF8928]
+                                            hover:bg-[#E67718]
+                                            text-white
+                                            px-7
+                                            py-3
+                                            rounded-xl
+                                            font-semibold
+                                            font-['Public_Sans']
+                                            transition
+                                            shadow-md
+                                            "
                                         >
                                             {banner.button_text}
                                         </Link>

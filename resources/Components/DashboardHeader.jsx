@@ -1,4 +1,4 @@
-import { usePage } from '@inertiajs/react';
+import { usePage, Link } from '@inertiajs/react';
 
 function getInitials(name) {
     return name
@@ -9,10 +9,18 @@ function getInitials(name) {
         .toUpperCase();
 }
 
+// Label kategori dinamis
+const kategoriLabel = {
+    publik: 'Member Gratis',
+    asn: 'Member ASN',
+    korporat: 'Member Korporat',
+};
+
 export default function DashboardHeader({ sidebarOpen, onToggleSidebar, onToggleNotif, title = 'Dashboard', showSearch = true }) {
-    const { auth } = usePage().props;
+    const { auth, unreadNotifCount = 0 } = usePage().props; // ✅ Ambil dari shared props
     const user = auth.user;
     const firstName = user.name.split(' ')[0];
+    const memberLabel = kategoriLabel[user.kategori_pensiun] ?? 'Member Gratis';
 
     return (
         <header className="flex items-center justify-between h-16 sm:h-20 px-4 sm:px-6 lg:px-10 bg-white border-b border-[#E4E2E1]/30 shrink-0 gap-4">
@@ -42,13 +50,7 @@ export default function DashboardHeader({ sidebarOpen, onToggleSidebar, onToggle
             <div className="flex items-center gap-3 sm:gap-6 shrink-0">
                 {showSearch && (
                     <div className="relative w-48 sm:w-72 lg:w-96 max-w-[384px] hidden md:block">
-                        <svg
-                            className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#3D4A3E]/60"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                        >
+                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#3D4A3E]/60" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                         <input
@@ -60,27 +62,32 @@ export default function DashboardHeader({ sidebarOpen, onToggleSidebar, onToggle
                 )}
 
                 <div className="flex items-center gap-2 sm:gap-4">
-                    <button
-                        type="button"
-                        onClick={onToggleNotif}
+                    {/* ✅ Bell Notifikasi — link ke halaman notifikasi + badge dinamis */}
+                    <Link
+                        href="/notifikasi"
                         className="relative p-2 rounded-full hover:bg-[#F0EDED] transition-colors"
-                        aria-label="Notifikasi"
+                        aria-label={`Notifikasi${unreadNotifCount > 0 ? `, ${unreadNotifCount} belum dibaca` : ''}`}
                     >
                         <svg className="w-4 h-5 text-[#3D4A3E]/60" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
                         </svg>
-                        <span className="absolute top-2 right-2 w-2 h-2 bg-[#BA1A1A] border-2 border-white rounded-full" />
-                    </button>
+
+                        {/* ✅ Badge hanya muncul kalau ADA notif belum dibaca */}
+                        {unreadNotifCount > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#BA1A1A] px-1 text-[10px] font-bold text-white border-2 border-white">
+                                {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                            </span>
+                        )}
+                    </Link>
 
                     <div className="w-px h-8 bg-[#E4E2E1] hidden sm:block" />
-
                     <div className="flex items-center gap-2 sm:gap-3">
                         <div className="text-right hidden sm:block">
                             <p className="font-['Atkinson_Hyperlegible'] font-bold text-sm text-[#1B1C1C]">
                                 {firstName}
                             </p>
                             <p className="font-['Atkinson_Hyperlegible'] font-semibold text-[10px] tracking-wider uppercase text-[#006B32]">
-                                Member Gratis
+                                {memberLabel}
                             </p>
                         </div>
                         <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#006B32] border-2 border-[#006B32]/20 flex items-center justify-center text-white font-bold text-xs sm:text-sm">

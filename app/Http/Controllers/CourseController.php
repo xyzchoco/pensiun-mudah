@@ -13,28 +13,42 @@ class CourseController extends Controller
 {
     public function show(Request $request, $id)
     {
-        // Cari kursus berdasarkan id atau slug, beserta relasinya
+        // 1. PENTING: Ambil data kategori user dari session/auth hasil onboarding ('asn', 'publik', 'korporat')
+        $user = auth()->user();
+        $kategoriUser = $user ? trim(strtolower($user->kategori_pensiun)) : null;
+
+        // 2. QUERY JITU: Cari kursus berdasarkan ID/Slug dengan teknik eager loading yang efisien
         $course = Course::with(['modules' => function ($query) {
             $query->orderBy('urutan', 'asc')
                   ->with(['materials' => function ($q) {
                       $q->orderBy('urutan', 'asc');
                   }, 'quizzes']);
-        }])->where(function ($query) use ($id) {
+        }])
+        ->where(function ($query) use ($id) {
             if (is_numeric($id)) {
                 $query->where('id', $id)->orWhere('slug', $id);
             } else {
                 $query->where('slug', $id);
             }
-        })->first();
+        })
+        /* 
+         | KUNCI UTAMA ANTI-BOCOR:
+         | Memastikan kolom 'kategori_pensiun' di tabel courses sama dengan milik user aktif.
+         | NOTE: Pastikan data di DB tabel courses juga menggunakan string 'asn' (bukan 'asn polri')
+         | agar lolos perbandingan string strict ini.
+         */
+        ->where('is_visible_' . $kategoriUser, true) 
+        ->first();
 
+        // 3. PROTEKSI: Jika user mencoba bypass URL kelas aktor lain, langsung gagalkan secara anggun
         if (!$course) {
             if ($request->is('api/*')) {
                 return response()->json([
-                    'meta' => ['code' => 404, 'status' => 'error', 'message' => 'Kursus tidak ditemukan.'],
+                    'meta' => ['code' => 404, 'status' => 'error', 'message' => 'Kursus tidak ditemukan atau Anda tidak memiliki hak akses.'],
                     'data' => null
                 ], 404);
             }
-            abort(404);
+            abort(404); 
         }
 
         if ($request->is('api/*')) {
@@ -63,11 +77,13 @@ class CourseController extends Controller
             ], 401);
         }
 
+        // Eager load data module seminim mungkin untuk efisiensi memory
         $material = Material::with('module:id,course_id')
             ->findOrFail($validated['material_id']);
 
         $courseId = $material->module->course_id;
 
+        // Validasi pendaftaran user di kelas ini
         $enrollment = Enrollment::where([
             'user_id'   => $userId,
             'course_id' => $courseId,
@@ -79,7 +95,7 @@ class CourseController extends Controller
             ], 403);
         }
 
-        // Insert hanya jika belum pernah selesai
+        // Menggunakan updateOrInsert bawaan DB Query Builder untuk speed eksekusi
         DB::table('material_user')->updateOrInsert(
             [
                 'user_id' => $userId,
@@ -90,11 +106,13 @@ class CourseController extends Controller
             ]
         );
 
+        // Kalkulasi total materi pada course terkait
         $totalMaterials = Material::whereHas(
             'module',
             fn ($query) => $query->where('course_id', $courseId)
         )->count();
 
+        // Hitung materi yang berhasil diselesaikan oleh user aktif
         $completedMaterials = DB::table('material_user')
             ->join('materials', 'materials.id', '=', 'material_user.material_id')
             ->join('modules', 'modules.id', '=', 'materials.module_id')
@@ -102,13 +120,12 @@ class CourseController extends Controller
             ->where('modules.course_id', $courseId)
             ->count();
 
+        // Penghitungan persentase progress
         $progress = $totalMaterials > 0
             ? round(($completedMaterials / $totalMaterials) * 100, 2)
             : 0;
 
-        $enrollment->update([
-            'progress_percentage' => $progress,
-        ]);
+        $enrollment->update(['progress_persen' => $progress]);
 
         return response()->json([
             'success' => true,

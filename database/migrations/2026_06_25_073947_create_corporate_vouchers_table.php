@@ -14,6 +14,7 @@ return new class extends Migration
             $table->unsignedBigInteger('corporate_user_id');
             $table->unsignedBigInteger('course_id'); 
             $table->string('code')->unique(); 
+            $table->string('target_kategori'); 
             $table->integer('max_uses')->default(1); 
             $table->integer('used_count')->default(0);
             $table->timestamps();

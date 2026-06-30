@@ -146,7 +146,7 @@ Route::middleware(['auth'])->group(function () {
                         'banners' => DashboardBanner::where('is_active', true)->latest()->get(),
                         'courses' => Course::with('category')
                             ->where('status', 'published')
-                            ->where('is_visible_korporat', true)
+                            ->where('is_visible_asn', true) 
                             ->latest()
                             ->get(),
                     ]);

@@ -15,67 +15,73 @@ use App\Models\CorporateVoucher;
 
 class PembayaranController extends Controller
 {
-    // Tampilkan halaman konfirmasi setelah berhasil daftar kelas GRATIS
+    // ✅ Helper: cek apakah user adalah pembeli voucher (korporat atau instansi/ASN)
+    private function isVoucherBuyer($user): bool
+    {
+        return in_array($user->kategori_pensiun, ['korporat', 'asn']);
+    }
+
+    // ✅ Helper: prefix kode voucher berdasarkan kategori
+    private function generateVoucherCode($kategori): string
+    {
+        $prefix = $kategori === 'asn' ? 'ASN' : 'CORP';
+        return $prefix . '-' . strtoupper(Str::random(5)) . '-' . rand(100, 999);
+    }
+
     public function konfirmasiGratis($slug)
     {
-        $user = Auth::user();
-
+        $user   = Auth::user();
         $course = Course::with('category')->where('slug', $slug)->firstOrFail();
 
-        // Pastikan user memang sudah terdaftar di kelas gratis ini
         $enrolled = Enrollment::where('user_id', $user->user_id)
             ->where('course_id', $course->id)
             ->where('status', 'active')
             ->exists();
 
-        if (! $enrolled) {
+        if (!$enrolled) {
             return redirect()->route('beli-pelatihan')
                 ->with('error', 'Anda belum terdaftar pada kelas ini.');
         }
 
-        return Inertia::render('Pelatihan/KonfirmasiPendaftaranGratis', [
-            'course' => $course,
-        ]);
+        return Inertia::render('Pelatihan/KonfirmasiPendaftaranGratis', ['course' => $course]);
     }
 
     // =================================================================
-    // 1. FUNGSI UNTUK MENAMPILKAN HALAMAN CHECKOUT & BIKIN TOKEN MIDTRANS
+    // 1. CHECKOUT — Halaman publik (non-korporat/instansi)
     // =================================================================
-    // Jangan lupa tambahkan (Request $request) untuk menangkap parameter dari frontend
     public function checkout(Request $request, $slug)
     {
-        $user = Auth::user();
-        
-        // Tarik data kursusnya
-        $course = Course::where('slug', $slug)->firstOrFail();
-
-        // 1. TANGKAP QTY DARI REACT (Default 1 kalau tidak ada)
-        $jumlahPeserta = (int) $request->query('qty', 1);
+        $user            = Auth::user();
+        $course          = Course::where('slug', $slug)->firstOrFail();
+        $jumlahPeserta   = (int) $request->query('qty', 1);
         $hargaPerPeserta = (int) $course->price;
-        $nominalTotal = $hargaPerPeserta * $jumlahPeserta; // Total yang dibayar ke Midtrans
+        $nominalTotal    = $hargaPerPeserta * $jumlahPeserta;
 
-        // 2. CEK DOUBLE BELI (Hanya berlaku untuk user Publik/ASN)
-        // User Korporat bebas beli berkali-kali untuk nambah kuota voucher karyawan
-        $sudahBeli = Enrollment::where('user_id', $user->user_id)
-            ->where('course_id', $course->id)
-            ->where('status', 'active')
-            ->exists();
+        // Cek double beli HANYA untuk user Publik (bukan korporat/asn)
+        // ✅ FIX BUG 2: ASN & Korporat tidak diblokir di sini
+        if (!$this->isVoucherBuyer($user)) {
+            $sudahBeli = Enrollment::where('user_id', $user->user_id)
+                ->where('course_id', $course->id)
+                ->where('status', 'active')
+                ->exists();
 
-        if ($sudahBeli) {
-            return redirect()->route('payment.success', $course->slug)
-                ->with('success', 'Anda sudah memiliki pelatihan ini.');
+            if ($sudahBeli) {
+                return redirect()->route('payment.success', $course->slug)
+                    ->with('success', 'Anda sudah memiliki pelatihan ini.');
+            }
         }
 
-        // 3. CEK KELAS GRATIS (Bypass Midtrans)
+        // Kelas gratis
         if ($nominalTotal == 0) {
-            // Kalau Korporat yang klaim gratis, buatkan voucher. Kalau Publik, buatkan enrollment.
-            if ($user->kategori_pensiun === 'korporat') {
-                \App\Models\CorporateVoucher::create([
+            if ($this->isVoucherBuyer($user)) {
+                // ✅ FIX BUG 3: Simpan target_kategori
+                CorporateVoucher::create([
                     'corporate_user_id' => $user->user_id,
                     'course_id'         => $course->id,
-                    'code'              => 'CORP-' . strtoupper(\Illuminate\Support\Str::random(5)) . '-' . rand(100, 999),
+                    'code'              => $this->generateVoucherCode($user->kategori_pensiun),
                     'max_uses'          => $jumlahPeserta,
                     'used_count'        => 0,
+                    'target_kategori'   => $user->kategori_pensiun,
                 ]);
             } else {
                 Enrollment::create([
@@ -85,65 +91,47 @@ class PembayaranController extends Controller
                     'status'         => 'active',
                 ]);
             }
-
             return redirect()->route('payment.success', $course->slug)
                 ->with('success', 'Pelatihan gratis berhasil diklaim!');
         }
 
-        // 4. SETUP MIDTRANS
-        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+        // Setup Midtrans
+        Config::$serverKey    = env('MIDTRANS_SERVER_KEY');
         Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
+        Config::$isSanitized  = true;
+        Config::$is3ds        = true;
 
-        
-
-        // 5. CEK TRANSAKSI PENDING
         $pendingTransaction = Transaction::where('user_id', $user->user_id)
             ->where('course_id', $course->id)
             ->where('status', 'pending')
             ->first();
 
-        // PENTING: Pastikan qty yang dibeli SAMA dengan qty di transaksi pending. 
-        // Kalau beda (misal awalnya klik beli 1, terus balik lagi klik beli 5), batalkan yang lama!
-
-        if ($pendingTransaction && $pendingTransaction->snap_token && now()->lessThan($pendingTransaction->batas_waktu) && $pendingTransaction->jumlah_peserta === $jumlahPeserta) {
-            $snapToken = $pendingTransaction->snap_token;
+        if (
+            $pendingTransaction &&
+            $pendingTransaction->snap_token &&
+            now()->lessThan($pendingTransaction->batas_waktu) &&
+            $pendingTransaction->jumlah_peserta === $jumlahPeserta
+        ) {
+            $snapToken   = $pendingTransaction->snap_token;
             $transaction = $pendingTransaction;
         } else {
             if ($pendingTransaction) {
-                // Ubah status yang lama jadi failed biar rapi di DB
                 $pendingTransaction->update(['status' => 'failed']);
             }
 
-            $orderId = 'INV-' . date('Ymd') . '-' . rand(1000, 9999);
-
-            $params = [
-                'transaction_details' => [
-                    'order_id'     => $orderId,
-                    'gross_amount' => $nominalTotal, // Pakai nominal total
-                ],
-                'customer_details' => [
-                    'first_name' => $user->name,
-                    'email'      => $user->email,
-                ],
-                'item_details' => [
-                    [
-                        'id'       => $course->id,
-                        'price'    => $hargaPerPeserta, // Harga satuan
-                        'quantity' => $jumlahPeserta,   // Jumlah yang dibeli
-                        'name'     => mb_substr($course->title, 0, 49),
-                    ]
-                ],
-                'expiry' => [
-                    'unit'     => 'minute',
-                    'duration' => 3 
-                ],
+            $orderId   = 'INV-' . date('Ymd') . '-' . rand(1000, 9999);
+            $params    = [
+                'transaction_details' => ['order_id' => $orderId, 'gross_amount' => $nominalTotal],
+                'customer_details'    => ['first_name' => $user->name, 'email' => $user->email],
+                'item_details'        => [[
+                    'id'       => $course->id,
+                    'price'    => $hargaPerPeserta,
+                    'quantity' => $jumlahPeserta,
+                    'name'     => mb_substr($course->title, 0, 49),
+                ]],
+                'expiry' => ['unit' => 'minute', 'duration' => 3],
             ];
-
-            $snapToken = Snap::getSnapToken($params);
-
-            // Simpan transaksi baru dengan kolom yang baru kita buat
+            $snapToken   = Snap::getSnapToken($params);
             $transaction = Transaction::create([
                 'user_id'           => $user->user_id,
                 'course_id'         => $course->id,
@@ -157,78 +145,74 @@ class PembayaranController extends Controller
             ]);
         }
 
-        // 6. Lempar semua data ke halaman React
         return Inertia::render('Payment/DetailPembelian', [
             'course'            => $course,
             'transaction'       => $transaction,
             'snapToken'         => $snapToken,
-            'midtransClientKey' => env('MIDTRANS_CLIENT_KEY')
+            'midtransClientKey' => env('MIDTRANS_CLIENT_KEY'),
         ]);
     }
 
     // =================================================================
-    // 2. FUNGSI UNTUK MENANGKAP LEMPARAN BALIK DARI POP-UP MIDTRANS
+    // 2. FINISH — Callback dari Midtrans popup
     // =================================================================
     public function finish(Request $request)
     {
-        $orderId = $request->query('order_id');
+        $orderId           = $request->query('order_id');
         $transactionStatus = $request->query('transaction_status');
-        $statusCode = $request->query('status_code');
+        $statusCode        = $request->query('status_code');
 
         $transaction = Transaction::where('nomor_transaksi', $orderId)->first();
-
         if (!$transaction) {
-            return redirect()->route('beli-pelatihan')
-                ->with('error', 'Transaksi tidak ditemukan.');
+            return redirect()->route('beli-pelatihan')->with('error', 'Transaksi tidak ditemukan.');
         }
 
-        $course = \App\Models\Course::find($transaction->course_id);
-        
+        $course = Course::find($transaction->course_id);
         if (!$course) {
             return redirect()->route('beli-pelatihan');
         }
 
-        // SATPAM ANTI-REFRESH: Cegah proses double jika transaksi sudah sukses
+        // Anti-double process
         if ($transaction->status === 'success') {
             return redirect()->route('payment.success', $course->slug);
         }
 
-       if (
-            in_array($transactionStatus, ['settlement','capture'])
-            || $request->query('flag') === 'success'
+        if (
+            in_array($transactionStatus, ['settlement', 'capture']) ||
+            $request->query('flag') === 'success'
         ) {
-            
             $transaction->update(['status' => 'success']);
+
+            // Batalkan semua transaksi pending lain untuk kursus yang sama
             Transaction::where('user_id', $transaction->user_id)
                 ->where('course_id', $transaction->course_id)
                 ->where('status', 'pending')
                 ->where('id', '!=', $transaction->id)
-                ->update([
-                    'status' => 'failed'
-                ]);
+                ->update(['status' => 'failed']);
 
             $buyer = \App\Models\User::find($transaction->user_id);
 
-            // LOGIKA KORPORAT
-            if ($buyer && $buyer->kategori_pensiun === 'korporat') {
-                $voucherLama = \App\Models\CorporateVoucher::where('corporate_user_id', $buyer->user_id)
+            // ✅ FIX BUG 1 + BUG 3: Korporat DAN ASN sama-sama dapat voucher
+            if ($buyer && $this->isVoucherBuyer($buyer)) {
+                $voucherLama = CorporateVoucher::where('corporate_user_id', $buyer->user_id)
                     ->where('course_id', $transaction->course_id)
                     ->first();
 
                 if ($voucherLama) {
                     $voucherLama->increment('max_uses', $transaction->jumlah_peserta);
                 } else {
-                    \App\Models\CorporateVoucher::create([
+                    // ✅ FIX BUG 3: Simpan target_kategori agar hanya ASN/korporat yang bisa redeem
+                    CorporateVoucher::create([
                         'corporate_user_id' => $buyer->user_id,
                         'course_id'         => $transaction->course_id,
-                        'code'              => 'CORP-' . strtoupper(\Illuminate\Support\Str::random(5)) . '-' . rand(100, 999),
+                        'code'              => $this->generateVoucherCode($buyer->kategori_pensiun),
                         'max_uses'          => $transaction->jumlah_peserta,
                         'used_count'        => 0,
+                        'target_kategori'   => $buyer->kategori_pensiun, // 'korporat' atau 'asn'
                     ]);
                 }
-            } 
-            // LOGIKA PUBLIK / ASN
-            else {
+            } else {
+                // User Publik → langsung enrollment
                 $cekEnrollment = Enrollment::where('user_id', $transaction->user_id)
                     ->where('course_id', $transaction->course_id)
                     ->exists();
@@ -248,128 +232,106 @@ class PembayaranController extends Controller
             return redirect()->route('payment.success', $course->slug);
         }
 
-        // JIKA EXPIRED / GAGAL
-        if ($transactionStatus === 'expire' || $transactionStatus === 'cancel' || $transactionStatus === 'deny' || $statusCode == 407) {
+        // Expired / gagal
+        if (in_array($transactionStatus, ['expire', 'cancel', 'deny']) || $statusCode == 407) {
             $transaction->update(['status' => 'failed']);
-
             return redirect()->route('payment.detail', $course->slug)
                 ->with('error', 'Waktu pembayaran habis atau dibatalkan.');
         }
 
-        // JIKA PENDING
+        // Pending
         return redirect()->route('payment.detail', $course->slug)
             ->with('info', 'Pembayaran sedang diproses.');
+
+        Notification::send(
+            $transaction->user_id,
+            'Pembayaran Berhasil!',
+            "Anda kini memiliki akses penuh ke {$course->title}.",
+            'success',
+            'Mulai Belajar',
+            "/pelatihan/{$course->id}/belajar"
+        );
+
+        Notification::send(
+            $transaction->user_id,
+            'Transaksi Gagal',
+            'Silakan coba lagi atau hubungi bantuan jika kendala berlanjut.',
+            'danger',
+            'Coba Lagi',
+            "/pelatihan/{$course->slug}/pembelian"
+        );
     }
+
     // =================================================================
-    // 4. FUNGSI UNTUK NAMPILIN HALAMAN STRUK SUKSES (DINAMIS ASLI)
+    // 3. SUCCESS — Halaman struk sukses
     // =================================================================
     public function success($slug)
     {
-        $user = Auth::user();
-        
-        // REVISI DI SINI: Tambahkan 'category' ke dalam fungsi with()
+        $user   = Auth::user();
         $course = Course::with(['modules.materials', 'category'])->where('slug', $slug)->firstOrFail();
-        
         $course->setAttribute('firstLessonId', $this->firstMaterialId($course));
-        
-        // Cari data transaksi sukses terbaru milik user untuk kursus ini
+
         $transaction = Transaction::where('user_id', $user->user_id)
             ->where('course_id', $course->id)
             ->where('status', 'success')
             ->latest()
             ->first();
 
-        // ==========================================
-        // LOGIKA PENGECEKAN KATEGORI AKUN
-        // ==========================================
         if ($user && $user->kategori_pensiun === 'korporat') {
-            $voucher = \App\Models\CorporateVoucher::where('corporate_user_id', $user->user_id)
+            $voucher = CorporateVoucher::where('corporate_user_id', $user->user_id)
                 ->where('course_id', $course->id)
                 ->latest()
                 ->first();
 
             return Inertia::render('Korporat/PembayaranBerhasilKorporat', [
-                'course' => $course,
+                'course'      => $course,
                 'transaction' => $transaction,
-                'voucher' => $voucher,
+                'voucher'     => $voucher,
             ]);
-        } else if ($user && $user->kategori_pensiun === 'asn') {
-            $voucher = \App\Models\CorporateVoucher::where('corporate_user_id', $user->user_id)
+        }
+
+        if ($user && $user->kategori_pensiun === 'asn') {
+            $voucher = CorporateVoucher::where('corporate_user_id', $user->user_id)
                 ->where('course_id', $course->id)
                 ->latest()
                 ->first();
 
             return Inertia::render('Instansi/PembayaranBerhasilInstansi', [
-                'course' => $course,
+                'course'      => $course,
                 'transaction' => $transaction,
-                'voucher' => $voucher,
+                'voucher'     => $voucher,
             ]);
         }
 
-        // Lempar ke halaman sukses umum (Publik)
+        // Publik
         return Inertia::render('Payment/PembayaranBerhasil', [
-            'course' => $course,
+            'course'      => $course,
             'transaction' => $transaction,
         ]);
     }
 
     // =================================================================
-    // 3. FUNGSI WEBHOOK (NOTIFIKASI BELAKANG LAYAR DARI SERVER MIDTRANS)
+    // 4. CHECKOUT KORPORAT & INSTANSI
     // =================================================================
-    public function webhook(Request $request)
-    {
-        \Log::info('MIDTRANS WEBHOOK', $request->all());
-
-        return response()->json([
-            'status' => 'ok'
-        ]);
-    }
-
-    private function learningRouteParams(Course $course): array
-    {
-        $params = ['id' => $course->id];
-        $firstMaterialId = $this->firstMaterialId($course);
-
-        if ($firstMaterialId) {
-            $params['lesson'] = $firstMaterialId;
-        }
-
-        return $params;
-    }
-
-    private function firstMaterialId(Course $course): mixed
-    {
-        $course->loadMissing('modules.materials');
-
-        return $course->modules
-            ->flatMap(fn ($module) => $module->materials)
-            ->first()
-            ?->id;
-    }
-
     public function checkoutKorporat(Request $request, $slug)
     {
-        $user = Auth::user();
-
-        $course = Course::where('slug', $slug)->firstOrFail();
-
-        $jumlahPeserta = max(1, (int) $request->query('qty', 1));
-
+        $user            = Auth::user();
+        $course          = Course::where('slug', $slug)->firstOrFail();
+        $jumlahPeserta   = max(1, (int) $request->query('qty', 1));
         $hargaPerPeserta = (int) $course->price;
+        $nominalTotal    = $hargaPerPeserta * $jumlahPeserta;
 
-        $nominalTotal = $hargaPerPeserta * $jumlahPeserta;
-
-        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+        Config::$serverKey    = env('MIDTRANS_SERVER_KEY');
         Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
+        Config::$isSanitized  = true;
+        Config::$is3ds        = true;
 
         $pendingTransaction = Transaction::where('user_id', $user->user_id)
-        ->where('course_id', $course->id)
-        ->where('status', 'pending')
-        ->where('batas_waktu', '>', now())
-        ->latest()
-        ->first();
+            ->where('course_id', $course->id)
+            ->where('status', 'pending')
+            ->where('batas_waktu', '>', now())
+            ->latest()
+            ->first();
 
         if (
             $pendingTransaction &&
@@ -377,66 +339,68 @@ class PembayaranController extends Controller
             now()->lessThan($pendingTransaction->batas_waktu) &&
             $pendingTransaction->jumlah_peserta == $jumlahPeserta
         ) {
-
             $transaction = $pendingTransaction;
-            $snapToken = $transaction->snap_token;
-
+            $snapToken   = $transaction->snap_token;
         } else {
-
             if ($pendingTransaction) {
-                $pendingTransaction->update([
-                    'status' => 'failed'
-                ]);
+                $pendingTransaction->update(['status' => 'failed']);
             }
 
-            $orderId = 'INV-' . date('Ymd') . '-' . rand(1000, 9999);
-
-            $params = [
-                'transaction_details' => [
-                    'order_id' => $orderId,
-                    'gross_amount' => $nominalTotal,
-                ],
-                'customer_details' => [
-                    'first_name' => $user->name,
-                    'email' => $user->email,
-                ],
-                'item_details' => [[
-                    'id' => $course->id,
-                    'price' => $hargaPerPeserta,
+            $orderId   = 'INV-' . date('Ymd') . '-' . rand(1000, 9999);
+            $params    = [
+                'transaction_details' => ['order_id' => $orderId, 'gross_amount' => $nominalTotal],
+                'customer_details'    => ['first_name' => $user->name, 'email' => $user->email],
+                'item_details'        => [[
+                    'id'       => $course->id,
+                    'price'    => $hargaPerPeserta,
                     'quantity' => $jumlahPeserta,
-                    'name' => mb_substr($course->title,0,49),
+                    'name'     => mb_substr($course->title, 0, 49),
                 ]],
-                'expiry' => [
-                    'unit'=>'minute',
-                    'duration'=>3,
-                ]
+                'expiry' => ['unit' => 'minute', 'duration' => 3],
             ];
-
-            $snapToken = Snap::getSnapToken($params);
-
+            $snapToken   = Snap::getSnapToken($params);
             $transaction = Transaction::create([
-                'user_id'=>$user->user_id,
-                'course_id'=>$course->id,
-                'nomor_transaksi'=>$orderId,
-                'jumlah_peserta'=>$jumlahPeserta,
-                'harga_per_peserta'=>$hargaPerPeserta,
-                'nominal'=>$nominalTotal,
-                'status'=>'pending',
-                'snap_token'=>$snapToken,
-                'batas_waktu'=>now()->addMinutes(3),
+                'user_id'           => $user->user_id,
+                'course_id'         => $course->id,
+                'nomor_transaksi'   => $orderId,
+                'jumlah_peserta'    => $jumlahPeserta,
+                'harga_per_peserta' => $hargaPerPeserta,
+                'nominal'           => $nominalTotal,
+                'status'            => 'pending',
+                'snap_token'        => $snapToken,
+                'batas_waktu'       => now()->addMinutes(3),
             ]);
         }
 
+        // ✅ Render halaman sesuai kategori user (korporat atau asn/instansi)
         $viewFolder = $user->kategori_pensiun === 'asn' ? 'Instansi' : 'Korporat';
         $routeName  = $user->kategori_pensiun === 'asn' ? 'instansi.pelatihan.detail' : 'korporat.pelatihan.detail';
 
         return Inertia::render("{$viewFolder}/DetailPembelianOnline", [
-            'course' => $course,
-            'transaction' => $transaction,
-            'snapToken' => $snapToken,
+            'course'            => $course,
+            'transaction'       => $transaction,
+            'snapToken'         => $snapToken,
             'midtransClientKey' => env('MIDTRANS_CLIENT_KEY'),
-            'quantity' => $jumlahPeserta,
-            'backHref' => route($routeName, $course->slug),
+            'quantity'          => $jumlahPeserta,
+            'backHref'          => route($routeName, $course->slug),
         ]);
+    }
+
+    // =================================================================
+    // 5. WEBHOOK
+    // =================================================================
+    public function webhook(Request $request)
+    {
+        \Log::info('MIDTRANS WEBHOOK', $request->all());
+        return response()->json(['status' => 'ok']);
+    }
+
+    private function firstMaterialId(Course $course): mixed
+    {
+        $course->loadMissing('modules.materials');
+        return $course->modules
+            ->flatMap(fn($module) => $module->materials)
+            ->first()
+            ?->id;
     }
 }

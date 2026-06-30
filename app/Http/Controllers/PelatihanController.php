@@ -261,6 +261,16 @@ class PelatihanController extends Controller
 
         // ✅ Redirect ke halaman hasil
         return redirect("/pelatihan/{$id}/kuis/hasil");
+
+        if ($finalScore >= $passingScore) {
+            Notification::send($user->user_id, 'Selamat, Kamu Lulus Kuis!',
+                "Nilai kamu {$finalScore}. Lanjut ke modul berikutnya!", 'success',
+                'Lihat Hasil', "/pelatihan/{$id}/kuis/hasil");
+        } else {
+            Notification::send($user->user_id, 'Nilai Kuis Belum Cukup',
+                "Nilai kamu {$finalScore}, minimal {$passingScore}. Coba lagi ya!", 'warning',
+                'Ulangi Kuis', "/pelatihan/{$id}/kuis");
+        }
     }
 
 
@@ -494,61 +504,80 @@ class PelatihanController extends Controller
     }
     public function klaimVoucher(Request $request)
     {
-        $request->validate([
-            'code' => ['required', 'string'],
+    $request->validate([
+        'code' => ['required', 'string'],
+    ]);
+
+    $user    = auth()->user();
+    $voucher = \App\Models\CorporateVoucher::where('code', $request->code)->first();
+
+    // 1. Cek kode valid
+    if (!$voucher) {
+        return back()->with('error', 'Kode voucher tidak valid atau salah ketik bos.');
+    }
+
+    // 2. ✅ Cek target_kategori — voucher ASN hanya bisa diklaim user ASN, dst.
+    // if ($voucher->target_kategori && $voucher->target_kategori !== $user->kategori_pensiun) {
+    //     $labelMap = [
+    //         'asn'     => 'ASN/TNI/Polri',
+    //         'korporat'=> 'Korporat',
+    //         'publik'  => 'Publik',
+    //     ];
+    //     $labelKategori = $labelMap[$voucher->target_kategori] ?? ucfirst($voucher->target_kategori);
+    //     return back()->with('error', "Kode voucher ini hanya berlaku untuk akun {$labelKategori}.");
+    // }
+
+    // 3. Cek kuota
+    if ($voucher->used_count >= $voucher->max_uses) {
+        return back()->with('error', 'Maaf, kuota penggunaan kode voucher ini sudah habis.');
+    }
+
+    // 4. Cek double klaim kode yang sama
+    $sudahKlaimKodeIni = \App\Models\VoucherRedemption::where('user_id', $user->user_id)
+        ->where('corporate_voucher_id', $voucher->id)
+        ->exists();
+
+    if ($sudahKlaimKodeIni) {
+        return back()->with('error', 'Akun anda sudah klaim kode voucher ini.');
+    }
+
+    // 5. Cek sudah enroll kelas ini lewat jalur lain
+    $sudahEnrollKelas = \App\Models\Enrollment::where('user_id', $user->user_id)
+        ->where('course_id', $voucher->course_id)
+        ->exists();
+
+    if ($sudahEnrollKelas) {
+        return back()->with('error', 'Anda sudah terdaftar di kelas ini.');
+    }
+
+    // 6. Eksekusi klaim
+    DB::transaction(function () use ($voucher, $user) {
+        $voucher->increment('used_count');
+
+        \App\Models\Enrollment::create([
+            'user_id'         => $user->user_id,
+            'course_id'       => $voucher->course_id,
+            'tanggal_daftar'  => now(),
+            'status'          => 'active',
+            'progress_persen' => 0,
+            'is_completed'    => false,
         ]);
 
-        $user = auth()->user();
+        \App\Models\VoucherRedemption::create([
+            'user_id'              => $user->user_id,
+            'corporate_voucher_id' => $voucher->id,
+            'redeemed_at'          => now(),
+        ]);
 
-        // 1. Cari kodenya di database
-        $voucher = \App\Models\CorporateVoucher::where('code', $request->code)->first();
-
-        if (!$voucher) {
-            return back()->with('error', 'Kode voucher tidak valid atau salah ketik bos.');
-        }
-
-        // 2. Cek apakah kuota vouchernya sudah habis
-        if ($voucher->used_count >= $voucher->max_uses) {
-            return back()->with('error', 'Maaf, kuota penggunaan kode voucher ini sudah habis.');
-        }
-
-        // 3. Cek history klaim akun ini biar ga double claim
-        $sudahKlaimKodeIni = \App\Models\VoucherRedemption::where('user_id', $user->user_id)
-            ->where('corporate_voucher_id', $voucher->id)
-            ->exists();
-
-        if ($sudahKlaimKodeIni) {
-            return back()->with('error', 'Akun anda sudah klaim kode voucher ini.');
-        }
-
-        // 4. Cek apakah user sebenarnya sudah punya kelas ini lewat jalur lain
-        $sudahEnrollKelas = \App\Models\Enrollment::where('user_id', $user->user_id)
-            ->where('course_id', $voucher->course_id)
-            ->exists();
-
-        if ($sudahEnrollKelas) {
-            return back()->with('error', 'Anda sudah terdaftar di kelas ini.');
-        }
-
-        // 5. Eksekusi klaim menggunakan DB Transaction
-        \Illuminate\Support\Facades\DB::transaction(function () use ($voucher, $user) {
-            $voucher->increment('used_count');
-
-            \App\Models\Enrollment::create([
-                'user_id'         => $user->user_id,
-                'course_id'       => $voucher->course_id,
-                'tanggal_daftar'  => now(),
-                'status'          => 'active',
-                'progress_persen' => 0,
-                'is_completed'    => false,
-            ]);
-
-            \App\Models\VoucherRedemption::create([
-                'user_id'              => $user->user_id,
-                'corporate_voucher_id' => $voucher->id,
-                'redeemed_at'          => now(),
-            ]);
-        });
+        Notification::send(
+            $user->user_id,
+            'Berhasil Gabung Kelas!',
+            'Kamu berhasil bergabung ke kelas menggunakan kode voucher. Selamat belajar!',
+            'success',
+            'Mulai Belajar',
+            "/pelatihan/{$voucher->course_id}/belajar"
+        );
+    });
 
         return back()->with('success', 'Kode berhasil diklaim, silakan cek menu pelatihan.');
     }

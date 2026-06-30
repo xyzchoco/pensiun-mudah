@@ -100,7 +100,7 @@ export default function PembayaranBerhasilInstansi({
                                     </div>
                                     <div className="min-w-0">
                                         <span className="inline-block rounded-full bg-[#FF8928] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-                                            Corporate Plan
+                                            ASN Plan
                                         </span>
                                         <h2 className="mt-2 text-lg font-bold leading-snug text-[#1B1C1C]">
                                             {courseName}
@@ -301,6 +301,6 @@ export default function PembayaranBerhasilInstansi({
                     </div>
                 </div>
             </main>
-            </InstansiLayout>
+        </InstansiLayout>
     );
 }
