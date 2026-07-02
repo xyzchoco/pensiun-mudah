@@ -12,6 +12,9 @@ use Midtrans\Config;
 use Midtrans\Snap;
 use Illuminate\Support\Str;
 use App\Models\CorporateVoucher;
+use App\Models\Notification;
+use App\Models\TrainingRequest;
+use Illuminate\Support\Facades\DB;
 
 class PembayaranController extends Controller
 {
@@ -104,6 +107,8 @@ class PembayaranController extends Controller
         $pendingTransaction = Transaction::where('user_id', $user->user_id)
             ->where('course_id', $course->id)
             ->where('status', 'pending')
+            ->where('batas_waktu', '>', now()) // Hanya ambil yang belum expired
+            ->latest() // Ambil yang terbaru jika ada beberapa
             ->first();
 
         if (
@@ -153,8 +158,143 @@ class PembayaranController extends Controller
         ]);
     }
 
-    // =================================================================
-    // 2. FINISH — Callback dari Midtrans popup
+    /**
+     * Halaman pembayaran booking offline.
+     * Dipakai jalur A (langsung dari store) & jalur B (setelah admin approve).
+     * Route-model-binding {trainingRequest} otomatis pakai PK request_id.
+     */
+    public function offlineCheckout(TrainingRequest $trainingRequest)
+    {
+        // 🔒 Keamanan: cuma pemilik booking yang boleh akses
+        abort_if($trainingRequest->user_id !== Auth::id(), 403);
+
+        // 🔒 Guard status: cuma bisa bayar kalau statusnya MENUNGGU_BAYAR
+        // (jalur B yang masih menunggu_approval / ditolak nggak boleh masuk sini)
+        if ($trainingRequest->status !== TrainingRequest::MENUNGGU_BAYAR) {
+            return redirect()->route('instansi.pelatihan-dibeli')
+                ->with('error', 'Booking ini belum bisa dibayar atau sudah diproses.');
+        }
+
+        $trainingRequest->load('course');
+
+        return Inertia::render('Instansi/PembayaranOffline', [
+            'request' => [
+                'id'              => $trainingRequest->request_id,
+                'course_title'    => $trainingRequest->course->title,
+                'thumbnail'       => $trainingRequest->course->thumbnail,
+                'tanggal_mulai'   => $trainingRequest->tanggal_mulai?->locale('id')->isoFormat('D MMM YYYY'),
+                'tanggal_selesai' => $trainingRequest->tanggal_selesai?->locale('id')->isoFormat('D MMM YYYY'),
+                'lokasi'          => $trainingRequest->usulan_lokasi
+                    ?: ($trainingRequest->course->lokasi_default ?? 'Akan dikonfirmasi'),
+                'jumlah_peserta'  => $trainingRequest->jumlah_peserta,
+                'harga_satuan'    => (int) $trainingRequest->course->price,
+                'total'           => (int) $trainingRequest->estimasi_harga,
+                'is_custom'       => $trainingRequest->is_custom,
+            ],
+            'payHref'  => route('instansi.pembayaran.proses', $trainingRequest->request_id),
+            'backHref' => route('instansi.beli-pelatihan'),
+        ]);
+    }
+
+    /**
+     * Proses pembayaran: tandai LUNAS + generate CorporateVoucher.
+     * Voucher observer otomatis kirim notif ke instansi.
+     */
+    public function prosesPembayaranOffline(TrainingRequest $trainingRequest)
+    {
+        abort_if($trainingRequest->user_id !== Auth::id(), 403);
+
+        // 🔒 Cegah double-bayar (idempotent)
+        if ($trainingRequest->status !== TrainingRequest::MENUNGGU_BAYAR) {
+            return redirect()->route('instansi.pelatihan-dibeli')
+                ->with('error', 'Booking ini sudah diproses sebelumnya.');
+        }
+
+        $user = Auth::user();
+        $trainingRequest->load('course');
+
+        // Prefix kode voucher sesuai kategori instansi
+        $prefix = $user->kategori_pensiun === 'asn' ? 'ASN-' : 'CORP-';
+
+        // Bungkus transaksi biar voucher + update status atomik (nggak setengah jadi)
+        DB::transaction(function () use ($trainingRequest, $user, $prefix) {
+            // Generate kode unik (ulang kalau kebetulan bentrok)
+            do {
+                $code = $prefix . strtoupper(Str::random(8));
+            } while (CorporateVoucher::where('code', $code)->exists());
+
+            // max_uses = jumlah peserta yang dibooking
+            $voucher = CorporateVoucher::create([
+                'corporate_user_id' => $trainingRequest->user_id,
+                'course_id'         => $trainingRequest->course_id,
+                'code'              => $code,
+                'max_uses'          => $trainingRequest->jumlah_peserta,
+                'used_count'        => 0,
+                'target_kategori'   => $user->kategori_pensiun,
+            ]);
+            // ↑ CorporateVoucherObserver fire di sini → notif "Voucher berhasil dibuat" 🔔
+
+            // Tandai lunas + simpan relasi voucher
+            $trainingRequest->update([
+                'status'     => TrainingRequest::LUNAS,
+                'voucher_id' => $voucher->id,
+            ]);
+        });
+
+        return redirect()->route('instansi.pembayaran-berhasil', $trainingRequest->request_id)
+            ->with('success', 'Pembayaran berhasil! Kode voucher sudah dibuat, silakan bagikan ke peserta.');
+    }
+
+    /**
+     * Finalisasi pembayaran dari popup Midtrans (jalur A langsung).
+     * Endpoint ini dipanggil via axios dari frontend.
+     */
+    public function finalizeOfflinePayment(TrainingRequest $trainingRequest)
+    {
+        abort_if($trainingRequest->user_id !== Auth::id(), 403);
+
+        if ($trainingRequest->status !== TrainingRequest::MENUNGGU_BAYAR) {
+            return response()->json(['ok' => true, 'redirect' => route('instansi.pembayaran-berhasil', $trainingRequest->request_id)]); // sudah diproses, idempotent
+        }
+
+        $user = Auth::user();
+        $trainingRequest->load('course');
+
+        $prefix = $user->kategori_pensiun === 'asn' ? 'ASN-' : 'CORP-';
+
+        try {
+            DB::transaction(function () use ($trainingRequest, $user, $prefix) {
+                do {
+                    $code = $prefix . strtoupper(Str::random(8));
+                } while (CorporateVoucher::where('code', $code)->exists());
+
+                $voucher = CorporateVoucher::create([
+                    'corporate_user_id' => $trainingRequest->user_id,
+                    'course_id'         => $trainingRequest->course_id,
+                    'code'              => $code,
+                    'max_uses'          => $trainingRequest->jumlah_peserta,
+                    'used_count'        => 0,
+                    'target_kategori'   => $user->kategori_pensiun,
+                ]);
+                // ↑ CorporateVoucherObserver fire di sini → notif "Voucher berhasil dibuat" 🔔
+
+                // Tandai lunas + simpan relasi voucher
+                $trainingRequest->update([
+                    'status'     => TrainingRequest::LUNAS,
+                    'voucher_id' => $voucher->id,
+                ]);
+            });
+
+            return response()->json(['ok' => true, 'redirect' => route('instansi.pembayaran-berhasil', $trainingRequest->request_id)]);
+        } catch (\Exception $e) {
+            // Log the exception for debugging
+            \Log::error('Error in finalizeOfflinePayment: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+
+            // Return a generic error response to the client
+            return response()->json(['ok' => false, 'message' => 'Terjadi kesalahan saat memproses pembayaran. Silakan coba lagi nanti.'], 500);
+        }
+    }
+
     // =================================================================
     public function finish(Request $request)
     {
@@ -189,6 +329,15 @@ class PembayaranController extends Controller
                 ->where('status', 'pending')
                 ->where('id', '!=', $transaction->id)
                 ->update(['status' => 'failed']);
+
+            Notification::send(
+                $transaction->user_id,
+                'Pembayaran Berhasil!',
+                "Anda kini memiliki akses penuh ke {$course->title}.",
+                'success',
+                'Mulai Belajar',
+                "/pelatihan/{$course->id}/belajar"
+            );
 
             $buyer = \App\Models\User::find($transaction->user_id);
 
@@ -235,6 +384,16 @@ class PembayaranController extends Controller
         // Expired / gagal
         if (in_array($transactionStatus, ['expire', 'cancel', 'deny']) || $statusCode == 407) {
             $transaction->update(['status' => 'failed']);
+
+            Notification::send(
+                $transaction->user_id,
+                'Transaksi Gagal',
+                'Silakan coba lagi atau hubungi bantuan jika kendala berlanjut.',
+                'danger',
+                'Coba Lagi',
+                "/pelatihan/{$course->slug}/pembelian"
+            );
+
             return redirect()->route('payment.detail', $course->slug)
                 ->with('error', 'Waktu pembayaran habis atau dibatalkan.');
         }
@@ -242,24 +401,6 @@ class PembayaranController extends Controller
         // Pending
         return redirect()->route('payment.detail', $course->slug)
             ->with('info', 'Pembayaran sedang diproses.');
-
-        Notification::send(
-            $transaction->user_id,
-            'Pembayaran Berhasil!',
-            "Anda kini memiliki akses penuh ke {$course->title}.",
-            'success',
-            'Mulai Belajar',
-            "/pelatihan/{$course->id}/belajar"
-        );
-
-        Notification::send(
-            $transaction->user_id,
-            'Transaksi Gagal',
-            'Silakan coba lagi atau hubungi bantuan jika kendala berlanjut.',
-            'danger',
-            'Coba Lagi',
-            "/pelatihan/{$course->slug}/pembelian"
-        );
     }
 
     // =================================================================

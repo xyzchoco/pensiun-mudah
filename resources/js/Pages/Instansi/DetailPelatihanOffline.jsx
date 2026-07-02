@@ -186,20 +186,20 @@ function BenefitIcon({ name }) {
 }
 
 export default function DetailPelatihanOffline({
-    title = 'Manajemen Keuangan Masa Pensiun',
-    rating = '4.8',
-    reviewCount = 124,
-    instructor = 'Dr. Herman Salim, CFP',
-    duration = '12 Jam',
-    location = 'Hotel Santika Surabaya, Ballroom Arjuna',
-    eventDate = 'Sabtu, 12 Oktober 2024',
-    eventTime = '09:00 - 15:00 WIB',
-    about = 'Masa pensiun bukanlah akhir dari produktivitas finansial, melainkan awal dari fase pengelolaan kekayaan yang baru. Kursus ini dirancang khusus untuk membantu Anda memahami cara menjaga nilai aset, mengelola pengeluaran pasca-pensiun, dan memastikan dana Anda cukup untuk gaya hidup impian selamanya.',
-    price = 'Rp 249.000',
-    oldPrice = 'Rp 499.000',
-    quantity = 5,
-    backHref = '/beli-pelatihan',
-    scheduleHref = '/instansi/pilih-jadwal',
+    title = 'Kelas Offline',
+    rating = null,
+    reviewCount = null,
+    instructor = 'Instruktur akan diumumkan',
+    duration = '-',
+    location = 'Lokasi akan dikonfirmasi',
+    eventDate = 'Tanggal akan dikonfirmasi',
+    eventTime = 'Jadwal akan dikonfirmasi',
+    about = '',
+    price = 'Gratis',
+    oldPrice = null,
+    quantity = 1,
+    backHref = '/instansi/beli-pelatihan',
+    scheduleHref = '#',
 }) {
     return (
         <InstansiLayout showSidebar={false} title={title + ' - Pensiun Mudah'} activeNav="dashboard">
@@ -232,6 +232,7 @@ export default function DetailPelatihanOffline({
                             </h1>
 
                             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-[#3D4A3E]">
+                                {rating && (
                                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FCE9D8] px-3 py-1 font-bold text-[#1B1C1C]">
                                     <svg
                                         className="h-4 w-4 text-[#FF8928]"
@@ -242,6 +243,7 @@ export default function DetailPelatihanOffline({
                                     </svg>
                                     {rating} ({reviewCount} Review)
                                 </span>
+                                )}
                                 <span className="inline-flex items-center gap-2">
                                     <svg
                                         className="h-4 w-4"
@@ -409,9 +411,11 @@ export default function DetailPelatihanOffline({
                                 <p className="mt-1 text-4xl font-bold text-[#006B32]">
                                     {price}
                                 </p>
+                                {oldPrice && (
                                 <p className="text-lg font-bold text-[#BA1A1A] line-through">
                                     {oldPrice}
                                 </p>
+                                )}
 
                                 <div className="mt-5 space-y-4 border-t border-[#E4E2E1] pt-5">
                                     {benefits.map((benefit) => (

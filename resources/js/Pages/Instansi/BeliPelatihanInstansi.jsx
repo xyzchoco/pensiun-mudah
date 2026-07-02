@@ -18,15 +18,7 @@ const formatPrice = (price) => {
 
 // --- HELPER URL (DINAMIS DARI DATABASE) ---
 function buildScheduleHref(course, qty) {
-    const params = new URLSearchParams();
-    params.set('course_id', course.id);
-    params.set('qty', qty);
-
-    // Tambahan data jika tersedia dari database
-    if (course.location) params.set('location', course.location);
-    if (course.time) params.set('time', course.time);
-
-    return `/instansi/pilih-jadwal?${params.toString()}`;
+    return `/instansi/pilih-jadwal/${course.slug}?qty=${qty}`;
 }
 
 function buildOnlinePurchaseHref(course, qty) {

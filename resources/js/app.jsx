@@ -21,6 +21,6 @@ createInertiaApp({
     },
     progress: {
         // Warna progress bar di atas layar saat pindah halaman (Oranye dari desain lu)
-        color: '#FF8928', 
+        color: '#FF8928',
     },
 });

@@ -128,6 +128,7 @@ export default function InstansiLayout({
         corporateProfile.nama_perusahaan || user.name || 'Instansi';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showToast, setShowToast] = useState(false);
+    const { unreadNotifCount = 0 } = usePage().props;
 
     // Munculkan toast setiap kali ada flash.success dari Laravel
     useEffect(() => {
@@ -169,61 +170,59 @@ export default function InstansiLayout({
             <Head title={title} />
 
             {showSidebar && (
-<>
-{/* Backdrop - mobile & tablet */}
-            <div
-                className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 lg:hidden ${
-                    sidebarOpen
-                        ? 'opacity-100 pointer-events-auto'
-                        : 'opacity-0 pointer-events-none'
-                }`}
-                onClick={() => setSidebarOpen(false)}
-                aria-hidden="true"
-            />
-
-            {/* Sidebar */}
-            <aside
-                className={`fixed left-0 top-0 z-50 flex h-screen w-[288px] max-w-[85vw] flex-col bg-[#F6F3F2] border-r border-[#E4E2E1] py-4 transition-transform duration-300 ease-in-out ${
-                    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                }`}
-            >
-                <div className="flex items-center justify-between px-6 pb-8">
-                    <Link href="/instansi/dashboard">
-                        <img
-                            src="/images/logo.png"
-                            alt="Pensiun Mudah"
-                            className="h-12 sm:h-14 w-auto"
-                        />
-                    </Link>
-                    {showSidebar && (
-                                <button
-                        type="button"
+                <>
+                    {/* Backdrop - mobile & tablet */}
+                    <div
+                        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 lg:hidden ${sidebarOpen
+                            ? 'opacity-100 pointer-events-auto'
+                            : 'opacity-0 pointer-events-none'
+                            }`}
                         onClick={() => setSidebarOpen(false)}
-                        className="p-2 rounded-lg text-[#3D4A3E] hover:bg-white/60 transition-colors lg:hidden"
-                        aria-label="Tutup menu"
+                        aria-hidden="true"
+                    />
+
+                    {/* Sidebar */}
+                    <aside
+                        className={`fixed left-0 top-0 z-50 flex h-screen w-[288px] max-w-[85vw] flex-col bg-[#F6F3F2] border-r border-[#E4E2E1] py-4 transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                            }`}
                     >
-                        <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
-                    </button>
-                                )}
-                </div>
+                        <div className="flex items-center justify-between px-6 pb-8">
+                            <Link href="/instansi/dashboard">
+                                <img
+                                    src="/images/logo.png"
+                                    alt="Pensiun Mudah"
+                                    className="h-12 sm:h-14 w-auto"
+                                />
+                            </Link>
+                            {showSidebar && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSidebarOpen(false)}
+                                    className="p-2 rounded-lg text-[#3D4A3E] hover:bg-white/60 transition-colors lg:hidden"
+                                    aria-label="Tutup menu"
+                                >
+                                    <svg
+                                        className="w-5 h-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M6 18L18 6M6 6l12 12"
+                                        />
+                                    </svg>
+                                </button>
+                            )}
+                        </div>
 
-                {sidebarNav}
-            </aside>
+                        {sidebarNav}
+                    </aside>
 
-            </>
-)}
+                </>
+            )}
             <div
                 className={`min-h-screen flex-1 transition-all duration-300 ${(sidebarOpen && showSidebar) ? 'lg:pl-72' : 'lg:pl-0'}`}
             >
@@ -304,8 +303,9 @@ export default function InstansiLayout({
                                 </div>
 
                                 <div className="flex items-center gap-2 sm:gap-4">
-                                    <button
-                                        type="button"
+                                    {/* 🔔 Lonceng → sekarang Link ke halaman notifikasi */}
+                                    <Link
+                                        href="/notifikasi"
                                         className="relative p-2 rounded-full hover:bg-[#F0EDED] transition-colors"
                                         aria-label="Notifikasi"
                                     >
@@ -316,8 +316,14 @@ export default function InstansiLayout({
                                         >
                                             <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
                                         </svg>
-                                        <span className="absolute top-2 right-2 w-2 h-2 bg-[#BA1A1A] border-2 border-white rounded-full" />
-                                    </button>
+
+                                        {/* Badge cuma muncul kalau ADA notif belum dibaca (bukan nyala terus) */}
+                                        {unreadNotifCount > 0 && (
+                                            <span className="absolute top-1 right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#BA1A1A] border-2 border-white px-1 text-[9px] font-bold text-white">
+                                                {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                                            </span>
+                                        )}
+                                    </Link>
 
                                     <div className="w-px h-8 bg-[#E4E2E1] hidden sm:block" />
 
