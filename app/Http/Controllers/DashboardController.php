@@ -10,33 +10,50 @@ use App\Models\Enrollment;
 use App\Models\LearningActivity;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use App\Models\LearningProgress;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         $user = Auth::user();
-        
-        $user = Auth::user();
-        $kategoriUser = $user ? trim(strtolower($user->kategori_pensiun)) : null;
+
+        // =========================================================
+        // 0. ROUTING PER KATEGORI — redirect DULU sebelum ngitung apa-apa.
+        //    Korporat & ASN punya dashboard + controller sendiri
+        //    (query "pernah dibeli" mereka berbasis voucher, bukan Enrollment),
+        //    jadi jangan render inline pakai $data punya publik.
+        // =========================================================
+        if ($user->kategori_pensiun === 'korporat') {
+            return redirect()->route('korporat.dashboard');
+        }
+
+        if ($user->kategori_pensiun === 'asn') {
+            return redirect()->route('instansi.dashboard'); // ✅ nama route, bukan nama komponen
+        }
+
+        // =========================================================
+        // Mulai sini KHUSUS user publik.
+        // =========================================================
+        $kategoriUser = trim(strtolower($user->kategori_pensiun));
 
         $banners = DashboardBanner::where('is_active', true)->latest()->get();
         $events  = Webinar::where('is_published', true)->latest()->take(3)->get();
 
-        // 1. FIX JITU: Tarik data enrollment aktif (HANYA yang kategori kursusnya COCOK dengan kategori user)
+        // 1. Enrollment aktif (hanya kursus yang visible untuk kategori user)
         $activeCourses = Enrollment::where('user_id', $user->user_id)
             ->where('progress_persen', '<', 100)
             ->whereHas('course', function ($query) use ($kategoriUser) {
                 $query->where('is_visible_' . $kategoriUser, true);
             })
-            ->with('course') // Load data kursusnya setelah difilter ketat
+            ->with('course')
             ->latest('updated_at')
             ->take(3)
             ->get()
             ->map(function ($enrollment) {
-                // Jika data relasi kosong/terhapus, beri proteksi agar tidak error objek kosong
-                if (!$enrollment->course) return null;
+                // Proteksi kalau relasi course kosong/terhapus
+                if (! $enrollment->course) {
+                    return null;
+                }
 
                 $progress = $enrollment->progress_persen;
 
@@ -60,10 +77,10 @@ class DashboardController extends Controller
                     'emoji'        => '📖',
                 ];
             })
-            ->filter() // Membuang nilai null jika ada data relasi yang miss
+            ->filter()  // buang null
             ->values();
 
-        // 2. Grafik aktivitas belajar 7 hari terakhir dari database
+        // 2. Grafik aktivitas belajar 7 hari terakhir
         $chartData = [];
         $dayNames  = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
@@ -71,16 +88,12 @@ class DashboardController extends Controller
             $date    = Carbon::today()->subDays($i);
             $dayName = $dayNames[$date->dayOfWeek]; // 0=Min, 6=Sab
 
-            // Ambil aktivitas nyata dari database
             $activity = LearningActivity::where('user_id', $user->user_id)
                 ->whereDate('tanggal', $date->format('Y-m-d'))
                 ->first();
 
-            // Durasi dalam jam, default 0 kalau belum ada
-            $hours = $activity ? round($activity->durasi_jam, 1) : 0;
-
-            // Tinggi bar UI (maks 20 agar tidak overflow)
-            $barHeight = min($hours * 5, 20);
+            $hours     = $activity ? round($activity->durasi_jam, 1) : 0;
+            $barHeight = min($hours * 5, 20); // maks 20 biar nggak overflow
 
             $chartData[] = [
                 'day'   => $dayName,
@@ -89,7 +102,7 @@ class DashboardController extends Controller
             ];
         }
 
-        // 3. Hitung Statistik Kursus
+        // 3. Statistik Kursus
         $totalKursus = Enrollment::where('user_id', $user->user_id)->count();
 
         $kursusBulanIni = Enrollment::where('user_id', $user->user_id)
@@ -97,15 +110,19 @@ class DashboardController extends Controller
             ->whereYear('created_at', now()->year)
             ->count();
 
-        // 4. Hitung Statistik Jam Belajar
-        $totalJamBelajar = round(LearningActivity::where('user_id', $user->user_id)->sum('durasi_jam'));
-        
-        $startOfWeek = now()->startOfWeek()->format('Y-m-d');
-        $jamBelajarMingguIni = round(LearningActivity::where('user_id', $user->user_id)
-            ->where('tanggal', '>=', $startOfWeek)
-            ->sum('durasi_jam'));
+        // 4. Statistik Jam Belajar
+        $totalJamBelajar = round(
+            LearningActivity::where('user_id', $user->user_id)->sum('durasi_jam')
+        );
 
-        // 5. Hitung Statistik Sertifikat (Selesai & Dalam Proses)
+        $startOfWeek = now()->startOfWeek()->format('Y-m-d');
+        $jamBelajarMingguIni = round(
+            LearningActivity::where('user_id', $user->user_id)
+                ->where('tanggal', '>=', $startOfWeek)
+                ->sum('durasi_jam')
+        );
+
+        // 5. Statistik Sertifikat
         $totalSertifikat = Enrollment::where('user_id', $user->user_id)
             ->where('progress_persen', '>=', 100)
             ->count();
@@ -115,8 +132,8 @@ class DashboardController extends Controller
             ->where('progress_persen', '<', 100)
             ->count();
 
-        // 6. Gabung semua variabel ke dalam satu array $data
-        $data = [
+        // 6. Kirim ke halaman Dashboard publik
+        return Inertia::render('Dashboard', [
             'banners'             => $banners,
             'events'              => $events,
             'activeCourses'       => $activeCourses,
@@ -127,21 +144,6 @@ class DashboardController extends Controller
             'jamBelajarMingguIni' => $jamBelajarMingguIni,
             'totalSertifikat'     => $totalSertifikat,
             'sertifikatProses'    => $sertifikatProses,
-        ];
-
-        // 7. Arahin halamannya sesuai kategori
-        switch ($user->kategori_pensiun) {
-            case 'korporat':
-                // Kalau korporat ada dashboard sendiri
-                return redirect()->route('korporat.dashboard');
-
-            case 'asn':
-                return Inertia::render('Instansi/DashboardInstansi', $data);
-
-            case 'publik':
-            default:
-                // Mengirim FULL $data ke halaman Dashboard publik
-                return Inertia::render('Dashboard', $data);
-        }
+        ]);
     }
 }
