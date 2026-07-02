@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 import InstansiLayout from '@/Layouts/InstansiLayout';
 
 // HAPUS DATA DUMMY, TANGKAP DATA DARI PROPS INERTIA
-export default function PelatihanDibeli({
+export default function PelatihanDibeliInstansi({
     purchasedCourses = [],
     backHref = '/instansi/dashboard',
 }) {

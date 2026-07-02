@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import InstansiLayout from '@/Layouts/InstansiLayout';
 
 function getInitials(name) {
@@ -58,7 +58,7 @@ const summary = [
     { label: 'Lokasi', value: 'Hotel Santika, Jakarta' },
 ];
 
-export default function PilihJadwalHybrid() {
+export default function PilihJadwalHybridInstansi() {
     return (
         <InstansiLayout showSidebar={false} title="Pilih Jadwal Hybrid - Pensiun Mudah" activeNav="dashboard">
             {/* Header */}
@@ -66,7 +66,7 @@ export default function PilihJadwalHybrid() {
             <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10">
                 <div className="mx-auto max-w-6xl">
                     <Link
-                        href="/korporat/dashboard"
+                        href="/instansi/dashboard"
                         className="inline-flex items-center gap-2 font-bold text-[#006B32]"
                     >
                         <svg

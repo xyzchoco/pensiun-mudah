@@ -40,7 +40,7 @@ export default function VerifikasiInstansi() {
                     </h1>
                     <p className="mt-3 text-[#3D4A3E]">
                         Lengkapi data dasar perusahaan Anda untuk mengaktifkan
-                        akses ke fitur korporat. Data lainnya dapat Anda
+                        akses ke fitur instansi. Data lainnya dapat Anda
                         lengkapi nanti melalui menu Profil Perusahaan.
                     </p>
 

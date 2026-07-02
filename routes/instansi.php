@@ -153,7 +153,7 @@ Route::middleware(['auth'])->group(function () {
                 })->name('instansi.beli-pelatihan');
 
                 Route::get('/instansi/anggota', fn () => Inertia::render('Instansi/AnggotaInstansi'))->name('instansi.anggota');
-                Route::get('/instansi/profil-perusahaan', fn () => Inertia::render('Instansi/ProfilPerusahaan'))->name('instansi.profil-perusahaan');
+                Route::get('/instansi/profil-perusahaan', fn () => Inertia::render('Instansi/ProfilPerusahaanInstansi'))->name('instansi.profil-perusahaan');
                 Route::post('/instansi/profil-perusahaan/update', function (Request $request) {
                     $data = $request->validate([
                         'namaPerusahaan'  => ['required', 'string'],
@@ -189,12 +189,12 @@ Route::middleware(['auth'])->group(function () {
                             ];
                         });
 
-                    return Inertia::render('Instansi/PelatihanDibeli', [
+                    return Inertia::render('Instansi/PelatihanDibeliInstansi', [
                         'purchasedCourses' => $purchasedCourses
                     ]);
                 })->name('instansi.pelatihan-dibeli');
 
-                Route::get('/instansi/profil-perusahaan/edit', fn () => Inertia::render('Instansi/EditProfilPerusahaan', ['profile' => auth()->user()->corporateProfile]))->name('instansi.profil-perusahaan.edit');
+                Route::get('/instansi/profil-perusahaan/edit', fn () => Inertia::render('Instansi/EditProfilPerusahaanInstansi', ['profile' => auth()->user()->corporateProfile]))->name('instansi.profil-perusahaan.edit');
                 Route::get('/instansi/pelatihan/{slug}/detail', function ($slug) {
                     $course = Course::with(['category', 'lessons'])->where('slug', $slug)->firstOrFail();
                     return Inertia::render('Instansi/DetailKelasInstansi', [
@@ -222,7 +222,7 @@ Route::middleware(['auth'])->group(function () {
                         'back' => $request->fullUrl(),
                     ]);
 
-                    return Inertia::render('Instansi/DetailPelatihanOffline', [
+                    return Inertia::render('Instansi/DetailPelatihanOfflineInstansi', [
                         'title' => $title,
                         'about' => strip_tags($course?->description ?? $request->query('description', '')),
                         'location' => $location,
@@ -247,7 +247,7 @@ Route::middleware(['auth'])->group(function () {
                         'category' => ['nama' => 'Hybrid'],
                     ];
 
-                    return Inertia::render('Instansi/DetailPembelianHybrid', [
+                    return Inertia::render('Instansi/DetailPembelianHybridInstansi', [
                         'course' => $purchaseCourse,
                         'quantity' => $quantity,
                         'backHref' => $request->query('back', route('instansi.beli-pelatihan')),
@@ -266,7 +266,7 @@ Route::middleware(['auth'])->group(function () {
                         'back' => $request->fullUrl(),
                     ]);
 
-                    return Inertia::render('Instansi/DetailPelatihanHybrid', [
+                    return Inertia::render('Instansi/DetailPelatihanHybridInstansi', [
                         'title' => $title,
                         'about' => $description,
                         'duration' => $request->query('time', $course?->time ?? 'Jadwal akan dikonfirmasi'),
@@ -278,9 +278,9 @@ Route::middleware(['auth'])->group(function () {
                 })->name('instansi.pelatihan-hybrid.detail');
                 Route::get('/instansi/pelatihan/{slug}', [PelatihanController::class, 'show'])->name('instansi.pelatihan.detail');
                 Route::get('/instansi/pembayaran-berhasil', fn () => Inertia::render('Instansi/PembayaranBerhasilInstansi'))->name('instansi.pembayaran-berhasil');
-                Route::get('/instansi/modul/{slug}', fn ($slug) => Inertia::render('Instansi/DetailModulKaryawan', ['moduleName' => $slug]))->name('instansi.modul.detail');
+                Route::get('/instansi/modul/{slug}', fn ($slug) => Inertia::render('Instansi/DetailModulKaryawanInstansi', ['moduleName' => $slug]))->name('instansi.modul.detail');
                 Route::get('/instansi/pilih-jadwal', function (Request $request) {
-                    return Inertia::render('Instansi/PilihJadwal', [
+                    return Inertia::render('Instansi/PilihJadwalInstansi', [
                         'title' => $request->query('title', 'Kelas Offline Instansi'),
                         'location' => $request->query('location', 'Lokasi akan dikonfirmasi'),
                         'eventTime' => $request->query('time', 'Jadwal akan dikonfirmasi'),

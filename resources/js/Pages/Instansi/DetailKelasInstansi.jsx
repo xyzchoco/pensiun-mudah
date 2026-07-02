@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import InstansiLayout from '@/Layouts/InstansiLayout';
 
 const benefits = [

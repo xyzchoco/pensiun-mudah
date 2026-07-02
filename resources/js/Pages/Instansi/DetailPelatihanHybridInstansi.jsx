@@ -1,5 +1,17 @@
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import InstansiLayout from '@/Layouts/InstansiLayout';
+
+const hybridInfo = [
+    { icon: 'wifi', text: 'Materi Pembelajaran: ONLINE via Video & Modul.' },
+    { icon: 'building', text: 'Kuis & Latihan: OFFLINE (Tatap Muka).' },
+];
+
+const benefits = [
+    { icon: 'video', label: '24 Modul Video HD' },
+    { icon: 'doc', label: 'E-Book Perencanaan Keuangan' },
+    { icon: 'people', label: 'Sesi Workshop Tatap Muka' },
+    { icon: 'badge', label: 'Sertifikat Kelulusan Resmi' },
+];
 
 const features = [
     {
@@ -22,12 +34,6 @@ const features = [
         title: 'Dana Kesehatan',
         desc: 'Manajemen asuransi dan biaya medis di usia emas.',
     },
-];
-
-const benefits = [
-    { icon: 'book', label: 'Materi Cetak & Modul Fisik' },
-    { icon: 'badge', label: 'Sertifikat Fisik Berstempel' },
-    { icon: 'food', label: 'Makan Siang & Coffee Break' },
 ];
 
 const testimonials = [
@@ -58,6 +64,119 @@ function getInitials(name) {
         .join('')
         .slice(0, 2)
         .toUpperCase();
+}
+
+function InfoIcon({ name }) {
+    if (name === 'wifi') {
+        return (
+            <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 12.5a10 10 0 0114 0M8 16a5 5 0 018 0"
+                />
+                <circle cx="12" cy="19.5" r="1" />
+            </svg>
+        );
+    }
+    return (
+        <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+        >
+            <rect x="5" y="3" width="14" height="18" rx="1" />
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 7h.01M15 7h.01M9 11h.01M15 11h.01M9 15h.01M15 15h.01"
+            />
+        </svg>
+    );
+}
+
+function BenefitIcon({ name }) {
+    if (name === 'video') {
+        return (
+            <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+            >
+                <rect x="3" y="6" width="18" height="12" rx="2" />
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M10 9.5l4 2.5-4 2.5z"
+                />
+            </svg>
+        );
+    }
+    if (name === 'doc') {
+        return (
+            <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M7 3h7l4 4v14H7z"
+                />
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13 3v5h5M10 13h5M10 17h5"
+                />
+            </svg>
+        );
+    }
+    if (name === 'people') {
+        return (
+            <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17 20h5v-1a4 4 0 00-4-4M9 20H4v-1a4 4 0 014-4h2m6-4a3 3 0 11-6 0 3 3 0 016 0zm6 1a2.5 2.5 0 10-3-2.45"
+                />
+            </svg>
+        );
+    }
+    return (
+        <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+        >
+            <circle cx="12" cy="9" r="5" />
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 13.5L8 21l4-2 4 2-1-7.5"
+            />
+        </svg>
+    );
 }
 
 function FeatureIcon({ name }) {
@@ -132,74 +251,20 @@ function FeatureIcon({ name }) {
     );
 }
 
-function BenefitIcon({ name }) {
-    if (name === 'book') {
-        return (
-            <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4 5a2 2 0 012-2h6v16H6a2 2 0 00-2 2V5zM20 5a2 2 0 00-2-2h-6v16h6a2 2 0 012 2V5z"
-                />
-            </svg>
-        );
-    }
-    if (name === 'badge') {
-        return (
-            <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-            >
-                <circle cx="12" cy="9" r="5" />
-                <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 13.5L8 21l4-2 4 2-1-7.5"
-                />
-            </svg>
-        );
-    }
-    return (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 3v8a3 3 0 003 3v7M8 3v6M11 3v6M17 3c-1.5 1-2 3-2 6s.5 4 2 5v7"
-            />
-        </svg>
-    );
-}
-
-export default function DetailPelatihanOffline({
+export default function DetailPelatihanHybridInstansi({
     title = 'Manajemen Keuangan Masa Pensiun',
     rating = '4.8',
     reviewCount = 124,
-    instructor = 'Dr. Herman Salim, CFP',
     duration = '12 Jam',
-    location = 'Hotel Santika Surabaya, Ballroom Arjuna',
-    eventDate = 'Sabtu, 12 Oktober 2024',
-    eventTime = '09:00 - 15:00 WIB',
+    hybridLocation = 'Hotel Santika, Jakarta',
+    hybridNote = '* Penting: Akses pendaftaran Kuis Offline hanya terbuka jika progres materi online mencapai minimal 80%.',
+    videoCaption = 'Tonton Cuplikan Kursus: Strategi Alokasi Aset 2024',
     about = 'Masa pensiun bukanlah akhir dari produktivitas finansial, melainkan awal dari fase pengelolaan kekayaan yang baru. Kursus ini dirancang khusus untuk membantu Anda memahami cara menjaga nilai aset, mengelola pengeluaran pasca-pensiun, dan memastikan dana Anda cukup untuk gaya hidup impian selamanya.',
     price = 'Rp 249.000',
     oldPrice = 'Rp 499.000',
     quantity = 5,
     backHref = '/beli-pelatihan',
-    scheduleHref = '/instansi/pilih-jadwal',
+    purchaseHref = '/instansi/beli-pelatihan',
 }) {
     return (
         <InstansiLayout showSidebar={false} title={title + ' - Pensiun Mudah'} activeNav="dashboard">
@@ -222,10 +287,58 @@ export default function DetailPelatihanOffline({
                                 d="M19 12H5M12 19l-7-7 7-7"
                             />
                         </svg>
-                        Kembali ke Beli Kelas
+                        Kembali ke Beli Pelatihan
                     </Link>
 
-                    <div className="mt-4 grid grid-cols-1 gap-8 lg:grid-cols-3">
+                    <div className="mt-4 overflow-hidden rounded-2xl border-l-4 border-[#FF8928] bg-[#FCE9D8] p-6">
+                        <div className="flex items-center gap-3">
+                            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FF8928] text-white">
+                                <svg
+                                    className="h-6 w-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M4 5a2 2 0 012-2h6v16H6a2 2 0 00-2 2V5zM20 5a2 2 0 00-2-2h-6v16h6a2 2 0 012 2V5z"
+                                    />
+                                </svg>
+                            </span>
+                            <h2 className="text-xl font-bold text-[#1B1C1C]">
+                                Panduan Belajar Kelas Hybrid
+                            </h2>
+                        </div>
+
+                        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {hybridInfo.map((info) => (
+                                <div
+                                    key={info.text}
+                                    className="flex items-center gap-3 rounded-xl bg-white p-4"
+                                >
+                                    <span className="shrink-0 text-[#006B32]">
+                                        <InfoIcon name={info.icon} />
+                                    </span>
+                                    <p className="text-sm font-bold text-[#1B1C1C]">
+                                        {info.text}
+                                    </p>
+                                </div>
+                            ))}
+                            <div className="flex items-center">
+                                <p className="text-sm text-[#6B7280]">
+                                    Lokasi: {hybridLocation}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p className="mt-4 rounded-lg bg-white/70 px-4 py-2 text-sm font-bold text-[#BA1A1A]">
+                            {hybridNote}
+                        </p>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-3">
                         <div className="lg:col-span-2">
                             <h1 className="text-3xl font-bold text-[#1B1C1C] sm:text-4xl">
                                 {title}
@@ -250,23 +363,6 @@ export default function DetailPelatihanOffline({
                                         strokeWidth="2"
                                         viewBox="0 0 24 24"
                                     >
-                                        <circle cx="12" cy="8" r="4" />
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M4 21c0-4 4-6 8-6s8 2 8 6"
-                                        />
-                                    </svg>
-                                    Instruktur: {instructor}
-                                </span>
-                                <span className="inline-flex items-center gap-2">
-                                    <svg
-                                        className="h-4 w-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        viewBox="0 0 24 24"
-                                    >
                                         <circle cx="12" cy="12" r="9" />
                                         <path
                                             strokeLinecap="round"
@@ -278,126 +374,21 @@ export default function DetailPelatihanOffline({
                                 </span>
                             </div>
 
-                            <div className="mt-6 rounded-2xl border border-[#006B32]/30 bg-[#F2F8F4] p-6">
-                                <h2 className="flex items-center gap-2 text-lg font-bold text-[#006B32]">
-                                    <svg
-                                        className="h-5 w-5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <rect
-                                            x="3"
-                                            y="5"
-                                            width="18"
-                                            height="16"
-                                            rx="2"
-                                        />
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M3 9h18M8 3v4M16 3v4"
-                                        />
-                                    </svg>
-                                    Detail Pelaksanaan Offline
-                                </h2>
-                                <div className="mt-4 grid gap-6 sm:grid-cols-2">
-                                    <div className="flex gap-3">
+                            <div className="relative mt-6 overflow-hidden rounded-2xl bg-gradient-to-br from-[#1B3326] to-[#0C1A12]">
+                                <div className="flex h-72 items-center justify-center sm:h-80">
+                                    <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#006B32] text-white shadow-lg">
                                         <svg
-                                            className="mt-0.5 h-5 w-5 shrink-0 text-[#006B32]"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
+                                            className="h-7 w-7"
+                                            fill="currentColor"
                                             viewBox="0 0 24 24"
                                         >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z"
-                                            />
-                                            <circle cx="12" cy="10" r="2.5" />
+                                            <path d="M8 5v14l11-7z" />
                                         </svg>
-                                        <div>
-                                            <p className="font-bold text-[#1B1C1C]">
-                                                Lokasi Pelatihan
-                                            </p>
-                                            <p className="mt-1 text-sm text-[#3D4A3E]">
-                                                {location}
-                                            </p>
-                                            <button
-                                                type="button"
-                                                className="mt-1 text-sm font-semibold text-[#006B32] underline"
-                                            >
-                                                Lihat Peta
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <svg
-                                            className="mt-0.5 h-5 w-5 shrink-0 text-[#006B32]"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <rect
-                                                x="3"
-                                                y="5"
-                                                width="18"
-                                                height="16"
-                                                rx="2"
-                                            />
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M3 9h18M8 3v4M16 3v4"
-                                            />
-                                        </svg>
-                                        <div>
-                                            <p className="font-bold text-[#1B1C1C]">
-                                                Waktu & Tanggal
-                                            </p>
-                                            <p className="mt-1 text-sm text-[#3D4A3E]">
-                                                {eventDate}
-                                            </p>
-                                            <p className="text-sm font-bold text-[#1B1C1C]">
-                                                {eventTime}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    </span>
                                 </div>
-                            </div>
-
-                            <div className="mt-6 rounded-2xl border border-[#E4E2E1] bg-white p-6 shadow-sm">
-                                <h2 className="text-xl font-bold text-[#006B32]">
-                                    Tentang Kursus Ini
-                                </h2>
-                                <p className="mt-4 leading-relaxed text-[#3D4A3E]">
-                                    {about}
+                                <p className="absolute bottom-4 left-4 font-bold text-white">
+                                    {videoCaption}
                                 </p>
-                                <div className="mt-6 grid gap-6 sm:grid-cols-2">
-                                    {features.map((feature) => (
-                                        <div
-                                            key={feature.title}
-                                            className="flex gap-3"
-                                        >
-                                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#006B32] text-white">
-                                                <FeatureIcon
-                                                    name={feature.icon}
-                                                />
-                                            </span>
-                                            <div>
-                                                <p className="font-bold text-[#1B1C1C]">
-                                                    {feature.title}
-                                                </p>
-                                                <p className="mt-1 text-sm text-[#3D4A3E]">
-                                                    {feature.desc}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
                             </div>
                         </div>
 
@@ -432,7 +423,7 @@ export default function DetailPelatihanOffline({
                                 </div>
 
                                 <Link
-                                    href={scheduleHref}
+                                    href={purchaseHref}
                                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF8928] px-6 py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"
                                 >
                                     Beli Sekarang
@@ -478,6 +469,32 @@ export default function DetailPelatihanOffline({
                                     kembali.
                                 </p>
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 rounded-2xl border border-[#E4E2E1] bg-white p-6 shadow-sm">
+                        <h2 className="text-xl font-bold text-[#006B32]">
+                            Tentang Kursus Ini
+                        </h2>
+                        <p className="mt-4 leading-relaxed text-[#3D4A3E]">
+                            {about}
+                        </p>
+                        <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                            {features.map((feature) => (
+                                <div key={feature.title} className="flex gap-3">
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#006B32] text-white">
+                                        <FeatureIcon name={feature.icon} />
+                                    </span>
+                                    <div>
+                                        <p className="font-bold text-[#1B1C1C]">
+                                            {feature.title}
+                                        </p>
+                                        <p className="mt-1 text-sm text-[#3D4A3E]">
+                                            {feature.desc}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
 

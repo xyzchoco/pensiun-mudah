@@ -1,5 +1,5 @@
 import { Link, usePage, useForm } from '@inertiajs/react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import InstansiLayout from '@/Layouts/InstansiLayout';
 
 const categoryOptions = [
@@ -11,7 +11,7 @@ const categoryOptions = [
     'Lainnya',
 ];
 
-export default function EditProfilPerusahaan({ profile = {} }) {
+export default function EditProfilPerusahaanInstansi({ profile = {} }) {
     const { auth } = usePage().props;
     const corporateProfile = profile || auth.user.corporate_profile || {};
 

@@ -11,7 +11,7 @@ function getInitials(name) {
         .toUpperCase();
 }
 
-export default function DetailModulKaryawan({
+export default function DetailModulKaryawanInstansi({
     moduleName = 'Detail Pelatihan',
     memberCount = 0,
     totalMembers = 0,

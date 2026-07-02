@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import InstansiLayout from '@/Layouts/InstansiLayout';
 
 const weekdays = ['MIN', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB'];
@@ -41,7 +41,7 @@ function formatPrice(value) {
     }).format(amount);
 }
 
-export default function PilihJadwal({
+export default function PilihJadwalInstansi({
     backHref = '/instansi/beli-pelatihan',
     confirmHref = '/instansi/pembayaran-berhasil',
     title = 'Kelas Offline Instansi',
@@ -365,7 +365,7 @@ export default function PilihJadwal({
                                         Total Biaya
                                     </span>
                                     <span className="text-2xl font-extrabold text-[#006B32]">
-                                        Rp 295.000
+                                        {formatPrice(totalPrice)}
                                     </span>
                                 </div>
                                 <Link

@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import InstansiLayout from '@/Layouts/InstansiLayout';
 
 function getInitials(name) {
@@ -73,7 +73,7 @@ function DetailIcon({ name }) {
     );
 }
 
-export default function JadwalBerhasil() {
+export default function JadwalBerhasilInstansi() {
     return (
         <InstansiLayout showSidebar={false} title="Jadwal Berhasil Dikonfirmasi - Pensiun Mudah" activeNav="dashboard">
             {/* Header */}
@@ -145,7 +145,7 @@ export default function JadwalBerhasil() {
 
                     <div className="mt-8 flex justify-center">
                         <Link
-                            href="/korporat/dashboard"
+                            href="/instansi/dashboard"
                             className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#006B32] px-8 py-3.5 font-bold text-white transition-colors hover:bg-[#005427]"
                         >
                             Kembali ke Dashboard

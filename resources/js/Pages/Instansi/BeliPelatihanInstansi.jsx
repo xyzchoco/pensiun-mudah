@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import InstansiLayout from '@/Layouts/InstansiLayout';
 
 // --- HELPER UTAMA ---

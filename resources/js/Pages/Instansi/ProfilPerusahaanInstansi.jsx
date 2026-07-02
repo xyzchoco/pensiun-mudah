@@ -1,7 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import InstansiLayout from '@/Layouts/InstansiLayout';
 
-export default function ProfilPerusahaan() {
+export default function ProfilPerusahaanInstansi() {
     const { auth } = usePage().props;
     const profile = auth?.user?.corporate_profile || {};
 

@@ -13,7 +13,7 @@ function getInitials(name) {
 const members = [
     {
         name: 'Agus Setiawan',
-        email: 'agus.s@korporat.id',
+        email: 'agus.s@instansi.id',
         progress: 95,
         done: '5 dari 5',
         trainings:
@@ -21,7 +21,7 @@ const members = [
     },
     {
         name: 'Ratna Lestari',
-        email: 'ratna.l@korporat.id',
+        email: 'ratna.l@instansi.id',
         progress: 88,
         done: '4 dari 5',
         trainings:
@@ -29,21 +29,21 @@ const members = [
     },
     {
         name: 'Budi Mansyur',
-        email: 'budi.m@korporat.id',
+        email: 'budi.m@instansi.id',
         progress: 72,
         done: '3 dari 5',
         trainings: 'Manajemen Keuangan, Kesehatan Senior, Investasi Aman',
     },
     {
         name: 'Endang Suganda',
-        email: 'endang.s@korporat.id',
+        email: 'endang.s@instansi.id',
         progress: 65,
         done: '3 dari 5',
         trainings: 'Manajemen Keuangan, Kesehatan Senior, Investasi Aman',
     },
     {
         name: 'Endang Suganda',
-        email: 'endang.s@korporat.id',
+        email: 'endang.s@instansi.id',
         progress: 65,
         done: '3 dari 5',
         trainings: 'Manajemen Keuangan, Kesehatan Senior, Investasi Aman',
@@ -141,7 +141,7 @@ export default function AnggotaInstansi() {
                     <div className="mt-6 rounded-2xl border border-[#E4E2E1] bg-white shadow-sm">
                         <div className="border-b border-[#E4E2E1] px-6 py-5">
                             <h2 className="text-xl font-bold text-[#1B1C1C]">
-                                Anggota Korporat
+                                Anggota Instansi
                             </h2>
                         </div>
 
