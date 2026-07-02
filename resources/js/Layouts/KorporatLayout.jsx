@@ -117,6 +117,7 @@ export default function KorporatLayout({
     title = 'Pensiun Mudah',
     activeNav = 'dashboard',
     showHeader = true,
+    showSidebar = true,
     searchPlaceholder = 'Cari kursus, konsultan, webinar...',
     children,
 }) {
@@ -166,68 +167,73 @@ export default function KorporatLayout({
         <div className="flex min-h-screen bg-[#FBF9F8] font-['Atkinson_Hyperlegible']">
             <Head title={title} />
 
-            {/* Backdrop - mobile & tablet */}
-            <div
-                className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 lg:hidden ${sidebarOpen
-                    ? "opacity-100 pointer-events-auto"
-                    : "opacity-0 pointer-events-none"
-                    }`}
-                onClick={() => setSidebarOpen(false)}
-                aria-hidden="true"
-            />
-
-            {/* Sidebar */}
-            <aside
-                className={`fixed left-0 top-0 z-50 flex h-screen w-[288px] max-w-[85vw] flex-col bg-[#F6F3F2] border-r border-[#E4E2E1] py-4 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                    }`}
-            >
-                <div className="flex items-center justify-between px-6 pb-8">
-                    <Link href="/korporat/dashboard">
-                        <img
-                            src="/images/logo.png"
-                            alt="Pensiun Mudah"
-                            className="h-12 sm:h-14 w-auto"
-                        />
-                    </Link>
-                    <button
-                        type="button"
+            {showSidebar && (
+                <>
+                    {/* Backdrop - mobile & tablet */}
+                    <div
+                        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 lg:hidden ${sidebarOpen
+                            ? "opacity-100 pointer-events-auto"
+                            : "opacity-0 pointer-events-none"
+                            }`}
                         onClick={() => setSidebarOpen(false)}
-                        className="p-2 rounded-lg text-[#3D4A3E] hover:bg-white/60 transition-colors lg:hidden"
-                        aria-label="Tutup menu"
-                    >
-                        <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
-                    </button>
-                </div>
+                        aria-hidden="true"
+                    />
 
-                {sidebarNav}
-            </aside>
+                    {/* Sidebar */}
+                    <aside
+                        className={`fixed left-0 top-0 z-50 flex h-screen w-[288px] max-w-[85vw] flex-col bg-[#F6F3F2] border-r border-[#E4E2E1] py-4 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                            }`}
+                    >
+                        <div className="flex items-center justify-between px-6 pb-8">
+                            <Link href="/korporat/dashboard">
+                                <img
+                                    src="/images/logo.png"
+                                    alt="Pensiun Mudah"
+                                    className="h-12 sm:h-14 w-auto"
+                                />
+                            </Link>
+                            <button
+                                type="button"
+                                onClick={() => setSidebarOpen(false)}
+                                className="p-2 rounded-lg text-[#3D4A3E] hover:bg-white/60 transition-colors lg:hidden"
+                                aria-label="Tutup menu"
+                            >
+                                <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {sidebarNav}
+                    </aside>
+                </>
+            )}
 
             <div
-                className={`min-h-screen flex-1 transition-all duration-300 ${sidebarOpen ? "lg:pl-72" : "lg:pl-0"}`}
+                className={`min-h-screen flex-1 transition-all duration-300 ${showSidebar && sidebarOpen ? "lg:pl-72" : "lg:pl-0"}`}
             >
                 <div className="flex-1 flex flex-col h-full">
                     {showHeader ? (
                         <header className="sticky top-0 z-30 flex items-center justify-between h-16 sm:h-20 px-4 sm:px-6 lg:px-10 bg-white border-b border-[#E4E2E1]/30 shrink-0 gap-4">
                             <div className="flex items-center gap-3 min-w-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setSidebarOpen((prev) => !prev)}
-                                    className="p-2 rounded-lg text-[#3D4A3E] hover:bg-[#F0EDED] transition-colors shrink-0"
-                                    aria-label={sidebarOpen ? "Sembunyikan sidebar" : "Tampilkan sidebar"}
-                                    aria-expanded={sidebarOpen}
-                                >
+                                {showSidebar && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSidebarOpen((prev) => !prev)}
+                                        className="p-2 rounded-lg text-[#3D4A3E] hover:bg-[#F0EDED] transition-colors shrink-0"
+                                        aria-label={sidebarOpen ? "Sembunyikan sidebar" : "Tampilkan sidebar"}
+                                        aria-expanded={sidebarOpen}
+                                    >
                                     {sidebarOpen ? (
                                         <svg
                                             className="w-6 h-6"
@@ -258,6 +264,7 @@ export default function KorporatLayout({
                                         </svg>
                                     )}
                                 </button>
+                                )}
                                 <h1 className="font-['Atkinson_Hyperlegible'] font-bold text-lg sm:text-xl text-[#1B1C1C] truncate">
                                     {title}
                                 </h1>
