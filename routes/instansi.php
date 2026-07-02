@@ -7,7 +7,9 @@ use App\Models\DashboardBanner;
 use App\Models\Course;
 use App\Models\Webinar;
 use App\Http\Controllers\PembayaranController;
+use App\Http\Controllers\TrainingRequestController;
 use App\Http\Controllers\PelatihanController;
+use Illuminate\Support\Carbon;
 
 /*
 |--------------------------------------------------------------------------
@@ -206,32 +208,35 @@ Route::middleware(['auth'])->group(function () {
                     '/instansi/pelatihan/{slug}/pembelian-online',
                     [PembayaranController::class, 'checkoutKorporat']
                 )->name('instansi.pelatihan.pembelian-online');
+
                 Route::get('/instansi/pelatihan-offline/{slug}', function ($slug, Request $request) {
-                    $course = Course::with('category')->where('slug', $slug)->first();
-                    $price = $course?->price ?? (int) $request->query('price', 0);
-                    $title = $course?->title ?? $request->query('title', 'Kelas Offline Instansi');
-                    $location = $request->query('location', $course?->location ?? 'Lokasi akan dikonfirmasi');
-                    $eventTime = $request->query('time', $course?->time ?? 'Jadwal akan dikonfirmasi');
-                    $scheduleParams = http_build_query([
-                        'course_id' => $course?->id ?? $slug,
-                        'title' => $title,
-                        'qty' => max(1, (int) $request->query('qty', 5)),
-                        'price' => $price,
-                        'location' => $location,
-                        'time' => $eventTime,
-                        'back' => $request->fullUrl(),
-                    ]);
+                    $course = Course::with('category')->where('slug', $slug)->firstOrFail();
+                    $qty = max(1, (int) $request->query('qty', 1));
+
+                    $eventDate = $course->tanggal_default
+                        ? Carbon::parse($course->tanggal_default)->locale('id')->isoFormat('dddd, D MMMM YYYY')
+                        : 'Tanggal akan dikonfirmasi';
 
                     return Inertia::render('Instansi/DetailPelatihanOfflineInstansi', [
-                        'title' => $title,
-                        'about' => strip_tags($course?->description ?? $request->query('description', '')),
-                        'location' => $location,
-                        'eventTime' => $eventTime,
-                        'price' => $price > 0 ? 'Rp ' . number_format($price, 0, ',', '.') : 'Gratis',
-                        'backHref' => route('instansi.beli-pelatihan'),
-                        'scheduleHref' => route('instansi.pilih-jadwal') . '?' . $scheduleParams,
+                        'title'      => $course->title,
+                        'about'      => strip_tags($course->description ?? ''),
+                        'location'   => $course->lokasi_default ?? 'Lokasi akan dikonfirmasi',
+                        'eventDate'  => $eventDate,
+                        'eventTime'  => $course->jadwal_default ?? 'Jadwal akan dikonfirmasi',
+                        'instructor' => $course->instruktur ?? 'Instruktur akan diumumkan',
+                        'duration'   => $course->durasi ?? '-',
+                        'price'      => $course->price > 0
+                            ? 'Rp ' . number_format($course->price, 0, ',', '.')
+                            : 'Gratis',
+                        'quantity'   => $qty,
+                        'backHref'   => route('instansi.beli-pelatihan'),
+                        'scheduleHref' => route('instansi.pilih-jadwal', [
+                            'course' => $course->slug,
+                            'qty'    => $qty,
+                        ]),
                     ]);
                 })->name('instansi.pelatihan-offline.detail');
+
                 Route::get('/instansi/pelatihan-hybrid/{slug}/pembelian', function ($slug, Request $request) {
                     $course = Course::with('category')->where('slug', $slug)->first();
                     $quantity = max(1, (int) $request->query('qty', 1));
@@ -269,27 +274,23 @@ Route::middleware(['auth'])->group(function () {
                     return Inertia::render('Instansi/DetailPelatihanHybridInstansi', [
                         'title' => $title,
                         'about' => $description,
-                        'duration' => $request->query('time', $course?->time ?? 'Jadwal akan dikonfirmasi'),
-                        'hybridLocation' => $request->query('location', $course?->location ?? 'Lokasi akan dikonfirmasi'),
+                        'duration' => $course?->durasi ?? $request->query('time', 'Jadwal akan dikonfirmasi'),
+                        'hybridLocation' => $course?->lokasi_default ?? $request->query('location', 'Lokasi akan dikonfirmasi'),
                         'price' => $price > 0 ? 'Rp ' . number_format($price, 0, ',', '.') : 'Gratis',
                         'backHref' => route('instansi.beli-pelatihan'),
                         'purchaseHref' => route('instansi.pelatihan-hybrid.pembelian', $slug) . '?' . $purchaseParams,
                     ]);
                 })->name('instansi.pelatihan-hybrid.detail');
                 Route::get('/instansi/pelatihan/{slug}', [PelatihanController::class, 'show'])->name('instansi.pelatihan.detail');
-                Route::get('/instansi/pembayaran-berhasil', fn () => Inertia::render('Instansi/PembayaranBerhasilInstansi'))->name('instansi.pembayaran-berhasil');
-                Route::get('/instansi/modul/{slug}', fn ($slug) => Inertia::render('Instansi/DetailModulKaryawanInstansi', ['moduleName' => $slug]))->name('instansi.modul.detail');
-                Route::get('/instansi/pilih-jadwal', function (Request $request) {
-                    return Inertia::render('Instansi/PilihJadwalInstansi', [
-                        'title' => $request->query('title', 'Kelas Offline Instansi'),
-                        'location' => $request->query('location', 'Lokasi akan dikonfirmasi'),
-                        'eventTime' => $request->query('time', 'Jadwal akan dikonfirmasi'),
-                        'price' => (int) $request->query('price', 0),
-                        'quantity' => max(1, (int) $request->query('qty', 5)),
-                        'backHref' => $request->query('back', route('instansi.beli-pelatihan')),
-                        'confirmHref' => route('instansi.pembayaran-berhasil'),
-                    ]);
-                })->name('instansi.pilih-jadwal');
+                Route::get('/instansi/pembayaran-berhasil/{trainingRequest}', [TrainingRequestController::class, 'pembayaranBerhasil'])
+                    ->name('instansi.pembayaran-berhasil');
+                Route::get('/instansi/pilih-jadwal/{course:slug}', [TrainingRequestController::class, 'pilihJadwal'])->name('instansi.pilih-jadwal');
+                Route::post('/instansi/request-jadwal', [TrainingRequestController::class, 'store'])->name('instansi.request-jadwal');
+                Route::get('/instansi/pembayaran/{trainingRequest}', [PembayaranController::class, 'offlineCheckout'])->name('instansi.pembayaran');
+                Route::post('/instansi/pembayaran/{trainingRequest}', [PembayaranController::class, 'prosesPembayaranOffline'])->name('instansi.pembayaran.proses');
+                Route::post('/instansi/pembayaran/{trainingRequest}/finalize', [PembayaranController::class, 'finalizeOfflinePayment'])->name('instansi.pembayaran.finalize');
+                Route::get('/instansi/request-ditinjau/{trainingRequest}', [TrainingRequestController::class, 'statusRequest'])->name('instansi.request-ditinjau');
+
                 Route::get('/instansi/modul/{slug}', [PelatihanController::class, 'detailModul'])->name('instansi.modul.detail');
                 Route::get('/instansi/pilih-jadwal-hybrid', fn () => Inertia::render('Instansi/PilihJadwalHybridInstansi'))->name('instansi.pilih-jadwal-hybrid');
                 Route::get('/instansi/jadwal-berhasil', fn () => Inertia::render('Instansi/JadwalBerhasilInstansi'))->name('instansi.jadwal-berhasil');

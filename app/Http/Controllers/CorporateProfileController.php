@@ -46,6 +46,10 @@ class CorporateProfileController extends Controller
 
         $user->corporateProfile()->updateOrCreate([], $validated);
 
-        return redirect('/korporat/profil-perusahaan')->with('success', 'Profil perusahaan berhasil diperbarui!');
+        $redirect = str_contains($request->path(), 'instansi')
+            ? '/instansi/profil-perusahaan'
+            : '/korporat/profil-perusahaan';
+
+        return redirect($redirect)->with('success', 'Profil perusahaan berhasil diperbarui!');
     }
 }

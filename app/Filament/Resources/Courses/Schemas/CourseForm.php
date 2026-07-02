@@ -10,6 +10,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\DatePicker;
 use Illuminate\Support\Str;
 
 class CourseForm
@@ -37,7 +38,8 @@ class CourseForm
                         'Hybrid' => 'Hybrid',
                     ])
                     ->required()
-                    ->default('Online'),
+                    ->default('Online')
+                    ->live(),
 
                 // Info Utama Kursus
                 TextInput::make('title')
@@ -78,6 +80,36 @@ class CourseForm
                     ->numeric()
                     ->default(0)
                     ->prefix('Rp'),
+
+                // ==========================================
+                // PENGATURAN KELAS OFFLINE / HYBRID
+                // ==========================================
+                Section::make('Detail Pelaksanaan Offline / Hybrid')
+                    ->description('Wajib diisi untuk kelas Offline atau Hybrid. Jadi jadwal & lokasi DEFAULT — sekaligus patokan sistem mendeteksi request custom dari instansi.')
+                    // Section cuma muncul kalau tipe kelas Offline atau Hybrid
+                    ->visible(fn ($get) => in_array($get('tipe_kelas'), ['Offline', 'Hybrid']))
+                    ->schema([
+                        DatePicker::make('tanggal_default')
+                            ->label('Tanggal Default Pelaksanaan')
+                            ->native(false)
+                            ->minDate(now())
+                            // Wajib HANYA kalau offline/hybrid (biar kelas online nggak keganggu)
+                            ->required(fn ($get) => in_array($get('tipe_kelas'), ['Offline', 'Hybrid'])),
+
+                        TextInput::make('lokasi_default')
+                            ->label('Lokasi Default')
+                            ->placeholder('cth: Pusat Komunitas Kota, Jl. Pertumbuhan 32')
+                            ->maxLength(255)
+                            ->required(fn ($get) => in_array($get('tipe_kelas'), ['Offline', 'Hybrid'])),
+
+                        TextInput::make('jadwal_default')
+                            ->label('Jadwal Harian')
+                            ->placeholder('cth: 09:00 - 15:00 WIB')
+                            ->maxLength(100)
+                            ->required(fn ($get) => in_array($get('tipe_kelas'), ['Offline', 'Hybrid'])),
+                    ])
+                    ->columns(3)
+                    ->collapsible(),
 
                 // ==========================================
                 // PENGATURAN PUBLIKASI & VISIBILITAS (BARU)

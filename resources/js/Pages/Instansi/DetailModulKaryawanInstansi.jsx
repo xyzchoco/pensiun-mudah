@@ -42,7 +42,7 @@ export default function DetailModulKaryawanInstansi({
                             d="M10 19l-7-7m0 0l7-7m-7 7h18"
                         />
                     </svg>
-                    Kembali ke Dashboard
+                    Kembali ke Dashboards
                 </Link>
 
                 {/* Hero Section (Box Hijau) */}
@@ -206,11 +206,10 @@ export default function DetailModulKaryawanInstansi({
                                             key={index}
                                             href={link.url}
                                             preserveScroll
-                                            className={`flex h-8 w-8 items-center justify-center rounded border text-sm font-bold transition-colors ${
-                                                link.active
-                                                    ? 'border-[#006B32] bg-[#006B32] text-white'
-                                                    : 'border-[#E4E2E1] bg-white text-[#3D4A3E] hover:bg-[#F0EDED]'
-                                            }`}
+                                            className={`flex h-8 w-8 items-center justify-center rounded border text-sm font-bold transition-colors ${link.active
+                                                ? 'border-[#006B32] bg-[#006B32] text-white'
+                                                : 'border-[#E4E2E1] bg-white text-[#3D4A3E] hover:bg-[#F0EDED]'
+                                                }`}
                                             dangerouslySetInnerHTML={{
                                                 __html: label,
                                             }}

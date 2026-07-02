@@ -65,9 +65,11 @@ class PelatihanController extends Controller
 
         // 4. Tentukan URL tombol "Kembali"
         $isCorporateUser = $kategoriUser === 'korporat';
-        $backUrl = $request->routeIs('korporat.*') || $isCorporateUser
-            ? '/korporat/beli-pelatihan'
-            : '/beli-pelatihan';
+        $backUrl = $request->routeIs('instansi.*')
+            ? '/instansi/beli-pelatihan'
+            : ($request->routeIs('korporat.*') || $isCorporateUser
+                ? '/korporat/beli-pelatihan'
+                : '/beli-pelatihan');
 
         return Inertia::render('Pelatihan/DetailPelatihan', [
             'course'         => $course,
@@ -615,11 +617,17 @@ class PelatihanController extends Controller
         });
 
         // 5. Lempar ke React
-        return Inertia::render('Korporat/DetailModulKaryawan', [
-            'moduleName'   => $course->title,
-            'memberCount'  => $voucher->used_count,
-            'totalMembers' => $voucher->max_uses,
-            'employees'    => $redemptions, // Bawa data pagination lengkap
-        ]);
+        $isInstansi = str_contains(request()->path(), 'instansi');
+
+        return Inertia::render(
+            $isInstansi ? 'Instansi/DetailModulKaryawanInstansi' : 'Korporat/DetailModulKaryawan',
+            [
+                'moduleName'   => $course->title,
+                'memberCount'  => $voucher->used_count,
+                'totalMembers' => $voucher->max_uses,
+                'employees'    => $redemptions,
+                'backHref'     => $isInstansi ? route('instansi.dashboard') : route('korporat.dashboard'),
+            ]
+        );
     }
 }

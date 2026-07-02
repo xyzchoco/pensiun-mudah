@@ -96,6 +96,7 @@ export default function PembayaranBerhasilInstansi({
                                             src={imageUrl}
                                             alt={courseName}
                                             className="h-full w-full object-cover"
+                                            onError={(e) => { e.currentTarget.src = '/images/event-placeholder.svg'; }}
                                         />
                                     </div>
                                     <div className="min-w-0">

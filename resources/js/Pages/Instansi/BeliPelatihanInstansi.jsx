@@ -16,17 +16,11 @@ const formatPrice = (price) => {
     }).format(price || 0);
 };
 
+const stripHtml = (value) => String(value || '').replace(/<[^>]*>?/gm, '');
+
 // --- HELPER URL (DINAMIS DARI DATABASE) ---
 function buildScheduleHref(course, qty) {
-    const params = new URLSearchParams();
-    params.set('course_id', course.id);
-    params.set('qty', qty);
-
-    // Tambahan data jika tersedia dari database
-    if (course.location) params.set('location', course.location);
-    if (course.time) params.set('time', course.time);
-
-    return `/instansi/pilih-jadwal?${params.toString()}`;
+    return `/instansi/pilih-jadwal/${course.slug}?qty=${qty}`;
 }
 
 function buildOnlinePurchaseHref(course, qty) {
@@ -173,12 +167,12 @@ function CourseCard({ course }) {
                     {course.title}
                 </h3>
                 <p className="mt-1 text-sm text-[#3D4A3E] line-clamp-2">
-                    {course.description ||
+                    {stripHtml(course.description) ||
                         'Deskripsi pelatihan belum tersedia.'}
                 </p>
 
                 {/* INFO LOKASI JIKA ADA */}
-                {course.location && (
+                {(course.lokasi_default || course.location) && (
                     <p className="mt-3 flex items-center gap-1.5 text-sm text-[#3D4A3E]">
                         <svg
                             className="h-4 w-4 text-[#006B32] shrink-0"
@@ -194,12 +188,12 @@ function CourseCard({ course }) {
                             />
                             <circle cx="12" cy="10" r="2.5" />
                         </svg>
-                        <span className="line-clamp-1">{course.location}</span>
+                        <span className="line-clamp-1">{course.lokasi_default || course.location}</span>
                     </p>
                 )}
 
                 {/* INFO WAKTU JIKA ADA */}
-                {course.time && (
+                {(course.jadwal_default || course.time) && (
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-[#3D4A3E]">
                         <svg
                             className="h-4 w-4 text-[#006B32] shrink-0"
@@ -215,7 +209,7 @@ function CourseCard({ course }) {
                                 d="M12 7v5l3 2"
                             />
                         </svg>
-                        {course.time}
+                        {course.jadwal_default || course.time}
                     </p>
                 )}
 

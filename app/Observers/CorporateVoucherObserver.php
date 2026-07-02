@@ -22,10 +22,22 @@ class CorporateVoucherObserver
         $isAsn = $buyer && $buyer->kategori_pensiun === 'asn';
         $actionUrl = $isAsn ? '/instansi/pelatihan-dibeli' : '/korporat/pelatihan-dibeli';
 
+        // Get user category and course title for the notification message
+        $userCategory = $buyer->kategori_pensiun ?? 'unknown';
+        $courseTitle = $course->title ?? 'pelatihan';
+
+        $tipeKelas = match ($course->tipe_kelas) {
+            'Online'  => 'Kelas Online',
+            'Offline' => 'Kelas Offline (Tatap Muka)',
+            'Hybrid'  => 'Kelas Hybrid',
+            default   => 'Kelas',
+        };
+
         Notification::send(
             $voucher->corporate_user_id,
             'Voucher Berhasil Dibuat!',
-            "Kode voucher untuk '{$course->title}' siap dibagikan ke anggota Anda. Kode: {$voucher->code}",
+            "Kode voucher untuk {$tipeKelas} '{$courseTitle}' siap dibagikan ke anggota Anda. " .
+                "Berlaku untuk {$voucher->max_uses} peserta. Kode: {$voucher->code}",
             'success',
             'Lihat Kode Voucher',
             $actionUrl
