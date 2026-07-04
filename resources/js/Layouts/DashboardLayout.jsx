@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, usePage } from "@inertiajs/react";
+import Footer from "@/Components/Footer"; // ✅ 1. Import komponen Footer di sini (Sesuaikan path-nya jika berbeda)
 
 /* =========================================================
  * Self-contained DashboardLayout
@@ -140,6 +141,7 @@ function Sidebar({ isOpen, onClose, currentPath }) {
 }
 
 /* --- Inlined header --- */
+<<<<<<< Updated upstream
 function Header({
   sidebarOpen,
   onToggleSidebar,
@@ -148,6 +150,10 @@ function Header({
   showSearch,
 }) {
   const { auth } = usePage().props;
+=======
+function Header({ sidebarOpen, onToggleSidebar, title, showSearch }) {
+  const { auth, unreadNotifCount = 0 } = usePage().props;
+>>>>>>> Stashed changes
   const user = auth?.user;
   const displayName = user?.name || "Pengguna";
   const firstName = displayName.split(" ")[0];
@@ -222,9 +228,14 @@ function Header({
         )}
 
         <div className="flex items-center gap-2 sm:gap-4">
+<<<<<<< Updated upstream
           <button
             type="button"
             onClick={onToggleNotif}
+=======
+          <Link
+            href="/notifikasi"
+>>>>>>> Stashed changes
             className="relative p-2 rounded-full hover:bg-[#F0EDED] transition-colors"
             aria-label="Notifikasi"
           >
@@ -235,8 +246,17 @@ function Header({
             >
               <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
             </svg>
+<<<<<<< Updated upstream
             <span className="absolute top-2 right-2 w-2 h-2 bg-[#BA1A1A] border-2 border-white rounded-full" />
           </button>
+=======
+            {unreadNotifCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#BA1A1A] px-1 text-[10px] font-bold text-white border-2 border-white">
+                {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+              </span>
+            )}
+          </Link>
+>>>>>>> Stashed changes
 
           <div className="w-px h-8 bg-[#E4E2E1] hidden sm:block" />
 
@@ -469,6 +489,7 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-[#FBF9F8]">
+<<<<<<< Updated upstream
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -497,6 +518,29 @@ export default function DashboardLayout({
             )}
           </main>
         </div>
+=======
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPath={currentPath} />
+      
+      {/* Container utama ditarik menggunakan flex-col dan min-h-screen */}
+      <div className={`min-h-screen flex flex-col transition-all duration-300 ${sidebarOpen ? "lg:pl-[288px]" : "lg:pl-0"}`}>
+        
+        {showHeader && (
+          <Header
+            sidebarOpen={sidebarOpen}
+            onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+            title={title}
+            showSearch={showSearch}
+          />
+        )}
+        
+        {/* ✅ 2. Main content. flex-1 akan mendorong footer ke bawah jika konten sedikit */}
+        <main className="p-4 sm:p-6 lg:p-8 flex-1">
+            {children}
+        </main>
+        
+        {/* ✅ 3. Pasang Footer di sini, maka footer akan muncul di semua page yang menggunakan DashboardLayout */}
+        <Footer />
+>>>>>>> Stashed changes
       </div>
     </div>
   );

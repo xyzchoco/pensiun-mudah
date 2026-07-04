@@ -251,44 +251,55 @@ export default function BeliPelatihanKorporat({ banners = [], courses = [] }) {
         <KorporatLayout title="Beli Pelatihan - Pensiun Mudah" activeNav="beli">
             <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10">
 
-                {/* BANNER DINAMIS */}
-                {banners.length > 0 ? (
-                    banners.map((banner) => (
-                        <section
-                            key={banner.id}
-                            className="relative overflow-hidden rounded-2xl px-6 py-10 text-white sm:px-10 sm:py-14 mb-6 bg-cover bg-center"
-                            style={banner.image_path ? { backgroundImage: `url(/storage/${banner.image_path})` } : { backgroundImage: 'linear-gradient(to right, #1B5036, #10251B)' }}
-                        >
-                            <div className="absolute inset-0 bg-black/40"></div>
-                            <div className="relative z-10">
-                                <h2 className="text-3xl font-extrabold sm:text-4xl">
-                                    {banner.title || 'Spesial Kelas MPP'}
-                                </h2>
-                                <p className="mt-2 max-w-md text-white/90">
-                                    {banner.description || 'Voucher Potongan 200rb khusus untuk pendaftaran bulan ini.'}
-                                </p>
-                                <Link
-                                    href={banner.link_url || "#"}
-                                    className="mt-6 inline-flex rounded-full bg-[#FF8928] px-6 py-3 font-bold text-white transition-colors hover:bg-[#F57F1E]"
-                                >
-                                    Gunakan Kode
-                                </Link>
+                {/* BANNER DINAMIS - Styling ngikutin Dashboard.jsx & Tombol Dihapus */}
+                <div className="relative w-full max-w-none h-[320px] rounded-3xl overflow-hidden flex items-center mb-6 shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)] bg-gradient-to-r from-[#006B32] to-[#008740]">
+                    {banners && banners.length > 0 ? (
+                        banners.map((banner) => (
+                            <div
+                                key={banner.id}
+                                className="absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center px-12 pr-64 py-12"
+                            >
+                                <div
+                                    className="absolute inset-0 bg-cover bg-center opacity-40"
+                                    style={{
+                                        backgroundImage: banner.image_path
+                                            ? `url('/storage/${banner.image_path.replace(/^public\//, '')}')`
+                                            : "url('/images/hero-dashboard-bg.png')",
+                                    }}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#006B32]/90 to-[#008740]/70" />
+
+                                <div className="relative z-20 max-w-[500px] flex flex-col items-start text-white">
+                                    {banner.promo_badge && (
+                                        <span className="bg-[#FF8928] text-white text-[10px] font-bold px-2 py-1 rounded w-fit mb-2">
+                                            {banner.promo_badge}
+                                        </span>
+                                    )}
+
+                                    <h2 className="font-['Public_Sans'] font-bold text-[40px] leading-[48px] mb-3">
+                                        {banner.title || 'Spesial Kelas MPP'}
+                                    </h2>
+
+                                    <p className="font-['Atkinson_Hyperlegible'] font-normal text-base leading-7 text-white/90 max-w-[520px]">
+                                        {banner.description || 'Voucher Potongan 200rb khusus untuk pendaftaran bulan ini.'}
+                                    </p>
+                                </div>
                             </div>
-                        </section>
-                    ))
-                ) : (
-                    <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1B5036] to-[#10251B] px-6 py-10 text-white sm:px-10 sm:py-14 mb-6">
-                        <h2 className="text-3xl font-extrabold sm:text-4xl">
-                            Spesial Kelas MPP
-                        </h2>
-                        <p className="mt-2 max-w-md text-white/90">
-                            Voucher Potongan 200rb khusus untuk pendaftaran bulan ini.
-                        </p>
-                        <button type="button" className="mt-6 rounded-full bg-[#FF8928] px-6 py-3 font-bold text-white transition-colors hover:bg-[#F57F1E]">
-                            Gunakan Kode
-                        </button>
-                    </section>
-                )}
+                        ))
+                    ) : (
+                        // Default Fallback Banner (Kalau BE kosong) - Tombol juga tidak ada
+                        <div className="absolute inset-0 flex items-center px-12 py-12">
+                            <div className="relative z-20 max-w-[500px] flex flex-col items-start text-white">
+                                <h2 className="font-['Public_Sans'] font-bold text-[40px] leading-[48px] mb-3">
+                                    Spesial Kelas MPP
+                                </h2>
+                                <p className="font-['Atkinson_Hyperlegible'] font-normal text-base leading-7 text-white/90 max-w-[520px]">
+                                    Voucher Potongan 200rb khusus untuk pendaftaran bulan ini.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 <div className="mt-8">
                     <h1 className="text-2xl font-bold text-[#1B1C1C] sm:text-3xl">

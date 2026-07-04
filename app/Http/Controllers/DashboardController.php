@@ -130,7 +130,7 @@ class DashboardController extends Controller
                 return redirect()->route('korporat.dashboard');
 
             case 'asn':
-                return Inertia::render('Asn/DashboardAsn', $data);
+                return Inertia::render('Instansi/DashboardInstansi', $data);
 
             case 'publik':
             default:
