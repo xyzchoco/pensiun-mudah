@@ -17,15 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'api/mark-done', 
+            'midtrans/notification',
         ]);
 
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
-        ]);
-
-        $middleware->validateCsrfTokens(except: [
-            'midtrans/notification',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -438,11 +438,25 @@ Route::get('/jalankan-migrasi', function () {
     // Menjalankan migrasi database
     Artisan::call('migrate', ['--force' => true]);
     
-    // Opsional: jalankan fungsi lain yang lu butuhkan
-    Artisan::call('optimize:clear');
-    Artisan::call('storage:link');
+    // Clear cache
+    try {
+        Artisan::call('optimize:clear');
+    } catch (\Throwable $e) {
+        // Ignore optimization error if functions are restricted
+    }
     
-    return 'Mantap Bos! Migrasi Database dan Setup Berhasil!';
+    // Safe storage link fallback (prevents crash if exec() is disabled in hosting)
+    try {
+        $target = storage_path('app/public');
+        $shortcut = public_path('storage');
+        if (!file_exists($shortcut)) {
+            @symlink($target, $shortcut);
+        }
+    } catch (\Throwable $e) {
+        // Ignore if symlink/exec is disabled on hosting
+    }
+    
+    return 'Migrasi Database dan Setup Berhasil!';
 });
 
 require __DIR__.'/auth.php';

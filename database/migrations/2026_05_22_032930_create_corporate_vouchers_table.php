@@ -21,8 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('transaction_id')
                   ->nullable()
                   ->unique()
-                  ->index()
-                  ->after('used_count');
+                  ->index();
             $table->foreign('corporate_user_id')->references('user_id')->on('users')->onDelete('cascade');
             $table->foreign('course_id')->references('id')->on('courses')->onDelete('cascade');
         });

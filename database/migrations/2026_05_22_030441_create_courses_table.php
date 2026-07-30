@@ -28,7 +28,7 @@ return new class extends Migration
             // ===== Default pelaksanaan (khusus Offline/Hybrid) =====
             // Jadi patokan default + acuan sistem deteksi request custom
             $table->date('tanggal_default')->nullable();
-            $table->date('tanggal_selesai_default')->nullable()->after('tanggal_default');
+            $table->date('tanggal_selesai_default')->nullable();
             $table->string('lokasi_default')->nullable();
             $table->string('jadwal_default', 100)->nullable(); // cth: "09:00 - 15:00 WIB"
             // (opsional, kalau mau instruktur & durasi dinamis)

@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('training_requests', function (Blueprint $table) {
             $table->id('request_id');
 
-            $table->unsignedInteger('user_id');
+            $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('course_id');
 
             $table->date('tanggal_mulai');
@@ -24,7 +24,7 @@ return new class extends Migration
             $table->decimal('estimasi_harga', 12, 2)->default(0);
             $table->boolean('is_custom')->default(false);
             $table->string('status')->default('menunggu_approval');
-            $table->timestamp('payment_due_at')->nullable()->after('status');
+            $table->timestamp('payment_due_at')->nullable();
             $table->text('alasan_penolakan')->nullable();
             $table->unsignedBigInteger('voucher_id')->nullable();
 
@@ -35,11 +35,11 @@ return new class extends Migration
 
             $table->foreign('user_id')
                   ->references('user_id')->on('users')
-                  ->cascadeOnDelete();
+                  ->onDelete('cascade');
 
             $table->foreign('course_id')
                   ->references('id')->on('courses')
-                  ->cascadeOnDelete();
+                  ->onDelete('cascade');
         });
     }
 

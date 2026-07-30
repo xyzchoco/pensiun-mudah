@@ -1,0 +1,1 @@
+import"./PelatihanFooter-Bkx666Ab.js";
