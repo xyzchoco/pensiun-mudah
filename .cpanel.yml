@@ -1,6 +1,0 @@
----
-deployment:
-  tasks:
-    - /bin/cp -n .env.example .env
-    - /bin/rm -rf /home/pene4791/public_html/pensiunmudah.my.id
-    - /bin/ln -s /home/pene4791/repositories/pensiun-mudah/public /home/pene4791/public_html/pensiunmudah.my.id
