@@ -10,9 +10,13 @@ use App\Models\Enrollment;
 use App\Models\LearningActivity;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Traits\HasRecentActivities;
+use App\Models\User as AppModelsUser;
 
 class DashboardController extends Controller
 {
+    use HasRecentActivities;
+
     public function index()
     {
         $user = Auth::user();
@@ -132,6 +136,86 @@ class DashboardController extends Controller
             ->where('progress_persen', '<', 100)
             ->count();
 
+        // 5.5. Hitung Target Kesiapan Pensiun (Mental, Keuangan, Kesehatan, Sosial) secara Dinamis
+        $enrollmentsForReadiness = Enrollment::where('user_id', $user->user_id)
+            ->with('course.category')
+            ->get();
+
+        $aspectProgress = [
+            'mental' => [],
+            'keuangan' => [],
+            'kesehatan' => [],
+            'sosial' => []
+        ];
+
+        foreach ($enrollmentsForReadiness as $enrollment) {
+            if (!$enrollment->course) {
+                continue;
+            }
+
+            $course = $enrollment->course;
+            $category = $course->category;
+
+            $titleLower = strtolower($course->title);
+            $categoryNameLower = $category ? strtolower($category->nama) : '';
+            $categoryDescLower = $category ? strtolower($category->deskripsi) : '';
+
+            $aspect = null;
+
+            // 1. Check title keywords first
+            if (str_contains($titleLower, 'keuangan') || str_contains($titleLower, 'finansial') || str_contains($titleLower, 'investasi') || str_contains($titleLower, 'dana') || str_contains($titleLower, 'uang') || str_contains($titleLower, 'saham') || str_contains($titleLower, 'reksadana')) {
+                $aspect = 'keuangan';
+            } elseif (str_contains($titleLower, 'mental') || str_contains($titleLower, 'jiwa') || str_contains($titleLower, 'psikologi') || str_contains($titleLower, 'emosi') || str_contains($titleLower, 'stres') || str_contains($titleLower, 'stress') || str_contains($titleLower, 'mindfulness') || str_contains($titleLower, 'bahagia') || str_contains($titleLower, 'spiritual') || str_contains($titleLower, 'religi') || str_contains($titleLower, 'batin')) {
+                $aspect = 'mental';
+            } elseif (str_contains($titleLower, 'kesehatan') || str_contains($titleLower, 'sehat') || str_contains($titleLower, 'fisik') || str_contains($titleLower, 'olahraga') || str_contains($titleLower, 'diet') || str_contains($titleLower, 'penyakit') || str_contains($titleLower, 'medis') || str_contains($titleLower, 'tubuh') || str_contains($titleLower, 'nutrisi') || str_contains($titleLower, 'gizi')) {
+                $aspect = 'kesehatan';
+            } elseif (str_contains($titleLower, 'sosial') || str_contains($titleLower, 'komunitas') || str_contains($titleLower, 'hobi') || str_contains($titleLower, 'wirausaha') || str_contains($titleLower, 'umkm') || str_contains($titleLower, 'usaha') || str_contains($titleLower, 'berkebun') || str_contains($titleLower, 'tani') || str_contains($titleLower, 'ternak') || str_contains($titleLower, 'hubungan') || str_contains($titleLower, 'keluarga') || str_contains($titleLower, 'komunikasi')) {
+                $aspect = 'sosial';
+            }
+
+            // 2. Check category name & description if no title match
+            if (!$aspect && $category) {
+                if (str_contains($categoryNameLower, 'keuangan') || str_contains($categoryNameLower, 'investasi') || str_contains($categoryNameLower, 'finansial')) {
+                    $aspect = 'keuangan';
+                } elseif (str_contains($categoryNameLower, 'mental') || str_contains($categoryDescLower, 'mental')) {
+                    $aspect = 'mental';
+                } elseif (str_contains($categoryNameLower, 'kesehatan') || str_contains($categoryNameLower, 'sehat') || str_contains($categoryNameLower, 'fisik')) {
+                    $aspect = 'kesehatan';
+                } elseif (str_contains($categoryNameLower, 'wirausaha') || str_contains($categoryNameLower, 'sosial') || str_contains($categoryNameLower, 'komunitas') || str_contains($categoryNameLower, 'kewirausahaan')) {
+                    $aspect = 'sosial';
+                }
+            }
+
+            // 3. Fallbacks based on category ID or general defaults
+            if (!$aspect) {
+                if ($category) {
+                    if ($category->id == 1) { // Kesehatan Pensiun
+                        $aspect = 'kesehatan';
+                    } elseif ($category->id == 2) { // Keuangan pensiun
+                        $aspect = 'keuangan';
+                    } elseif ($category->id == 3) { // Kewirausahaan
+                        $aspect = 'sosial';
+                    } else {
+                        $aspect = 'sosial';
+                    }
+                } else {
+                    $aspect = 'sosial';
+                }
+            }
+
+            $aspectProgress[$aspect][] = $enrollment->progress_persen;
+        }
+
+        $targetPensiunData = [];
+        foreach ($aspectProgress as $key => $values) {
+            if (empty($values)) {
+                $targetPensiunData[$key] = 0;
+            } else {
+                $targetPensiunData[$key] = (int) round(array_sum($values) / count($values));
+            }
+        }
+        $targetPensiunData['overall'] = (int) round(array_sum($targetPensiunData) / count($targetPensiunData));
+
         // 6. Kirim ke halaman Dashboard publik
         return Inertia::render('Dashboard', [
             'banners'             => $banners,
@@ -144,6 +228,8 @@ class DashboardController extends Controller
             'jamBelajarMingguIni' => $jamBelajarMingguIni,
             'totalSertifikat'     => $totalSertifikat,
             'sertifikatProses'    => $sertifikatProses,
+            'targetPensiun'       => $targetPensiunData,
+            'recentActivities'    => $this->recentActivities($user),
         ]);
     }
 }

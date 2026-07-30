@@ -18,7 +18,7 @@ return new class extends Migration
             // Data Utama User
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('whatsapp')->unique();
+            $table->string('whatsapp')->unique()->nullable();
             $table->date('tanggal_lahir')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
@@ -27,6 +27,8 @@ return new class extends Migration
             
             // Kategori Pensiun
             $table->string('kategori_pensiun')->nullable();
+
+            $table->string('profile_photo_path')->nullable();
             
             $table->rememberToken();
             $table->timestamps();

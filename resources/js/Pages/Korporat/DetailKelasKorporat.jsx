@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import PaymentHeader from '@/Components/Payment/PaymentHeader';
 import Footer from '@/Components/Footer';
 
 const benefits = [
-    { id: 1, label: '24 Modul Video HD', icon: 'video' },
+    { id: 1, label: 'Modul Video HD', icon: 'video' },
     { id: 2, label: 'E-Book Perencanaan Keuangan', icon: 'book' },
     { id: 3, label: 'Grup WA Eksklusif Pensiunan', icon: 'group' },
     { id: 4, label: 'Sertifikat Kelulusan Resmi', icon: 'award' },
@@ -33,7 +33,7 @@ const aboutFeatures = [
     },
 ];
 
-const testimonials = [
+const defaultTestimonials = [
     {
         id: 1,
         name: 'Ibu Sulastri',
@@ -96,25 +96,46 @@ function BenefitIcon({ name }) {
 
 export default function DetailKelasKorporat({
     course, // Prop dinamis dari backend
+    reviews = [],
+    ratingAverage = 0,
+    totalReviews = 0,
     rating = '4.8',
     reviewCount = '124',
     duration = '12 Jam',
     videoCaption = 'Tonton Cuplikan Kursus',
 }) {
-    const [qty, setQty] = useState(5);
+    const [qty, setQty] = useState(1);
     const decrement = () => setQty((prev) => (prev > 1 ? prev - 1 : 1));
     const increment = () => setQty((prev) => prev + 1);
 
     // Ambil data dinamis dari course
     const courseTitle = course?.title || 'Judul Pelatihan Tidak Ditemukan';
 
-    // Harga Asli Per Peserta (Satuan)
+    // RATING & REVIEW DINAMIS
+    const displayRating = ratingAverage > 0
+        ? ratingAverage
+        : (course?.rating_average > 0 ? course.rating_average : rating);
+
+    const displayReviewCount = totalReviews > 0
+        ? totalReviews
+        : (course?.total_reviewer > 0 ? course.total_reviewer : reviewCount);
+
+    // Testimoni dinamis
+    const testimonialsData = reviews && reviews.length > 0
+        ? reviews.map((item, index) => ({
+            id: index,
+            name: item.name,
+            role: item.profession || 'Peserta',
+            quote: item.text,
+            avatar: item.avatar,
+        }))
+        : defaultTestimonials;
+
+    // Harga Per Peserta (Satuan)
     const coursePrice = Number(course?.price) || 0;
-    const originalPrice = coursePrice > 0 ? coursePrice * 2 : 499000;
 
     // PERKALIAN OTOMATIS: Harga dikali Quantity (Jumlah Peserta)
     const totalCoursePrice = coursePrice * qty;
-    const totalOriginalPrice = originalPrice * qty;
 
     // Format Rupiah untuk Total Harga
     const formattedTotalPrice = new Intl.NumberFormat('id-ID', {
@@ -123,40 +144,50 @@ export default function DetailKelasKorporat({
         maximumFractionDigits: 0,
     }).format(totalCoursePrice);
 
-    const formattedTotalOriginalPrice = new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        maximumFractionDigits: 0,
-    }).format(totalOriginalPrice);
-
     // Format Harga Satuan (Untuk keterangan di UI)
-    const formattedUnitOriginalPrice = new Intl.NumberFormat('id-ID', {
+    const formattedUnitPrice = new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR',
         maximumFractionDigits: 0,
     }).format(coursePrice);
 
-    // Link ke halaman detail pembelian
-    const purchaseHref = `/korporat/pelatihan/${course?.slug || ''}/pembelian-online?qty=${qty}`;
-
-    // MENCARI VIDEO PERTAMA DARI RELASI MATERIALS
-    const videoUrl = course?.modules
-        ?.flatMap((module) => module.materials || [])
-        ?.find((material) => material?.url_video)?.url_video;
-
-    // Helper untuk mengubah URL YouTube biasa menjadi URL Embed agar bisa diputar di iframe
-    const getEmbedUrl = (url) => {
-        if (!url) return null;
-        if (url.includes('youtube.com/watch?v=')) {
-            return url.replace('watch?v=', 'embed/');
+    // Navigate ke halaman pembelian
+    const handleBuyNow = () => {
+        if (course?.slug) {
+            router.visit(`/korporat/pelatihan/${course.slug}/pembelian-online?qty=${qty}`);
         }
-        if (url.includes('youtu.be/')) {
-            return url.replace('youtu.be/', 'youtube.com/embed/');
-        }
-        return url;
     };
 
-    const embedUrl = getEmbedUrl(videoUrl);
+    // Fungsi konverter link YouTube menjadi embed
+    const getYouTubeEmbedUrl = (url) => {
+        if (!url) return null;
+        let videoId = '';
+        if (url.includes('youtu.be/')) {
+            videoId = url.split('youtu.be/')[1].split('?')[0];
+        } else if (url.includes('watch?v=')) {
+            videoId = url.split('watch?v=')[1].split('&')[0];
+        } else if (url.includes('embed/')) {
+            return url; // Sudah dalam format embed
+        }
+        return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
+    };
+
+    // Ambil video URL dari lessons (lesson pertama yang memiliki video)
+    const getFirstVideoLink = () => {
+        if (!course || !course.lessons || course.lessons.length === 0) {
+            return null;
+        }
+
+        for (const lesson of course.lessons) {
+            if (lesson.video_url) {
+                return lesson.video_url;
+            }
+        }
+        return null;
+    };
+
+    const rawVideoLink = getFirstVideoLink();
+    const embedUrl = getYouTubeEmbedUrl(rawVideoLink);
 
     return (
         <div className="flex min-h-screen flex-col bg-[#FBF9F8] font-['Atkinson_Hyperlegible']">
@@ -183,14 +214,7 @@ export default function DetailKelasKorporat({
                             <svg className="h-4 w-4 text-[#FF8928]" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15.9 4.7 17.6l1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
                             </svg>
-                            {rating} ({reviewCount} Review)
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 text-sm text-[#3D4A3E]">
-                            <svg className="h-4 w-4 text-[#006B32]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="9" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" />
-                            </svg>
-                            Total Durasi: {duration}
+                            {displayRating} ({displayReviewCount} Review)
                         </span>
                     </div>
 
@@ -234,10 +258,9 @@ export default function DetailKelasKorporat({
                                 {formattedTotalPrice}
                             </p>
 
-                            {/* Harga Coret Total & Harga Satuan */}
-                            <p className="text-sm text-[#9AA6A0]">
-                                <span className="line-through">{formattedTotalOriginalPrice}</span>
-                                <span className="ml-2 font-semibold text-[#006B32]">({formattedUnitOriginalPrice} / org)</span>
+                            {/* Harga Satuan */}
+                            <p className="text-sm text-[#6B7280]">
+                                <span className="font-semibold text-[#006B32]">{formattedUnitPrice} / org</span>
                             </p>
 
                             <ul className="mt-5 space-y-3">
@@ -276,8 +299,9 @@ export default function DetailKelasKorporat({
                                 </button>
                             </div>
 
-                            <Link
-                                href={purchaseHref}
+                            <button
+                                type="button"
+                                onClick={handleBuyNow}
                                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF8928] py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"
                             >
                                 Beli Sekarang
@@ -286,7 +310,7 @@ export default function DetailKelasKorporat({
                                     <circle cx="18" cy="20" r="1" />
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M2 3h3l2.4 12.4a1 1 0 001 .8h8.7a1 1 0 001-.8L21 7H6" />
                                 </svg>
-                            </Link>
+                            </button>
 
                             <p className="mt-3 text-center text-xs text-[#9AA6A0]">
                                 Akses seumur hidup. Jaminan 7 hari uang kembali.
@@ -336,22 +360,32 @@ export default function DetailKelasKorporat({
                             Apa Kata Mereka?
                         </h2>
                         <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                            {testimonials.map((item) => (
+                            {testimonialsData.map((item) => (
                                 <div key={item.id} className="rounded-2xl border border-[#E4E2E1] bg-[#F6F3F2] p-5">
                                     <div className="flex items-center gap-3">
-                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-sm font-bold text-white">
-                                            {getInitials(item.name)}
-                                        </span>
+                                        {item.avatar ? (
+                                            <img
+                                                src={item.avatar}
+                                                alt={item.name}
+                                                className="w-11 h-11 rounded-full object-cover shrink-0"
+                                            />
+                                        ) : (
+                                            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-sm font-bold text-white">
+                                                {getInitials(item.name)}
+                                            </span>
+                                        )}
                                         <div>
                                             <p className="font-bold text-[#1B1C1C]">
                                                 {item.name}
                                             </p>
-                                            <p className="text-xs text-[#6B7280]">
-                                                {item.role}
-                                            </p>
+                                            {item.role && item.role !== 'Peserta Publik' && (
+                                                <p className="text-xs text-[#6B7280]">
+                                                    {item.role}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
-                                    <p className="mt-3 text-sm italic text-[#3D4A3E]">
+                                    <p className="mt-3 text-md text-[#3D4A3E]">
                                         "{item.quote}"
                                     </p>
                                 </div>

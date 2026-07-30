@@ -1,72 +1,131 @@
-import { Link } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, Link } from '@inertiajs/react';
+import axios from 'axios';
 import InstansiLayout from '@/Layouts/InstansiLayout';
 
-function getInitials(name) {
-    return name
-        .split(' ')
-        .map((part) => part[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase();
+const weekdays = ['MIN', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB'];
+const monthNames = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+function toYmd(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
 }
 
-const currentUser = { name: 'Budi Santoso', role: 'PREMIUM MEMBER' };
+export default function PilihJadwalHybridInstansi({
+    course = { id: null, title: '', price: 0 },
+    defaultDate = null,
+    defaultLocation = 'Lokasi akan dikonfirmasi',
+    eventTime = 'Jadwal akan dikonfirmasi',
+}) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-const weekdays = ['MIN', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB'];
+    const initial = defaultDate ? new Date(defaultDate) : today;
 
-const calendarDays = [
-    { day: 29, muted: true },
-    { day: 30, muted: true },
-    { day: 1 },
-    { day: 2 },
-    { day: 3 },
-    { day: 4 },
-    { day: 5 },
-    { day: 6 },
-    { day: 7 },
-    { day: 8 },
-    { day: 9 },
-    { day: 10 },
-    { day: 11 },
-    { day: 12 },
-    { day: 13 },
-    { day: 14 },
-    { day: 15 },
-    { day: 16 },
-    { day: 17 },
-    { day: 18 },
-    { day: 19 },
-    { day: 20 },
-    { day: 21 },
-    { day: 22 },
-    { day: 23 },
-    { day: 24, selected: true },
-    { day: 25 },
-    { day: 26 },
-    { day: 27 },
-    { day: 28 },
-    { day: 29 },
-    { day: 30 },
-    { day: 31 },
-    { day: 1, muted: true },
-    { day: 2, muted: true },
-];
+    const [viewYear, setViewYear] = useState(initial.getFullYear());
+    const [viewMonth, setViewMonth] = useState(initial.getMonth());
 
-const summary = [
-    { label: 'Tanggal', value: '24 Oktober 2024' },
-    { label: 'Waktu', value: 'Pagi (08:00 - 12:00)' },
-    { label: 'Lokasi', value: 'Hotel Santika, Jakarta' },
-];
+    // Rentang tanggal terpilih
+    const [startDate, setStartDate] = useState(defaultDate ? new Date(defaultDate) : null);
+    const [endDate, setEndDate] = useState(null);
 
-export default function PilihJadwalHybridInstansi() {
+    const [lokasi, setLokasi] = useState('');
+    const [jam, setJam] = useState('08:00');
+    const [submitting, setSubmitting] = useState(false);
+    const [errors, setErrors] = useState({});
+
+    // Durasi (hari) dari rentang terpilih
+    const durasiHari = startDate
+        ? (endDate ? Math.round((endDate - startDate) / 86400000) + 1 : 1)
+        : 0;
+
+    // Susun sel-sel kalender untuk bulan yang sedang ditampilkan
+    const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const cells = [
+        ...Array.from({ length: firstWeekday }, () => null),
+        ...Array.from({ length: daysInMonth }, (_, i) => new Date(viewYear, viewMonth, i + 1)),
+    ];
+
+    const goPrevMonth = () => {
+        const m = viewMonth - 1;
+        if (m < 0) { setViewMonth(11); setViewYear((y) => y - 1); } else setViewMonth(m);
+    };
+    const goNextMonth = () => {
+        const m = viewMonth + 1;
+        if (m > 11) { setViewMonth(0); setViewYear((y) => y + 1); } else setViewMonth(m);
+    };
+
+    function sameDay(a, b) {
+        return a && b && a.toDateString() === b.toDateString();
+    }
+
+    const handleDayClick = (date) => {
+        if (date < today) return;
+        if (!startDate || (startDate && endDate)) {
+            setStartDate(date);
+            setEndDate(null);
+        } else if (date < startDate) {
+            setStartDate(date);
+        } else {
+            setEndDate(date);
+        }
+    };
+
+    const dayClass = (date) => {
+        if (date < today) return 'text-[#C7CAC8] cursor-not-allowed';
+        if (sameDay(date, startDate) || sameDay(date, endDate)) return 'bg-[#006B32] font-bold text-white';
+        if (startDate && endDate && date > startDate && date < endDate) return 'bg-[#E5F0E9] text-[#006B32]';
+        return 'text-[#1B1C1C] hover:bg-[#F0EDED]';
+    };
+
+    const rangeLabel = startDate
+        ? `${startDate.getDate()} ${monthShort[startDate.getMonth()]}${endDate ? ` — ${endDate.getDate()} ${monthShort[endDate.getMonth()]}` : ''}, ${(endDate ?? startDate).getFullYear()}`
+        : 'Belum dipilih';
+
+    const konfirmasiJadwal = async () => {
+        if (!startDate) return;
+        if (!lokasi.trim()) {
+            setErrors({ usulan_lokasi: ['Usulan lokasi wajib diisi.'] });
+            return;
+        }
+        setSubmitting(true);
+        setErrors({});
+
+        try {
+            const { data } = await axios.post('/instansi/request-jadwal-hybrid', {
+                course_id: course.id,
+                tanggal_mulai: toYmd(startDate),
+                tanggal_selesai: toYmd(endDate ?? startDate),
+                usulan_lokasi: lokasi,
+                jam: jam || null,
+            });
+
+            if (data.success && data.redirect_url) {
+                window.location.href = data.redirect_url;
+            }
+        } catch (err) {
+            setSubmitting(false);
+            if (err.response?.data?.errors) {
+                setErrors(err.response.data.errors);
+            } else {
+                alert('Terjadi kesalahan sistem.');
+            }
+        }
+    };
+
     return (
         <InstansiLayout showSidebar={false} title="Pilih Jadwal Hybrid - Pensiun Mudah" activeNav="dashboard">
-            {/* Header */}
-            {/* Main */}
             <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10">
                 <div className="mx-auto max-w-6xl">
                     <Link
-                        href="/instansi/dashboard"
+                        href={`/instansi/modul/${course.slug}`}
                         className="inline-flex items-center gap-2 font-bold text-[#006B32]"
                     >
                         <svg
@@ -82,7 +141,7 @@ export default function PilihJadwalHybridInstansi() {
                                 d="M19 12H5M11 6l-6 6 6 6"
                             />
                         </svg>
-                        Kembali ke Dashboard
+                        Kembali ke Detail Modul
                     </Link>
 
                     <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -95,6 +154,7 @@ export default function PilihJadwalHybridInstansi() {
                                 <div className="flex items-center gap-3">
                                     <button
                                         type="button"
+                                        onClick={goPrevMonth}
                                         className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#006B32]/40 text-[#006B32] transition-colors hover:bg-[#F0EDED]"
                                         aria-label="Bulan sebelumnya"
                                     >
@@ -112,11 +172,12 @@ export default function PilihJadwalHybridInstansi() {
                                             />
                                         </svg>
                                     </button>
-                                    <span className="text-lg font-bold text-[#1B1C1C]">
-                                        Oktober 2024
+                                    <span className="text-lg font-bold text-[#1B1C1C] w-36 text-center">
+                                        {monthNames[viewMonth]} {viewYear}
                                     </span>
                                     <button
                                         type="button"
+                                        onClick={goNextMonth}
                                         className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#006B32]/40 text-[#006B32] transition-colors hover:bg-[#F0EDED]"
                                         aria-label="Bulan berikutnya"
                                     >
@@ -146,34 +207,21 @@ export default function PilihJadwalHybridInstansi() {
                                         {weekday}
                                     </div>
                                 ))}
-                                {calendarDays.map((cell, index) => {
-                                    if (cell.muted) {
-                                        return (
-                                            <div
-                                                key={index}
-                                                className="py-3 text-sm text-[#9AA6A0]"
-                                            >
-                                                {cell.day}
-                                            </div>
-                                        );
+                                {cells.map((date, index) => {
+                                    if (!date) {
+                                        return <div key={index} className="py-3 text-sm text-[#9AA6A0]" />;
                                     }
-                                    if (cell.selected) {
-                                        return (
-                                            <div
-                                                key={index}
-                                                className="rounded-lg bg-[#006B32] py-3 text-sm font-bold text-white"
-                                            >
-                                                {cell.day}
-                                            </div>
-                                        );
-                                    }
+                                    const isBeforeToday = date < today;
                                     return (
-                                        <div
+                                        <button
                                             key={index}
-                                            className="rounded-lg border border-[#E4E2E1] py-3 text-sm text-[#1B1C1C] transition-colors hover:border-[#006B32]/40"
+                                            type="button"
+                                            onClick={() => handleDayClick(date)}
+                                            disabled={isBeforeToday}
+                                            className={`rounded-lg py-3 text-sm transition-colors w-full text-center ${dayClass(date)}`}
                                         >
-                                            {cell.day}
-                                        </div>
+                                            {date.getDate()}
+                                        </button>
                                     );
                                 })}
                             </div>
@@ -196,18 +244,47 @@ export default function PilihJadwalHybridInstansi() {
                                     <circle cx="12" cy="10" r="2.5" />
                                 </svg>
                                 <h2 className="font-bold text-[#1B1C1C]">
-                                    Tuliskan Usulan Lokasi
+                                    Tuliskan Usulan Lokasi <span className="text-red-500 font-normal">*</span>
                                 </h2>
                             </div>
                             <input
                                 type="text"
+                                value={lokasi}
+                                onChange={(e) => setLokasi(e.target.value)}
                                 placeholder="Masukkan alamat atau nama lokasi yang diusulkan..."
-                                className="mt-3 w-full rounded-lg border border-[#E4E2E1] bg-[#F0EDED] px-4 py-3 text-sm text-[#6B7280] outline-none focus:ring-2 focus:ring-[#006B32]/30"
+                                className="mt-3 w-full rounded-lg border border-[#E4E2E1] bg-white px-4 py-3 text-sm text-[#1B1C1C] outline-none focus:ring-2 focus:ring-[#006B32]/30"
                             />
+                            {errors.usulan_lokasi && (
+                                <p className="mt-2 text-sm font-semibold text-red-500">{errors.usulan_lokasi[0]}</p>
+                            )}
                             <p className="mt-2 text-xs text-[#6B7280]">
-                                Lokasi ini akan digunakan sebagai titik temu
-                                utama untuk sesi tatap muka.
+                                Lokasi ini akan digunakan sebagai titik temu utama untuk sesi tatap muka praktik.
                             </p>
+
+                            <div className="mt-6 flex items-center gap-2">
+                                <svg
+                                    className="h-5 w-5 text-[#006B32]"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle cx="12" cy="12" r="9" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" />
+                                </svg>
+                                <h2 className="font-bold text-[#1B1C1C]">
+                                    Tuliskan Usulan Jam Mulai <span className="text-red-500 font-normal">*</span>
+                                </h2>
+                            </div>
+                            <input
+                                type="time"
+                                value={jam}
+                                onChange={(e) => setJam(e.target.value)}
+                                className="mt-3 w-full rounded-lg border border-[#E4E2E1] bg-white px-4 py-3 text-sm text-[#1B1C1C] outline-none focus:ring-2 focus:ring-[#006B32]/30"
+                            />
+                            {errors.jam && (
+                                <p className="mt-2 text-sm font-semibold text-red-500">{errors.jam[0]}</p>
+                            )}
                         </div>
 
                         {/* Summary card */}
@@ -239,26 +316,47 @@ export default function PilihJadwalHybridInstansi() {
                             </div>
 
                             <dl className="mt-6 space-y-4">
-                                {summary.map((item) => (
-                                    <div
-                                        key={item.label}
-                                        className="flex items-start justify-between gap-4 border-b border-[#E4E2E1] pb-4 last:border-b-0"
-                                    >
-                                        <dt className="text-sm text-[#3D4A3E]">
-                                            {item.label}
-                                        </dt>
-                                        <dd className="text-right text-sm font-bold text-[#1B1C1C]">
-                                            {item.value}
-                                        </dd>
-                                    </div>
-                                ))}
+                                <div className="flex items-start justify-between gap-4 border-b border-[#E4E2E1] pb-4">
+                                    <dt className="text-sm text-[#3D4A3E]">
+                                        Kelas
+                                    </dt>
+                                    <dd className="text-right text-sm font-bold text-[#1B1C1C]">
+                                        {course.title}
+                                    </dd>
+                                </div>
+                                <div className="flex items-start justify-between gap-4 border-b border-[#E4E2E1] pb-4">
+                                    <dt className="text-sm text-[#3D4A3E]">
+                                        Tanggal
+                                    </dt>
+                                    <dd className="text-right text-sm font-bold text-[#1B1C1C]">
+                                        {rangeLabel}
+                                    </dd>
+                                </div>
+                                <div className="flex items-start justify-between gap-4 border-b border-[#E4E2E1] pb-4">
+                                    <dt className="text-sm text-[#3D4A3E]">
+                                        Waktu
+                                    </dt>
+                                    <dd className="text-right text-sm font-bold text-[#1B1C1C]">
+                                        {jam ? `${jam} WIB` : 'Pagi (08:00 - 12:00 WIB)'}
+                                    </dd>
+                                </div>
+                                <div className="flex items-start justify-between gap-4 border-b border-[#E4E2E1] pb-4 last:border-b-0">
+                                    <dt className="text-sm text-[#3D4A3E]">
+                                        Usulan Lokasi
+                                    </dt>
+                                    <dd className="text-right text-sm font-bold text-[#1B1C1C]">
+                                        {lokasi.trim() || defaultLocation}
+                                    </dd>
+                                </div>
                             </dl>
 
-                            <Link
-                                href="/instansi/jadwal-berhasil"
-                                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF8928] px-6 py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"
+                            <button
+                                type="button"
+                                onClick={konfirmasiJadwal}
+                                disabled={!startDate || submitting}
+                                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF8928] px-6 py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E] disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                Konfirmasi Jadwal
+                                {submitting ? 'Memproses...' : 'Konfirmasi Jadwal'}
                                 <svg
                                     className="h-5 w-5"
                                     fill="none"
@@ -273,135 +371,14 @@ export default function PilihJadwalHybridInstansi() {
                                         d="M8 12l3 3 5-6"
                                     />
                                 </svg>
-                            </Link>
+                            </button>
                             <p className="mt-3 text-center text-xs text-[#6B7280]">
-                                Konfirmasi ini akan mengirimkan notifikasi ke
-                                seluruh peserta kelas hybrid.
+                                Konfirmasi ini akan mengirimkan notifikasi usulan jadwal praktik ke administrator untuk ditinjau.
                             </p>
                         </div>
                     </div>
                 </div>
             </main>
-
-            {/* Footer */}
-            <footer className="border-t border-[#E4E2E1] bg-[#F0EDED] px-4 py-10 sm:px-6 lg:px-10">
-                <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 sm:grid-cols-3">
-                    <div>
-                        <h3 className="font-bold text-[#006B32]">
-                            Pensiun Mudah
-                        </h3>
-                        <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#3D4A3E]">
-                            Membimbing profesional berpengalaman menuju masa
-                            pensiun yang lebih bermakna, sehat, dan sejahtera
-                            melalui ekosistem belajar yang ramah senior.
-                        </p>
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-[#1B1C1C]">Kontak</h3>
-                        <ul className="mt-3 space-y-2 text-sm text-[#3D4A3E]">
-                            <li className="flex items-center gap-2">
-                                <svg
-                                    className="h-4 w-4 text-[#3D4A3E]/70"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <rect
-                                        x="3"
-                                        y="5"
-                                        width="18"
-                                        height="14"
-                                        rx="2"
-                                    />
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M3 7l9 6 9-6"
-                                    />
-                                </svg>
-                                info@pensiunmudah.id
-                            </li>
-                            <li className="flex items-center gap-2">
-                                <svg
-                                    className="h-4 w-4 text-[#3D4A3E]/70"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M3 5l4-1 2 5-2 1a12 12 0 005 5l1-2 5 2-1 4a16 16 0 01-14-14z"
-                                    />
-                                </svg>
-                                +62 21 1234 5678
-                            </li>
-                            <li className="flex items-center gap-2">
-                                <svg
-                                    className="h-4 w-4 text-[#3D4A3E]/70"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M12 21s-7-5.5-7-11a7 7 0 1114 0c0 5.5-7 11-7 11z"
-                                    />
-                                    <circle cx="12" cy="10" r="2.5" />
-                                </svg>
-                                Jakarta, Indonesia
-                            </li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-[#1B1C1C]">Ikuti Kami</h3>
-                        <div className="mt-3 flex items-center gap-3">
-                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#3D4A3E] shadow-sm">
-                                <svg
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <circle cx="12" cy="12" r="9" />
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"
-                                    />
-                                </svg>
-                            </span>
-                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#3D4A3E] shadow-sm">
-                                <svg
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <circle cx="18" cy="5" r="2" />
-                                    <circle cx="6" cy="12" r="2" />
-                                    <circle cx="18" cy="19" r="2" />
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M8 11l8-5M8 13l8 5"
-                                    />
-                                </svg>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div className="mx-auto mt-8 max-w-6xl border-t border-[#E4E2E1] pt-6 text-center text-sm text-[#3D4A3E]">
-                    © 2026 Pensiun Mudah. Seluruh hak cipta dilindungi.
-                    Investasi Masa Tua yang Bermakna.
-                </div>
-            </footer>
         </InstansiLayout>
     );
 }

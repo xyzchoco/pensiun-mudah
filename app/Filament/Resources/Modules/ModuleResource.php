@@ -22,12 +22,14 @@ use Filament\Actions\EditAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\BulkActionGroup;
 use BackedEnum;
+use UnitEnum;
 
 class ModuleResource extends Resource
 {
     protected static ?string $model = Module::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static UnitEnum|string|null $navigationGroup = 'Konten';
 
     protected static ?string $recordTitleAttribute = 'judul';
 
@@ -118,7 +120,7 @@ class ModuleResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('course.judul')
+                TextColumn::make('course.title')
                     ->label('Kursus')
                     ->sortable()
                     ->searchable(),

@@ -24,6 +24,7 @@ return new class extends Migration
             $table->decimal('estimasi_harga', 12, 2)->default(0);
             $table->boolean('is_custom')->default(false);
             $table->string('status')->default('menunggu_approval');
+            $table->timestamp('payment_due_at')->nullable()->after('status');
             $table->text('alasan_penolakan')->nullable();
             $table->unsignedBigInteger('voucher_id')->nullable();
 

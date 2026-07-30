@@ -14,12 +14,21 @@ return new class extends Migration
             $table->unsignedBigInteger('quiz_id')->index();
             $table->integer('score')->default(0);
             $table->boolean('is_passed')->default(false);
+            $table->integer('correct_count')->default(0);
+            $table->integer('total_questions')->default(0);
+            $table->integer('time_taken_minutes')->default(0);
+            $table->json('wrong_questions')->nullable();
             $table->timestamps();
 
             // Satu user hanya punya satu record per kuis
             $table->unique(['user_id', 'quiz_id']);
 
             // Foreign keys
+            $table->foreign('user_id')
+                  ->references('user_id')
+                  ->on('users')
+                  ->onDelete('cascade');
+            
             $table->foreign('quiz_id')
                   ->references('id')
                   ->on('quizzes')

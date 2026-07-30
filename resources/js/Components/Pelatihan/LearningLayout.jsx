@@ -10,13 +10,24 @@ function initials(name) {
     .toUpperCase();
 }
 
+// Label kategori pensiun -> teks yang tampil di header (dinamis)
+const KATEGORI_LABEL = {
+  publik: "Peserta Publik",
+  asn: "ASN",
+  korporat: "Korporat",
+};
+
 function LearningHeader({
   backHref = "/pelatihan",
   showHeaderBack = false,
   alignContentLeft = false,
 }) {
-  const { auth } = usePage().props;
-  const userName = auth?.user?.name || "Budi Santoso";
+  const { auth, unreadNotifCount = 0 } = usePage().props;
+
+  const user = auth?.user;
+  const userName = user?.name || "Pengguna";
+  const kategoriLabel = KATEGORI_LABEL[user?.kategori_pensiun] || "Peserta";
+
   const containerClass = alignContentLeft
     ? "flex h-full w-full items-center"
     : "mx-auto flex h-full max-w-[1188px] items-center justify-between px-8";
@@ -38,10 +49,7 @@ function LearningHeader({
         </Link>
 
         {showHeaderBack ? (
-          <Link
-            href={backHref}
-            className={backLinkClass}
-          >
+          <Link href={backHref} className={backLinkClass}>
             <ArrowLeft className="h-5 w-5" />
             Kembali Pelatihan
           </Link>
@@ -50,24 +58,32 @@ function LearningHeader({
         )}
 
         <div className={userClass}>
-          <button
-            type="button"
+          {/* Bell notifikasi dinamis */}
+          <Link
+            href="/notifikasi"
             className="relative rounded-full p-2 text-[#6F7A70] transition hover:bg-[#F4F2F1]"
             aria-label="Notifikasi"
           >
             <Bell className="h-5 w-5" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#BA1A1A] ring-2 ring-white" />
-          </button>
+            {unreadNotifCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#BA1A1A] px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+              </span>
+            )}
+          </Link>
+
           <div className="h-8 w-px bg-[#E4E2E1]" />
+
           <div className="text-right">
             <p className="text-sm font-extrabold text-[#1F1F1F]">{userName}</p>
             <p className="text-[10px] font-extrabold uppercase tracking-wide text-[#007A3D]">
-              Premium Member
+              {kategoriLabel}
             </p>
           </div>
-          {auth?.user?.avatar ? (
+
+          {user?.profile_photo_url ? (
             <img
-              src={auth.user.avatar}
+              src={user.profile_photo_url}
               alt={userName}
               className="h-10 w-10 rounded-full border-2 border-[#007A3D]/30 object-cover"
             />
@@ -95,6 +111,7 @@ export function LearningFooter() {
               senior.
             </p>
           </div>
+
           <div>
             <h3 className="font-medium text-[#1F1F1F]">Kontak</h3>
             <div className="mt-7 space-y-5 text-base text-[#3D4A3E]">
@@ -102,13 +119,14 @@ export function LearningFooter() {
                 <Mail className="h-4 w-4" /> info@pensiunmudah.id
               </p>
               <p className="flex items-center gap-2">
-                <Phone className="h-4 w-4" /> +62 21 1234 5678
+                <Phone className="h-4 w-4" /> +62 8519 6449 699
               </p>
               <p className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" /> Jakarta, Indonesia
               </p>
             </div>
           </div>
+
           <div>
             <h3 className="font-medium text-[#1F1F1F]">Ikuti Kami</h3>
             <div className="mt-7 flex gap-4">

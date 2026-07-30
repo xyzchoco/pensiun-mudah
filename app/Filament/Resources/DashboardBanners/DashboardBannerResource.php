@@ -7,27 +7,28 @@ use App\Filament\Resources\DashboardBanners\Pages\EditDashboardBanner;
 use App\Filament\Resources\DashboardBanners\Pages\ListDashboardBanners;
 use App\Models\DashboardBanner;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema; // Standar v5
+use Filament\Schemas\Schema;
 use Filament\Tables\Table;
-use Filament\Tables;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
-use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Schemas\Components\Section;
-use Filament\Actions\EditAction; // v5 table action
+use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Forms\Components\Toggle;
 use BackedEnum;
+use UnitEnum;
 
 class DashboardBannerResource extends Resource
 {
     protected static ?string $model = DashboardBanner::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-presentation-chart-bar';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-photo';
+    protected static UnitEnum|string|null $navigationGroup = 'Website';
 
     protected static ?string $recordTitleAttribute = 'title';
 
@@ -38,9 +39,6 @@ class DashboardBannerResource extends Resource
                 Section::make('Dashboard Carousel Banner')
                     ->description('Kelola banner promosi/carousel yang muncul di halaman dashboard setelah user login.')
                     ->schema([
-                        TextInput::make('promo_badge')
-                            ->label('Badge Promo (Cth: PROMO SPESIAL)')
-                            ->maxLength(50),
                         TextInput::make('title')
                             ->label('Judul Banner')
                             ->required()
@@ -51,13 +49,13 @@ class DashboardBannerResource extends Resource
                             ->columnSpanFull()
                             ->maxLength(100),
                         TextInput::make('button_text')
-                            ->label('Teks Tombol (Cth: Gunakan Kode)')
+                            ->label('Teks Tombol')
                             ->maxLength(50),
                         TextInput::make('target_url')
                             ->label('URL Target Tombol')
                             ->maxLength(50),
                         FileUpload::make('image_path')
-                            ->label('Gambar Latar Banner (Rekomendasi overlay transparan)')
+                            ->label('Gambar Latar Banner')
                             ->image()
                             ->disk('public')
                             ->directory('dashboard-banners')
@@ -79,8 +77,6 @@ class DashboardBannerResource extends Resource
                 TextColumn::make('title')
                     ->label('Judul Banner')
                     ->searchable(),
-                TextColumn::make('promo_badge')
-                    ->label('Badge'),
                 IconColumn::make('is_active')
                     ->label('Status Aktif')
                     ->boolean(),
@@ -94,13 +90,13 @@ class DashboardBannerResource extends Resource
             ])
             ->actions([
                 EditAction::make()->icon('heroicon-o-pencil')
-                ->label('Edit'),
+                    ->label('Edit'),
                 DeleteAction::make()->icon('heroicon-o-trash')
-                ->label('Hapus'),
+                    ->label('Hapus'),
             ])
             ->bulkActions([
                 DeleteBulkAction::make()->icon('heroicon-o-trash')
-                ->label('Hapus'),
+                    ->label('Hapus'),
             ]);
     }
 

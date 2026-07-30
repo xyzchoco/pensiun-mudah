@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, usePage } from "@inertiajs/react";
+import { Toaster } from "react-hot-toast";
+import useFlashToast from "../Hooks/useFlashToast";
+import SearchDropdown from "@/Components/SearchDropdown";
 
 /* --- Sidebar navigation config --- */
 const menuItems = [
@@ -16,7 +19,6 @@ function getInitials(name) {
 }
 
 const kategoriLabel = {
-  publik: "Member Gratis",
   asn: "Member ASN",
   korporat: "Member Korporat",
 };
@@ -59,14 +61,14 @@ function Sidebar({ isOpen, onClose, currentPath }) {
                 href={item.href}
                 onClick={onClose}
                 className={`flex items-center gap-4 px-4 py-3 rounded-lg font-['Atkinson_Hyperlegible'] text-base transition-all ${isActive
-                    ? "bg-[#006B32] text-white font-semibold shadow-[0_4px_6px_-1px_rgba(0,107,50,0.2)]"
-                    : "text-[#3D4A3E] hover:bg-white/60"
+                  ? "bg-[#006B32] text-white font-semibold shadow-[0_4px_6px_-1px_rgba(0,107,50,0.2)]"
+                  : "text-[#3D4A3E] hover:bg-white/60"
                   }`}
               >
                 <span
                   className={`transition-all duration-300 ${isActive
-                      ? "[&>img]:brightness-0 [&>img]:invert"
-                      : "[&>img]:brightness-0 [&>img]:opacity-70"
+                    ? "[&>img]:brightness-0 [&>img]:invert"
+                    : "[&>img]:brightness-0 [&>img]:opacity-70"
                     }`}
                 >
                   <img src={item.icon} alt={item.label} className={`${item.iconClass} object-contain`} />
@@ -83,12 +85,11 @@ function Sidebar({ isOpen, onClose, currentPath }) {
 
 /* --- Inlined header --- */
 function Header({ sidebarOpen, onToggleSidebar, title, showSearch }) {
-  const { auth, unreadNotifCount = 0 } = usePage().props; // ✅ ambil count dari shared props
+  const { auth, unreadNotifCount = 0 } = usePage().props;
   const user = auth?.user;
   const displayName = user?.name || "Pengguna";
   const firstName = displayName.split(" ")[0];
   const memberLabel = kategoriLabel[user?.kategori_pensiun] ?? "Member Gratis";
-
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 sm:h-20 px-4 sm:px-6 lg:px-10 bg-white border-b border-[#E4E2E1]/30 shrink-0 gap-4">
       <div className="flex items-center gap-3 min-w-0">
@@ -116,15 +117,8 @@ function Header({ sidebarOpen, onToggleSidebar, title, showSearch }) {
 
       <div className="flex items-center gap-3 sm:gap-6 shrink-0">
         {showSearch && (
-          <div className="relative w-48 sm:w-72 lg:w-96 max-w-[384px] hidden md:block">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#3D4A3E]/60" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Cari kursus, konsultan, webinar..."
-              className="w-full pl-10 pr-4 py-2 bg-[#F0EDED] rounded-lg text-sm font-['Atkinson_Hyperlegible'] text-[#6B7280] outline-none focus:ring-2 focus:ring-[#006B32]/30"
-            />
+          <div className="hidden md:block">
+            <SearchDropdown />
           </div>
         )}
 
@@ -154,12 +148,29 @@ function Header({ sidebarOpen, onToggleSidebar, title, showSearch }) {
                 {memberLabel}
               </p>
             </div>
-            <Link
-              href="/profile"
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#006B32] border-2 border-[#006B32]/20 flex items-center justify-center text-white font-bold text-xs sm:text-sm"
-            >
-              {getInitials(displayName)}
-            </Link>
+            {/* Avatar: Tampilkan foto profil jika ada, fallback ke inisial */}
+            {user?.profile_photo_url ? (
+              <Link
+                href="/profile"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-[#006B32]/20 flex items-center justify-center overflow-hidden"
+                aria-label="Foto Profil"
+              >
+                <img
+                  src={user.profile_photo_url}
+                  alt={user.name}
+                  className="h-full w-full object-cover"
+                  onError={(e) => { e.currentTarget.src = '/images/avatar.png'; }} // Fallback ke gambar default jika foto gagal load
+                />
+              </Link>
+            ) : (
+              <Link
+                href="/profile"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#006B32] border-2 border-[#006B32]/20 flex items-center justify-center text-white font-bold text-xs sm:text-sm"
+                aria-label="Inisial Pengguna"
+              >
+                {getInitials(displayName)}
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -174,6 +185,7 @@ export default function DashboardLayout({
   showHeader = true,
   showSearch = true,
 }) {
+  useFlashToast();
   const { url } = usePage();
   const currentPath = url.split("?")[0];
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -201,6 +213,8 @@ export default function DashboardLayout({
           <main className="p-8 flex-1 overflow-y-auto">{children}</main>
         </div>
       </div>
+      {/* Toast Notifications */}
+      <Toaster position="top-right" />
     </div>
   );
 }

@@ -25,8 +25,8 @@ const formatTanggalSingkat = (tanggal) => {
 
 export default function RelatedEventCard({ event }) {
     const slug = event.slug || event.id;
-    const thumbnail = event.thumbnail || '/images/event-placeholder.svg';
-    const tanggal = formatTanggalSingkat(event.date || event.start_date);
+    const thumbnail = event.thumbnail || event.image_url || '/images/event-placeholder.svg';
+    const tanggal = formatTanggalSingkat(event.date || event.tanggal || event.start_date);
 
     return (
         <div className="flex flex-col overflow-hidden rounded-2xl border border-[#E4E2E1] bg-white hover:shadow-md transition-all">
@@ -51,14 +51,14 @@ export default function RelatedEventCard({ event }) {
             {/* ISI */}
             <div className="flex flex-1 flex-col p-4">
                 <p className="text-sm font-bold text-[#008740]">
-                    {event.category}
+                    {event.category || event.kategori}
                 </p>
                 <h4 className="mt-1 font-bold text-[#1B1C1C] leading-snug line-clamp-2">
-                    {event.title}
+                    {event.title || event.judul}
                 </h4>
 
                 <div className="mt-3 flex items-center justify-between">
-                    <span className="text-sm text-[#6B7280]">{event.type}</span>
+                    <span className="text-sm text-[#6B7280]">{event.type || event.jenis_event}</span>
                     <Link
                         href={`/event/${slug}`}
                         className="inline-flex items-center gap-1 text-sm font-bold text-[#008740] hover:text-[#006B32] transition-colors"

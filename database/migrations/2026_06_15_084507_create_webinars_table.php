@@ -21,7 +21,6 @@ return new class extends Migration
             $table->string('narasumber');
             $table->string('lokasi_link'); // Link Gmeet / Alamat gedung
             $table->integer('kapasitas');
-            $table->integer('sisa_kuota');
             $table->text('deskripsi');
             $table->string('image_path')->nullable(); // Wajib buat UI
             $table->boolean('is_published')->default(false);

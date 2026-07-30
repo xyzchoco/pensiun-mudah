@@ -1,4 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import PaymentHeader from '@/Components/Payment/PaymentHeader';
 import Footer from '@/Components/Footer';
 
@@ -197,11 +198,27 @@ export default function DetailPelatihanOffline({
     eventTime = '09:00 - 15:00 WIB',
     about = 'Masa pensiun bukanlah akhir dari produktivitas finansial, melainkan awal dari fase pengelolaan kekayaan yang baru. Kursus ini dirancang khusus untuk membantu Anda memahami cara menjaga nilai aset, mengelola pengeluaran pasca-pensiun, dan memastikan dana Anda cukup untuk gaya hidup impian selamanya.',
     price = 'Rp 249.000',
-    oldPrice = 'Rp 499.000',
-    quantity = 5,
+    rawPrice = 0,
+    quantity = 1,
     backHref = '/beli-pelatihan',
-    scheduleHref = '/korporat/pilih-jadwal',
+    slug,
 }) {
+    const [qty, setQty] = useState(quantity);
+
+    // Hitung total harga berdasarkan kuantitas
+    const formatRupiah = (angka) =>
+        'Rp ' + angka.toLocaleString('id-ID');
+
+    const totalHarga = rawPrice > 0 ? formatRupiah(rawPrice * qty) : price;
+
+    const handleBeliSekarang = () => {
+        router.get(route('korporat.pilih-jadwal', { course: slug }), {
+            qty: qty,
+            location: location,
+            time: eventTime,
+        });
+    };
+
     return (
         <div className="flex min-h-screen flex-col bg-[#FBF9F8] font-['Atkinson_Hyperlegible']">
             <Head title={title + ' - Pensiun Mudah'} />
@@ -411,11 +428,13 @@ export default function DetailPelatihanOffline({
                                     Investasi Ilmu:
                                 </p>
                                 <p className="mt-1 text-4xl font-bold text-[#006B32]">
-                                    {price}
+                                    {totalHarga}
                                 </p>
-                                <p className="text-lg font-bold text-[#BA1A1A] line-through">
-                                    {oldPrice}
-                                </p>
+                                {rawPrice > 0 && qty > 1 && (
+                                    <p className="mt-1 text-sm text-[#6B7280]">
+                                        {formatRupiah(rawPrice)} × {qty} peserta
+                                    </p>
+                                )}
 
                                 <div className="mt-5 space-y-4 border-t border-[#E4E2E1] pt-5">
                                     {benefits.map((benefit) => (
@@ -435,8 +454,9 @@ export default function DetailPelatihanOffline({
                                     ))}
                                 </div>
 
-                                <Link
-                                    href={scheduleHref}
+                                <button
+                                    type="button"
+                                    onClick={handleBeliSekarang}
                                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF8928] px-6 py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"
                                 >
                                     Beli Sekarang
@@ -455,21 +475,23 @@ export default function DetailPelatihanOffline({
                                             d="M3 4h2l2.5 12h10l2-8H6"
                                         />
                                     </svg>
-                                </Link>
+                                </button>
 
                                 <div className="mt-4 flex items-center justify-center gap-3">
                                     <button
                                         type="button"
+                                        onClick={() => setQty(Math.max(1, qty - 1))}
                                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#006B32] text-xl font-bold text-[#006B32] transition-colors hover:bg-[#F0EDED]"
                                         aria-label="Kurangi jumlah"
                                     >
                                         -
                                     </button>
                                     <span className="flex h-9 w-11 items-center justify-center rounded-lg bg-[#FF8928] text-lg font-bold text-white">
-                                        {quantity}
+                                        {qty}
                                     </span>
                                     <button
                                         type="button"
+                                        onClick={() => setQty(qty + 1)}
                                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#006B32] text-xl font-bold text-[#006B32] transition-colors hover:bg-[#F0EDED]"
                                         aria-label="Tambah jumlah"
                                     >

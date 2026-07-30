@@ -9,6 +9,7 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Table;
 
 class UsersTable
@@ -16,6 +17,7 @@ class UsersTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) =>$query->with('role'))
             ->columns([
                 TextColumn::make('name')
                     ->label('Nama')
@@ -26,7 +28,7 @@ class UsersTable
                     ->label('Email')
                     ->searchable(),
 
-                TextColumn::make('role.role_name')
+                TextColumn::make('role.name')
                     ->label('Role')
                     ->badge()
                     ->color('info')

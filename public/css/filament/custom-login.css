@@ -1,0 +1,74 @@
+/* Filament Custom Auth Design Tokens */
+:root {
+  --color-bg: #131315;
+  --color-surface: rgba(27, 27, 31, 0.45);
+  --color-surface-badge: #2a2a2c;
+  --color-surface-icon: #201f21;
+  --color-primary: #14b8a6;
+  --color-primary-glow: #4fdbc8;
+  --color-text-primary: #e5e1e4;
+  --color-text-secondary: #bbcac6;
+  --color-border: #3c4947;
+  --color-border-glass: rgba(58, 58, 63, 0.5);
+  --color-border-glass-top: rgba(255, 255, 255, 0.12);
+  --blur-intensity: 24px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --blur-intensity: 12px;
+  }
+}
+
+/* Base auth theme classes */
+.auth-page-root {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.auth-glass-card {
+  background: var(--color-surface);
+  backdrop-filter: blur(var(--blur-intensity));
+  -webkit-backdrop-filter: blur(var(--blur-intensity));
+  border: 1px solid var(--color-border-glass);
+  border-top-color: var(--color-border-glass-top);
+  box-shadow: 
+    0 2px 4px rgba(0,0,0,0.4),
+    0 12px 24px rgba(0,0,0,0.3),
+    0 32px 64px rgba(0,0,0,0.25);
+}
+
+.auth-title-brand {
+  color: var(--color-primary-glow);
+}
+
+.auth-text-muted {
+  color: var(--color-text-secondary);
+}
+
+.auth-badge {
+  background-color: var(--color-surface-badge);
+  border: 1px solid var(--color-border);
+}
+
+.auth-badge-dot {
+  background-color: var(--color-primary-glow);
+}
+
+.auth-icon-container {
+  background-color: var(--color-surface-icon);
+  border: 1px solid var(--color-border);
+}
+
+.auth-icon-symbol {
+  color: var(--color-primary-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-badge-dot {
+    animation: none !important;
+  }
+  .auth-glass-card {
+    transition: none !important;
+  }
+}

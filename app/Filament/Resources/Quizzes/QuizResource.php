@@ -21,12 +21,14 @@ use Filament\Actions\EditAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\BulkActionGroup;
 use BackedEnum;
+use UnitEnum;
 
 class QuizResource extends Resource
 {
     protected static ?string $model = Quiz::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-check';
+    protected static UnitEnum|string|null $navigationGroup = 'Konten';
 
     protected static ?string $recordTitleAttribute = 'judul';
 
@@ -91,21 +93,34 @@ class QuizResource extends Resource
 
                                 // REPEATER NESTED: Pilihan Jawaban (Hanya muncul jika tipe soal Pilihan Ganda)
                                 Repeater::make('options')
-                                    ->relationship('options') // Hubungan ke hasMany options di model QuizQuestion
-                                    ->label('Pilihan Jawaban (A, B, C, D)')
-                                    ->schema([
-                                        TextInput::make('teks_opsi')
-                                            ->label('Teks Pilihan / Jawaban')
-                                            ->required(),
-                                        Toggle::make('is_correct')
-                                            ->label('Jawaban Benar')
-                                            ->default(false),
-                                    ])
-                                    ->columns(2)
-                                    ->columnSpanFull()
-                                    ->visible(fn ($get) => $get('tipe') === 'pilihan_ganda')
-                                    ->itemLabel(fn (array $state): ?string => $state['teks_opsi'] ?? null)
-                                    ->collapsible(),
+                                        ->relationship('options')
+                                        ->label('Pilihan Jawaban (A, B, C, D)')
+                                        ->schema([
+                                            TextInput::make('teks_opsi')
+                                                ->label('Teks Pilihan / Jawaban')
+                                                ->required(),
+                                                Toggle::make('is_correct')
+                                                    ->label('Jawaban Benar')
+                                                    ->inline(false)
+                                                    ->default(false),
+                                        ])
+                                        ->columns(2)
+                                        ->columnSpanFull()
+                                        ->visible(fn ($get) => $get('tipe') === 'pilihan_ganda')
+
+                                        // >>> INI KUNCINYA <<<
+                                        ->defaultItems(4)   // langsung muncul 4 baris kosong (A–D)
+                                        ->minItems(2)       // minimal 2 pilihan
+                                        ->maxItems(5)       // maksimal 5 (kalau mau ada E)
+                                        ->addActionLabel('Tambah pilihan')
+
+                                        // Label tiap baris otomatis jadi "A. ...", "B. ...", dst.
+                                        ->itemLabel(function (array $state, $component): ?string {
+                                            $items = array_keys($component->getState());
+                                            $index = array_search($component->getRawItemKey ?? null, $items); // fallback
+                                            return $state['teks_opsi'] ?? null;
+                                        })
+                                        ->collapsible(),
                             ])
                             ->columnSpanFull()
                             ->itemLabel(fn (array $state): ?string => $state['teks_soal'] ?? null)

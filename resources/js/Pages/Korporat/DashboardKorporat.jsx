@@ -1,14 +1,22 @@
+import { useState, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import KorporatLayout from '@/Layouts/KorporatLayout';
 
-// Mock data: Progress (Biarkan sementara kalau belum ada tabelnya)
-const memberProgress = [
-    ['AS', 'Agus Setiawan', 95, 'bg-[#00A553]', 'text-[#00A553]'],
-    ['RL', 'Ratna Lestari', 88, 'bg-[#00A553]', 'text-[#00A553]'],
-    ['BM', 'Budi Mansyur', 72, 'bg-[#A8632A]', 'text-[#A8632A]'],
-    ['DS', 'Dini Safitri', 84, 'bg-[#00A553]', 'text-[#00A553]'],
-    ['EP', 'Eko Prasetyo', 68, 'bg-[#A8632A]', 'text-[#A8632A]'],
-];
+function getInitials(name) {
+    if (!name) return 'U';
+    return name
+        .split(' ')
+        .map((part) => part[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase();
+}
+
+function getProgressColor(percent) {
+    if (percent >= 80) return { bar: 'bg-[#00A553]', text: 'text-[#00A553]' };
+    if (percent >= 40) return { bar: 'bg-[#FF8928]', text: 'text-[#FF8928]' };
+    return { bar: 'bg-[#A8632A]', text: 'text-[#A8632A]' };
+}
 
 // Icon Component
 function CourseIcon() {
@@ -20,8 +28,38 @@ function CourseIcon() {
     );
 }
 
-// TAMBAHKAN purchasedCourses SEBAGAI PROPS DARI BACKEND DI SINI BOS
 export default function DashboardKorporat({ banners = [], events = [], purchasedCourses = [], recentActivities = [], memberProgressData = [] }) {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [touchStart, setTouchStart] = useState(null);
+    const [touchEnd, setTouchEnd] = useState(null);
+
+    useEffect(() => {
+        if (!banners || banners.length <= 1) return;
+        const interval = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % banners.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [banners]);
+
+    const handleTouchStart = (e) => {
+        setTouchStart(e.targetTouches[0].clientX);
+        setTouchEnd(null);
+    };
+
+    const handleTouchMove = (e) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        if (distance > 50) {
+            setCurrentIndex((prev) => (prev + 1) % banners.length);
+        } else if (distance < -50) {
+            setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
+        }
+    };
+
     return (
         <KorporatLayout
             title="Dashboard HRD - Pensiun Mudah"
@@ -31,48 +69,83 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
             <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10">
 
                 {/* Banner Section */}
-                {banners.length > 0 ? (
-                    banners.map((banner) => (
-                        <section
-                            key={banner.id}
-                            className="relative overflow-hidden rounded-2xl px-6 py-10 text-white sm:px-10 sm:py-14 mb-6 bg-cover bg-center"
-                            style={banner.image_path ? { backgroundImage: `url(/storage/${banner.image_path})` } : { backgroundImage: 'linear-gradient(to right, #1B5036, #10251B)' }}
-                        >
-                            <div className="absolute inset-0 bg-black/40"></div>
+                <div
+                    className="relative w-full max-w-none h-[280px] md:h-[320px] rounded-3xl overflow-hidden flex items-center bg-[#008740] shadow-lg mb-6 select-none"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
+                    {banners.length > 0 ? (
+                        banners.map((banner, index) => (
+                            <div
+                                key={banner.id}
+                                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center ${index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                            >
+                                <div
+                                    className="absolute inset-0 bg-cover bg-center"
+                                    style={{
+                                        backgroundImage: banner.image_path
+                                            ? `url('/storage/${banner.image_path.replace(/^public\//, '')}')`
+                                            : "url('/images/banner-mpp.jpg')",
+                                    }}
+                                />
+                                <div className="absolute inset-0 bg-[#008740]/80" />
 
-                            <div className="relative z-10">
-                                <h1 className="text-3xl font-extrabold sm:text-4xl">
-                                    {banner.title || 'Spesial Kelas MPP'}
-                                </h1>
-                                <p className="mt-2 max-w-md text-white/90">
-                                    {banner.description || 'Voucher Potongan 200rb khusus untuk pendaftaran bulan ini.'}
-                                </p>
-                                <Link
-                                    href={banner.link_url || "/korporat/beli-pelatihan"}
-                                    className="mt-6 inline-flex rounded-full bg-[#FF8928] px-6 py-3 font-bold text-white transition-colors hover:bg-[#F57F1E]"
-                                >
-                                    Gunakan Kode
-                                </Link>
+                                <div className="relative z-20 px-8 py-10 lg:px-16 flex flex-col justify-center items-start text-white">
+                                    {banner.promo_badge && (
+                                        <span className="bg-[#FF8928] text-white text-[10px] font-bold px-2 py-1 rounded w-fit mb-4">
+                                            {banner.promo_badge}
+                                        </span>
+                                    )}
+
+                                    <h2 className="text-3xl md:text-[42px] font-bold leading-tight mb-4 tracking-tight font-['Public_Sans']">
+                                        {banner.title}
+                                    </h2>
+
+                                    <p className="max-w-md text-base md:text-lg leading-relaxed text-white/90 mb-8 line-clamp-2 font-['Atkinson_Hyperlegible']">
+                                        {banner.description}
+                                    </p>
+
+                                    {banner.button_text ? (
+                                        <Link
+                                            href={banner.target_url || '/korporat/beli-pelatihan'}
+                                            className="w-max rounded-xl bg-[#FF8928] px-8 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-[#e67a22] active:scale-95 font-['Public_Sans']"
+                                        >
+                                            {banner.button_text}
+                                        </Link>
+                                    ) : (
+                                        <Link
+                                            href="/korporat/beli-pelatihan"
+                                            className="w-max rounded-xl bg-[#FF8928] px-8 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-[#e67a22] active:scale-95 font-['Public_Sans']"
+                                        >
+                                            Gunakan Kode
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
-                        </section>
-                    ))
-                ) : (
-                    // Default Fallback Banner
-                    <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1B5036] to-[#10251B] px-6 py-10 text-white sm:px-10 sm:py-14 mb-6">
-                        <h1 className="text-3xl font-extrabold sm:text-4xl">
-                            Spesial Kelas MPP
-                        </h1>
-                        <p className="mt-2 max-w-md text-white/90">
-                            Voucher Potongan 200rb khusus untuk pendaftaran bulan ini.
-                        </p>
-                        <Link
-                            href="/korporat/beli-pelatihan"
-                            className="mt-6 inline-flex rounded-full bg-[#FF8928] px-6 py-3 font-bold text-white transition-colors hover:bg-[#F57F1E]"
-                        >
-                            Gunakan Kode
-                        </Link>
-                    </section>
-                )}
+                        ))
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-white z-10 px-10">
+                            <p className="font-bold">Belum ada banner aktif.</p>
+                        </div>
+                    )}
+
+                    {/* Banner Indicators */}
+                    {banners.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-30 items-center">
+                            {banners.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setCurrentIndex(index)}
+                                    className={`transition-all duration-300 rounded-full ${index === currentIndex
+                                        ? 'w-8 h-1.5 bg-white'
+                                        : 'w-2 h-2 bg-white/40 hover:bg-white/80'
+                                        }`}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 {/* Purchased Courses Header */}
                 <div className="mt-8 flex items-center justify-between">
@@ -136,7 +209,7 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                 </div>
 
                 <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    {/* Progress Section */}
+                    {/* [DATA] Progres belajar anggota terbaru — maks 4 */}
                     <section className="rounded-2xl border border-[#E4E2E1] bg-white p-6 shadow-sm lg:col-span-2">
                         <h2 className="max-w-sm text-lg font-bold text-[#1B1C1C]">
                             Progres Belajar Anggota Terbaru
@@ -147,32 +220,40 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                         </div>
                         <div className="divide-y divide-[#F0EDED]">
                             {memberProgressData && memberProgressData.length > 0 ? (
-                                memberProgressData.map((data, index) => (
-                                    <div key={index} className="flex items-center gap-4 py-3">
-                                        <div className="flex w-52 shrink-0 items-center gap-3">
-                                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-xs font-bold text-white">
-                                                {data.initials}
-                                            </span>
-                                            <div>
-                                                <span className="block font-semibold text-[#1B1C1C]">{data.name}</span>
-                                                <span className="block text-[10px] text-[#6B7280] line-clamp-1" title={data.course}>
-                                                    {data.course}
+                                memberProgressData.slice(0, 4).map((data, index) => {
+                                    const color = getProgressColor(data.progress);
+                                    return (
+                                        <div key={index} className="flex items-center gap-4 py-3">
+                                            <div className="flex w-52 shrink-0 items-center gap-3">
+                                                {/* [DATA] Foto profil anggota — member.photo (URL penuh, fallback inisial) */}
+                                                {data.photo ? (
+                                                    <img src={data.photo} alt={data.name} className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                                                ) : (
+                                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-xs font-bold text-white">
+                                                        {getInitials(data.name)}
+                                                    </span>
+                                                )}
+                                                <div>
+                                                    <span className="block font-semibold text-[#1B1C1C]">{data.name}</span>
+                                                    <span className="block text-[10px] text-[#6B7280] line-clamp-1" title={data.course}>
+                                                        {data.course}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-1 items-center gap-3">
+                                                <div className="h-2.5 flex-1 rounded-full bg-[#F0EDED]">
+                                                    <div
+                                                        className={`h-2.5 rounded-full ${color.bar}`}
+                                                        style={{ width: `${data.progress}%` }}
+                                                    />
+                                                </div>
+                                                <span className={`w-12 text-right font-bold ${color.text}`}>
+                                                    {data.progress}%
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="flex flex-1 items-center gap-3">
-                                            <div className="h-2.5 flex-1 rounded-full bg-[#F0EDED]">
-                                                <div
-                                                    className={`h-2.5 rounded-full ${data.barColor}`}
-                                                    style={{ width: `${data.percent}%` }}
-                                                />
-                                            </div>
-                                            <span className={`w-12 text-right font-bold ${data.percentColor}`}>
-                                                {data.percent}%
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <div className="py-6 text-center">
                                     <p className="text-sm font-semibold text-[#6B7280]">Belum ada anggota yang memulai pelatihan.</p>
@@ -228,13 +309,12 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                             </Link>
                         </section>
 
-                        {/* Recent Activities Section */}
+                        {/* [DATA] Aktivitas terbaru — maks 4, dari voucher_redemptions (scoped corporate_user_id) */}
                         <section className="rounded-2xl border border-[#E4E2E1] bg-white p-5 shadow-sm">
                             <h2 className="text-lg font-bold text-[#1B1C1C]">Aktivitas Terbaru</h2>
                             <div className="mt-4 space-y-4">
-                                {/* 2. Cek apakah ada aktivitas, kalau kosong kasih pesan */}
                                 {recentActivities.length > 0 ? (
-                                    recentActivities.map((activity, index) => (
+                                    recentActivities.slice(0, 4).map((activity, index) => (
                                         <div key={index} className="flex gap-3">
                                             <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${activity.variant === 'done'
                                                 ? 'bg-[#FCE9D8] text-[#FF8928]'
@@ -249,7 +329,7 @@ export default function DashboardKorporat({ banners = [], events = [], purchased
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-sm text-gray-500">Belum ada aktivitas dari karyawan.</p>
+                                    <p className="text-sm text-gray-500">Belum ada aktivitas terbaru.</p>
                                 )}
                             </div>
                         </section>

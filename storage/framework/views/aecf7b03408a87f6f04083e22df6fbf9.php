@@ -1458,6 +1458,7 @@
                                         $recordGroupKey = $group?->getStringKey($record);
                                         $recordGroupTitle = $group?->getTitle($record);
                                         $isRecordGroupCollapsible = $group?->isCollapsible();
+                                        $recordIsSelectable = $isSelectionEnabled && $isRecordSelectable($record);
 
                                         $collapsibleColumnsLayout?->record($record)->recordKey($recordKey);
                                         $hasCollapsibleColumnsLayout = (bool) $collapsibleColumnsLayout?->isVisible();
@@ -1634,18 +1635,18 @@
                                         class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                             'fi-ta-record',
                                             'fi-clickable' => $recordUrl || $recordAction,
-                                            'fi-ta-record-with-content-prefix' => $isReordering || ($isSelectionEnabled && $isRecordSelectable($record)),
+                                            'fi-ta-record-with-content-prefix' => $isReordering || $recordIsSelectable,
                                             'fi-ta-record-with-content-suffix' => $hasCollapsibleColumnsLayout && (! $isReordering),
                                             ...$getRecordClasses($record),
                                         ]); ?>"
                                         x-bind:class="{
                                             <?php echo e($group?->isCollapsible() ? '\'fi-collapsed\': isGroupCollapsed(' . \Illuminate\Support\Js::from($recordGroupTitle) . '),' : ''); ?>
 
-                                            'fi-selected': isRecordSelected(<?php echo \Illuminate\Support\Js::from($recordKey)->toHtml() ?>),
+                                            'fi-selected': <?php echo \Illuminate\Support\Js::from($recordIsSelectable)->toHtml() ?> && isRecordSelected(<?php echo \Illuminate\Support\Js::from($recordKey)->toHtml() ?>),
                                         }"
                                     >
                                         <?php
-                                            $hasItemBeforeRecordContent = $isReordering || ($isSelectionEnabled && $isRecordSelectable($record));
+                                            $hasItemBeforeRecordContent = $isReordering || $recordIsSelectable;
                                             $hasItemAfterRecordContent = $hasCollapsibleColumnsLayout && (! $isReordering);
                                         ?>
 
@@ -1657,7 +1658,7 @@
                                                 <?php echo e(\Filament\Support\generate_icon_html(\Filament\Support\Icons\Heroicon::Bars2, alias: \Filament\Tables\View\TablesIconAlias::REORDER_HANDLE)); ?>
 
                                             </button>
-                                        <?php elseif($isSelectionEnabled && $isRecordSelectable($record)): ?>
+                                        <?php elseif($recordIsSelectable): ?>
                                             <input
                                                 aria-label="<?php echo e(__('filament-tables::table.fields.bulk_select_record.label', ['key' => $recordKey])); ?>"
                                                 type="checkbox"
@@ -2273,7 +2274,7 @@
                                                             (filled($columnVisibleFrom = $column->getVisibleFrom()) ? "{$columnVisibleFrom}:fi-visible" : ''),
                                                         ])
                                                         ->style([
-                                                            ('width: ' . $columnWidth) => filled($columnWidth),
+                                                            ('width: ' . e($columnWidth)) => filled($columnWidth),
                                                         ])); ?>
 
                                             >
@@ -2516,6 +2517,7 @@
                                                 $openRecordUrlInNewTab = $shouldOpenRecordUrlInNewTab($record);
                                                 $recordGroupKey = $group?->getStringKey($record);
                                                 $recordGroupTitle = $group?->getTitle($record);
+                                                $recordIsSelectable = $isSelectionEnabled && $isRecordSelectable($record);
 
                                                 $recordActions = array_reduce(
                                                     $defaultRecordActions,
@@ -2748,7 +2750,7 @@
                                                     x-bind:class="{
                                                         <?php echo e($group?->isCollapsible() ? '\'fi-collapsed\': isGroupCollapsed(' . \Illuminate\Support\Js::from($recordGroupTitle) . '),' : ''); ?>
 
-                                                        'fi-selected': isRecordSelected(<?php echo \Illuminate\Support\Js::from($recordKey)->toHtml() ?>),
+                                                        'fi-selected': <?php echo \Illuminate\Support\Js::from($recordIsSelectable)->toHtml() ?> && isRecordSelected(<?php echo \Illuminate\Support\Js::from($recordKey)->toHtml() ?>),
                                                     }"
                                                     class="<?php echo \Illuminate\Support\Arr::toCssClasses([
                                                         'fi-ta-row',
@@ -2795,7 +2797,7 @@
                                                         <td
                                                             class="fi-ta-cell fi-ta-selection-cell"
                                                         >
-                                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($isRecordSelectable($record)): ?>
+                                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($recordIsSelectable): ?>
                                                                 <input
                                                                     aria-label="<?php echo e(__('filament-tables::table.fields.bulk_select_record.label', ['key' => $recordKey])); ?>"
                                                                     type="checkbox"
@@ -2938,7 +2940,7 @@
                                                         <td
                                                             class="fi-ta-cell fi-ta-selection-cell"
                                                         >
-                                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($isRecordSelectable($record)): ?>
+                                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($recordIsSelectable): ?>
                                                                 <input
                                                                     aria-label="<?php echo e(__('filament-tables::table.fields.bulk_select_record.label', ['key' => $recordKey])); ?>"
                                                                     type="checkbox"

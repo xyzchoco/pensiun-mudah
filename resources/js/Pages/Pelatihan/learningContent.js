@@ -127,7 +127,7 @@ export function flattenMaterials(modules) {
 export function firstQuiz(modules) {
   const quiz = modules.find((module) => module.quiz)?.quiz;
   if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
-    return fallbackLearning.modules[0].quiz;
+    return null; // ← jangan balikin fallbackLearning dummy
   }
   return quiz;
 }

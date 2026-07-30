@@ -16,17 +16,18 @@ class CourseCategoriesTable
     {
         return $table
             ->columns([
-                TextColumn::make('nama')
+                TextColumn::make('icon')
+                    ->label('Nama ')
                     ->searchable()
-                    ->sortable()
                     ->weight('bold'),
+
+                TextColumn::make('nama')
+                    ->label('Label Kategori')
+                    ->searchable()
+                    ->sortable(),
                     
                 TextColumn::make('deskripsi')
-                    ->limit(50) // Biar tabel ga kepanjangan
-                    ->searchable(),
-                    
-                TextColumn::make('icon')
-                    ->label('Label/Badge')
+                    ->limit(20)
                     ->searchable(),
                 
                 ColorColumn::make('warna_bg_icon')

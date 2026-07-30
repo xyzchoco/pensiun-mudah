@@ -161,24 +161,14 @@ export default function Notifikasi({ notifications = [] }) {
                                     <h3 className={`text-lg font-bold mb-1 ${style.titleColor}`}>{notif.title}</h3>
                                     <p className="text-[#6B7280] text-sm mb-4">{notif.body}</p>
 
-                                    {(notif.actionLabel || notif.type === "danger") && (
+                                    {notif.actionLabel && notif.actionUrl && (
                                         <div className="flex flex-wrap gap-3">
-                                            {notif.actionLabel && notif.actionUrl && (
-                                                <button
-                                                    onClick={() => handleAction(notif)}
-                                                    className={`px-5 py-2 rounded-lg font-semibold text-sm transition ${style.btn}`}
-                                                >
-                                                    {notif.actionLabel}
-                                                </button>
-                                            )}
-                                            {notif.type === "danger" && (
-                                                <a
-                                                    href="/bantuan"
-                                                    className="border-2 border-[#E4E2E1] text-[#4B5563] px-5 py-2 rounded-lg font-semibold text-sm hover:bg-gray-50 transition"
-                                                >
-                                                    Hubungi Bantuan
-                                                </a>
-                                            )}
+                                            <button
+                                                onClick={() => handleAction(notif)}
+                                                className={`px-5 py-2 rounded-lg font-semibold text-sm transition ${style.btn}`}
+                                            >
+                                                {notif.actionLabel}
+                                            </button>
                                         </div>
                                     )}
                                 </div>

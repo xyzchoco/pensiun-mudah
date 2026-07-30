@@ -8,8 +8,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Enrollment extends Model
 {
     protected $fillable = [
-        'user_id', 'course_id', 'tanggal_daftar', 'status', 
-        'progress_persen', 'is_completed', 'tanggal_selesai'
+        'user_id', 'course_id', 'voucher_id', 'tanggal_daftar', 'status',
+        'progress_persen', 'is_completed', 'tanggal_selesai',
+        'tanggal_mulai', 'jam_mulai', 'jam_selesai', 'usulan_lokasi',
+    ];
+
+    protected $casts = [
+        'tanggal_daftar'  => 'date',
+        'tanggal_selesai' => 'date',
+        'tanggal_mulai'   => 'date',
+        'is_completed'    => 'boolean',
     ];
 
     // ========================================================
@@ -36,5 +44,9 @@ class Enrollment extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function voucher() {
+        return $this->belongsTo(CorporateVoucher::class, 'voucher_id');
     }
 }

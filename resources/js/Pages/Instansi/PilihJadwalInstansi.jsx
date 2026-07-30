@@ -32,16 +32,24 @@ function formatRupiah(value) {
 
 export default function PilihJadwalInstansi({
     course = { id: null, title: '', price: 0 },
-    defaultDate = null,          // tanggal default kursus (patokan deteksi custom)
+    defaultDate = null,          // tanggal mulai default kursus (patokan deteksi custom)
+    defaultEndDate = null,       // tanggal selesai default kursus (rentang multi-hari)
     defaultLocation = 'Lokasi akan dikonfirmasi',
     eventTime = 'Jadwal akan dikonfirmasi',
     quantity = 1,
     backHref = '/instansi/beli-pelatihan',
     submitUrl = '/instansi/request-jadwal',
     midtransClientKey,
+    pendingRequest = null, // { id, status, statusUrl, snapTokenUrl }
+    isEventPassed = false,
+    eventStartAt = null, // ISO string for UI reference
 }) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // User boleh beli lagi kalau request sebelumnya sudah lunas/selesai/ditolak/kadaluarsa
+    // Jadi, hanya kunci jika ada request dengan status 'menunggu_approval' atau 'menunggu_bayar'
+    const isLocked = (pendingRequest && (pendingRequest.status === 'menunggu_approval' || pendingRequest.status === 'menunggu_bayar')) || isEventPassed;
 
     // Titik awal tampilan kalender: dari tanggal default kursus, atau bulan ini
     const initial = defaultDate ? new Date(defaultDate) : today;
@@ -51,10 +59,14 @@ export default function PilihJadwalInstansi({
 
     // Rentang tanggal terpilih
     const [startDate, setStartDate] = useState(defaultDate ? new Date(defaultDate) : null);
-    const [endDate, setEndDate] = useState(null);
+    const [endDate, setEndDate] = useState(defaultEndDate ? new Date(defaultEndDate) : null);
 
-    const [peserta, setPeserta] = useState(Math.max(1, Number(quantity) || 1));
+    const [peserta, setPeserta] = useState(
+        pendingRequest?.jumlah_peserta ?? Math.max(1, Number(quantity) || 1)
+    );
     const [lokasi, setLokasi] = useState('');
+    const [jamMulai, setJamMulai] = useState('');
+    const [jamSelesai, setJamSelesai] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState({});
 
@@ -77,10 +89,18 @@ export default function PilihJadwalInstansi({
 
     const totalBiaya = (Number(course.price) || 0) * peserta;
 
+    const isPending = pendingRequest &&
+        (pendingRequest.status === 'menunggu_bayar' || pendingRequest.status === 'menunggu_approval');
+    const displayTotal = isPending ? pendingRequest.total : totalBiaya;
+
     // Deteksi custom (mirror logika backend) -> cuma buat kasih hint ke user
     const willNeedApproval =
         lokasi.trim() !== '' ||
-        (defaultDate && startDate && toYmd(startDate) !== toYmd(new Date(defaultDate)));
+        jamMulai !== '' ||
+        jamSelesai !== '' ||
+        (defaultDate && startDate && toYmd(startDate) !== toYmd(new Date(defaultDate))) ||
+        (defaultEndDate && endDate && toYmd(endDate) !== toYmd(new Date(defaultEndDate))) ||
+        (!defaultEndDate && defaultDate && endDate && toYmd(endDate) !== toYmd(new Date(defaultDate)));
 
     // Susun sel-sel kalender untuk bulan yang sedang ditampilkan
     const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
@@ -101,7 +121,7 @@ export default function PilihJadwalInstansi({
 
     // Klik tanggal: klik-1 set awal, klik-2 set akhir, klik-3 reset ulang
     const handleDayClick = (date) => {
-        if (date < today) return; // tanggal lampau tidak bisa dipilih
+        if (isLocked || date < today) return; // tanggal lampau atau terkunci tidak bisa dipilih
         if (!startDate || (startDate && endDate)) {
             setStartDate(date);
             setEndDate(null);
@@ -113,7 +133,7 @@ export default function PilihJadwalInstansi({
     };
 
     const dayClass = (date) => {
-        if (date < today) return 'text-[#C7CAC8] cursor-not-allowed';
+        if (isLocked || date < today) return 'text-[#C7CAC8] cursor-not-allowed';
         if (sameDay(date, startDate) || sameDay(date, endDate)) return 'bg-[#006B32] font-bold text-white';
         if (startDate && endDate && date > startDate && date < endDate) return 'bg-[#E5F0E9] text-[#006B32]';
         return 'text-[#1B1C1C] hover:bg-[#F0EDED]';
@@ -125,6 +145,7 @@ export default function PilihJadwalInstansi({
 
     // Kirim ke backend (store) -> backend yang mutusin jalur A / B
     const konfirmasiJadwal = async () => {
+        if (isLocked) return; // Guard tambahan: jangan kirim request kalau terkunci
         if (!startDate) return; // wajib pilih tanggal dulu
         setSubmitting(true);
         setErrors({});
@@ -136,6 +157,8 @@ export default function PilihJadwalInstansi({
                 tanggal_selesai: toYmd(endDate ?? startDate), // 1 hari kalau cuma pilih 1 tanggal
                 jumlah_peserta: peserta,
                 usulan_lokasi: lokasi,
+                jam_mulai: jamMulai || null,
+                jam_selesai: jamSelesai || null,
             });
 
             if (data.is_custom) {
@@ -153,7 +176,9 @@ export default function PilihJadwalInstansi({
                         router.visit(finalizeData.redirect);
                     },
                     onPending: () => {
-                        router.visit(route('instansi.pembayaran-berhasil', data.request_id));
+                        // Jika statusnya MENUNGGU_BAYAR, arahkan ke halaman status
+                        // yang akan menampilkan tombol "Lanjutkan Pembayaran"
+                        router.visit(route('instansi.request-ditinjau', data.request_id));
                     },
                     onError: () => {
                         alert('Pembayaran gagal atau terjadi kesalahan.');
@@ -170,11 +195,72 @@ export default function PilihJadwalInstansi({
             }
         } catch (err) {
             setSubmitting(false);
+            if (err.response?.status === 409) {
+                router.visit(err.response.data.redirect_url);
+                return;
+            }
             if (err.response?.data?.errors) {
                 setErrors(err.response.data.errors);
             } else {
                 alert('Terjadi kesalahan sistem.');
             }
+        }
+    };
+
+    // Handler baru untuk tombol "Lanjutkan Pembayaran"
+    const handleLanjutBayar = async () => {
+        if (!pendingRequest || pendingRequest.status !== 'menunggu_bayar') return;
+
+        setSubmitting(true); // Set submitting state for the button
+        setErrors({});
+
+        try {
+            // 1. Dapatkan snap token dari backend
+            const snapTokenResponse = await axios.post(pendingRequest.snapTokenUrl);
+            const { snap_token, request_id, finalize_url } = snapTokenResponse.data;
+
+            if (window.snap && snap_token) {
+                // 2. Buka Midtrans Snap popup
+                window.snap.pay(snap_token, {
+                    onSuccess: async () => {
+                        // 3. Jika pembayaran sukses, panggil finalize endpoint
+                        try {
+                            const finalizeResponse = await axios.post(finalize_url);
+                            router.visit(finalizeResponse.data.redirect); // Redirect ke halaman sukses
+                        } catch (finalizeError) {
+                            alert('Terjadi kesalahan saat finalisasi pembayaran.');
+                            console.error('Finalisasi pembayaran error:', finalizeError);
+                            setSubmitting(false); // Reset submitting state
+                        }
+                    },
+                    onPending: () => {
+                        // Jika status masih menunggu, arahkan ke halaman status
+                        router.visit(route('instansi.request-ditinjau', request_id));
+                    },
+                    onError: () => {
+                        alert('Pembayaran gagal atau terjadi kesalahan.');
+                        setSubmitting(false); // Reset submitting state
+                    },
+                    onClose: () => {
+                        console.log('Pop-up Midtrans ditutup oleh user');
+                        setSubmitting(false); // Reset submitting state
+                    },
+                });
+            } else {
+                alert('Midtrans Snap tidak dimuat atau token gagal didapat.');
+                setSubmitting(false);
+            }
+        } catch (err) {
+            console.error('Error in handleLanjutBayar:', err);
+            if (err.response?.status === 409) {
+                // Jika ada request aktif lain, redirect ke sana
+                router.visit(err.response.data.redirect_url);
+            } else if (err.response?.data?.errors) {
+                setErrors(err.response.data.errors);
+            } else {
+                alert('Terjadi kesalahan sistem saat melanjutkan pembayaran.');
+            }
+            setSubmitting(false); // Reset submitting state on error
         }
     };
 
@@ -224,7 +310,7 @@ export default function PilihJadwalInstansi({
                                             <button
                                                 type="button"
                                                 onClick={() => handleDayClick(date)}
-                                                disabled={date < today}
+                                                disabled={isLocked || date < today}
                                                 className={`mx-auto flex h-10 w-full items-center justify-center rounded-lg text-sm transition-colors ${dayClass(date)}`}
                                             >
                                                 {date.getDate()}
@@ -234,17 +320,42 @@ export default function PilihJadwalInstansi({
                                 ))}
                             </div>
 
-                            <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-xl border border-[#E4E2E1] bg-white p-5 shadow-sm sm:flex-row">
-                                <div className="flex-1 space-y-1">
+                            <div className="mt-6 flex flex-col gap-4 rounded-xl border border-[#E4E2E1] bg-white p-5 shadow-sm">
+                                <div className="space-y-1">
                                     <label className="text-sm font-bold text-[#1B1C1C]">Usulan Lokasi Offline <span className="font-normal text-[#6B7280]">(Opsional)</span></label>
                                     <input
                                         type="text"
                                         value={lokasi}
                                         onChange={(e) => setLokasi(e.target.value)}
                                         placeholder="Cth: Aula Kantor Dinas XYZ"
-                                        className="w-full rounded-lg border border-[#C7CAC8] px-3 py-2 text-sm focus:border-[#006B32] focus:ring-[#006B32]"
+                                        disabled={isLocked}
+                                        className="w-full rounded-lg border border-[#C7CAC8] px-3 py-2 text-sm focus:border-[#006B32] focus:ring-[#006B32] disabled:bg-[#F0EDED] disabled:text-[#9AA6A0] disabled:cursor-not-allowed"
                                     />
                                     {errors.usulan_lokasi && <p className="text-sm text-red-500">{errors.usulan_lokasi[0]}</p>}
+                                </div>
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-bold text-[#1B1C1C]">Usulan Jam Mulai <span className="font-normal text-[#6B7280]">(Opsional)</span></label>
+                                        <input
+                                            type="time"
+                                            value={jamMulai}
+                                            onChange={(e) => setJamMulai(e.target.value)}
+                                            disabled={isLocked}
+                                            className="w-full rounded-lg border border-[#C7CAC8] px-3 py-2 text-sm focus:border-[#006B32] focus:ring-[#006B32] disabled:bg-[#F0EDED] disabled:text-[#9AA6A0] disabled:cursor-not-allowed"
+                                        />
+                                        {errors.jam_mulai && <p className="text-sm text-red-500">{errors.jam_mulai[0]}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-bold text-[#1B1C1C]">Usulan Jam Selesai <span className="font-normal text-[#6B7280]">(Opsional)</span></label>
+                                        <input
+                                            type="time"
+                                            value={jamSelesai}
+                                            onChange={(e) => setJamSelesai(e.target.value)}
+                                            disabled={isLocked}
+                                            className="w-full rounded-lg border border-[#C7CAC8] px-3 py-2 text-sm focus:border-[#006B32] focus:ring-[#006B32] disabled:bg-[#F0EDED] disabled:text-[#9AA6A0] disabled:cursor-not-allowed"
+                                        />
+                                        {errors.jam_selesai && <p className="text-sm text-red-500">{errors.jam_selesai[0]}</p>}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -264,11 +375,11 @@ export default function PilihJadwalInstansi({
                                         <span className="text-sm font-semibold text-[#3D4A3E]">Jumlah Peserta</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button type="button" onClick={() => setPeserta((p) => (p > 1 ? p - 1 : 1))} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#006B32] text-[#006B32] transition-colors hover:bg-[#006B32]/5" aria-label="Kurangi peserta">
+                                        <button type="button" onClick={() => setPeserta((p) => (p > 1 ? p - 1 : 1))} disabled={isLocked} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#006B32] text-[#006B32] transition-colors hover:bg-[#006B32]/5 disabled:cursor-not-allowed disabled:opacity-60 disabled:border-[#C7CAC8] disabled:text-[#C7CAC8]" aria-label="Kurangi peserta">
                                             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" /></svg>
                                         </button>
                                         <span className="w-6 text-center font-bold text-[#1B1C1C]">{peserta}</span>
-                                        <button type="button" onClick={() => setPeserta((p) => p + 1)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#006B32] text-[#006B32] transition-colors hover:bg-[#006B32]/5" aria-label="Tambah peserta">
+                                        <button type="button" onClick={() => setPeserta((p) => p + 1)} disabled={isLocked} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#006B32] text-[#006B32] transition-colors hover:bg-[#006B32]/5 disabled:cursor-not-allowed disabled:opacity-60 disabled:border-[#C7CAC8] disabled:text-[#C7CAC8]" aria-label="Tambah peserta">
                                             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" /></svg>
                                         </button>
                                     </div>
@@ -315,7 +426,9 @@ export default function PilihJadwalInstansi({
                                     </span>
                                     <div>
                                         <p className="text-sm text-[#6B7280]">Jadwal Harian</p>
-                                        <p className="font-bold text-[#1B1C1C]">{eventTime}</p>
+                                        <p className="font-bold text-[#1B1C1C]">
+                                            {jamMulai && jamSelesai ? `${jamMulai} - ${jamSelesai} WIB` : eventTime}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -323,7 +436,7 @@ export default function PilihJadwalInstansi({
                             <div className="mt-6 border-t border-[#E4E2E1] pt-5">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[#3D4A3E]">Total Biaya</span>
-                                    <span className="text-2xl font-extrabold text-[#006B32]">{formatRupiah(totalBiaya)}</span>
+                                    <span className="text-2xl font-extrabold text-[#006B32]">{formatRupiah(displayTotal)}</span>
                                 </div>
 
                                 {/* Hint: kasih tau user kalau pilihannya bakal butuh approval admin */}
@@ -333,18 +446,54 @@ export default function PilihJadwalInstansi({
                                     </p>
                                 )}
 
-                                <button
-                                    type="button"
-                                    onClick={konfirmasiJadwal}
-                                    disabled={!startDate || submitting}
-                                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF8928] py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E] disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                        <circle cx="12" cy="12" r="9" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 12.5l2.5 2.5 4.5-5" />
-                                    </svg>
-                                    {submitting ? 'Memproses...' : 'Konfirmasi Jadwal'}
-                                </button>
+                                {pendingRequest && (pendingRequest.status === 'menunggu_approval' || pendingRequest.status === 'menunggu_bayar') ? (
+                                    // Tombol "Lanjutkan Pembayaran" atau "Menunggu Persetujuan"
+                                    <button
+                                        onClick={pendingRequest.status === 'menunggu_bayar' ? handleLanjutBayar : () => router.visit(pendingRequest.statusUrl)}
+                                        disabled={submitting}
+                                        className={`mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-3.5 font-bold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${pendingRequest.status === 'menunggu_bayar'
+                                            ? 'bg-[#006B32] hover:bg-[#005A2B]'
+                                            : 'bg-[#FF8928] hover:bg-[#F57F1E]'
+                                            }`}
+                                    >
+                                        {pendingRequest.status === 'menunggu_bayar' ? (
+                                            <>
+                                                <span className="text-xl">💳</span> {submitting ? 'Memproses...' : 'Lanjutkan Pembayaran'}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="text-xl">🕐</span> Menunggu Persetujuan — Lihat Status
+                                            </>
+                                        )}
+                                    </button>
+                                ) : isEventPassed ? (
+                                    <button
+                                        type="button"
+                                        disabled
+                                        className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#C7CAC8] py-3.5 font-bold text-white cursor-not-allowed"
+                                    >
+                                        Jadwal Kelas Sudah Berlalu
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={konfirmasiJadwal}
+                                        disabled={!startDate || submitting}
+                                        className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF8928] py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E] disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                            <circle cx="12" cy="12" r="9" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 12.5l2.5 2.5 4.5-5" />
+                                        </svg>
+                                        {submitting ? 'Memproses...' : 'Konfirmasi Jadwal'}
+                                    </button>
+                                )}
+
+                                {isEventPassed && (
+                                    <p className="mt-3 text-center text-xs font-semibold text-red-500">
+                                        Pendaftaran untuk jadwal ini sudah ditutup.
+                                    </p>
+                                )}
 
                                 <p className="mt-3 text-center text-xs text-[#9AA6A0]">Pendaftaran aman melalui Pensiun Mudah</p>
                             </div>

@@ -9,8 +9,7 @@ class VoucherRedemption extends Model
 {
     use HasFactory;
 
-    // TAMBAHKAN BARIS INI BOS BIAR LARAVEL NGGAK NYARI KOLOM UPDATED_AT
-    public $timestamps = false;
+    protected $table = 'voucher_redemptions';
 
     protected $fillable = [
         'user_id',
@@ -18,9 +17,13 @@ class VoucherRedemption extends Model
         'redeemed_at',
     ];
 
+    public $timestamps = false;
+
+    protected $casts = ['redeemed_at' => 'datetime'];
+
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
     public function voucher()

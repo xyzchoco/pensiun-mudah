@@ -254,6 +254,8 @@
                                 step="<?php echo e($getHoursStep()); ?>"
                                 type="number"
                                 inputmode="numeric"
+                                x-on:blur="checkTimeInputValidity"
+                                x-on:invalid="timeInputInvalid"
                                 x-model.debounce="hour"
                             />
 
@@ -269,6 +271,8 @@
                                 step="<?php echo e($getMinutesStep()); ?>"
                                 type="number"
                                 inputmode="numeric"
+                                x-on:blur="checkTimeInputValidity"
+                                x-on:invalid="timeInputInvalid"
                                 x-model.debounce="minute"
                             />
 
@@ -285,6 +289,8 @@
                                     step="<?php echo e($getSecondsStep()); ?>"
                                     type="number"
                                     inputmode="numeric"
+                                    x-on:blur="checkTimeInputValidity"
+                                    x-on:invalid="timeInputInvalid"
                                     x-model.debounce="second"
                                 />
                             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>

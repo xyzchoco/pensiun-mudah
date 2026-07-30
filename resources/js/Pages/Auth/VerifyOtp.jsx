@@ -2,12 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 
 export default function VerifikasiOtp({
-    whatsapp,
+    email,
     backHref = '/register',
 }) {
     // 1. Setup Form Inertia untuk Submit OTP
     const { data, setData, post, processing, errors } = useForm({
-        whatsapp: whatsapp || '',
+        email: email || '',
         otp: '',
     });
 
@@ -66,15 +66,14 @@ export default function VerifikasiOtp({
         post(route('verify-otp.store'));
     };
 
-    // --- Eksekusi Kirim Ulang WA ---
+    // --- Eksekusi Kirim Ulang Email ---
     const handleResend = () => {
         if (timeLeft > 0 || isResending) return;
 
         setIsResending(true);
-        // Tembak route resend tanpa mengganggu state form OTP
-        router.post(route('verify-otp.resend'), { whatsapp: data.whatsapp }, {
+        router.post(route('verify-otp.resend'), { email: data.email }, {
             onSuccess: () => {
-                setTimeLeft(120); // Reset waktu ke 2 menit lagi
+                setTimeLeft(120);
                 setIsResending(false);
             },
             onError: () => {
@@ -104,9 +103,9 @@ export default function VerifikasiOtp({
                     <div className="p-8 sm:p-12">
                         <h1 className="text-center text-2xl font-bold text-[#1B1C1C] sm:text-3xl">Verifikasi Kode OTP</h1>
                         <p className="mt-3 text-center text-sm text-[#3D4A3E] leading-relaxed">
-                            Masukkan 6 digit kode yang telah kami kirimkan ke WhatsApp Anda <br />
+                            Masukkan 6 digit kode yang telah kami kirimkan ke email Anda <br />
                             <span className="font-bold text-[#1B1C1C] text-base">
-                                {whatsapp || 'Nomor tidak ditemukan'}
+                                {email || 'Email tidak ditemukan'}
                             </span>
                         </p>
 
@@ -140,9 +139,12 @@ export default function VerifikasiOtp({
                             </button>
                         </form>
 
-                        {/* BAGIAN KIRIM ULANG YANG BARU */}
+                        {/* BAGIAN KIRIM ULANG */}
                         <div className="mt-6 text-center">
                             <p className="text-sm text-[#3D4A3E]">Tidak menerima kode?</p>
+                            <p className="text-xs text-[#795548] mt-2">
+                                Periksa juga folder <strong>Spam</strong> atau <strong>Promosi</strong> email Anda.
+                            </p>
                             <button
                                 type="button"
                                 onClick={handleResend}

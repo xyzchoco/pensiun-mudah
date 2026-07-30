@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CorporateVoucher extends Model
 {
@@ -19,17 +20,21 @@ class CorporateVoucher extends Model
         'target_kategori',
         'max_uses',
         'used_count',
+        'transaction_id',
     ];
 
-    // Relasi ke Kursus
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class, 'course_id');
     }
 
-    // ✅ TAMBAH INI — relasi ke User pembeli (korporat/ASN)
     public function corporateUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'corporate_user_id', 'user_id');
+    }
+
+    public function redemptions(): HasMany
+    {
+        return $this->hasMany(VoucherRedemption::class, 'corporate_voucher_id');
     }
 }

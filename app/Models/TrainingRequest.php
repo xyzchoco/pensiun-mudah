@@ -15,6 +15,7 @@ class TrainingRequest extends Model
     const MENUNGGU_BAYAR    = 'menunggu_bayar';
     const LUNAS             = 'lunas';
     const SELESAI           = 'selesai';
+    const KADALUARSA        = 'kadaluarsa';
 
     // === Primary key (sesuai migrasi: $table->id('request_id')) ===
     protected $primaryKey = 'request_id';
@@ -32,6 +33,7 @@ class TrainingRequest extends Model
         'estimasi_harga',
         'is_custom',
         'status',
+        'payment_due_at',
         'alasan_penolakan',
         'voucher_id',
     ];
@@ -42,6 +44,7 @@ class TrainingRequest extends Model
         'tanggal_selesai' => 'date',
         'is_custom'       => 'boolean',
         'estimasi_harga'  => 'decimal:2',
+        'payment_due_at'  => 'datetime',
     ];
 
     // === Relasi ===

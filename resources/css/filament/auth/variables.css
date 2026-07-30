@@ -1,0 +1,36 @@
+/* Filament Auth - Design Tokens & Theme Variables */
+:root {
+  --color-bg: #0B0B0D;
+  --color-surface: rgba(27, 27, 31, 0.65);
+  --color-surface-badge: #2a2a2c;
+  --color-surface-icon: #201f21;
+  --color-primary: #14b8a6;
+  --color-primary-glow: #4fdbc8;
+  --color-text-primary: #e5e1e4;
+  --color-text-secondary: #bbcac6;
+  --color-border: #3c4947;
+  --color-border-glass: rgba(58, 58, 63, 0.5);
+  --color-border-glass-top: rgba(255, 255, 255, 0.12);
+  --blur-intensity: 24px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --blur-intensity: 12px;
+  }
+}
+
+/* Ensure global dark background override */
+html, body {
+  background-color: var(--color-bg) !important;
+  color: var(--color-text-primary) !important;
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow-x: hidden;
+}
+
+.fi-body, .fi-simple-layout, .fi-layout, .fi-simple-main {
+  background-color: transparent !important;
+}

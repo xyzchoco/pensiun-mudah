@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import { Link, router } from '@inertiajs/react';
 import InstansiLayout from '@/Layouts/InstansiLayout';
 
 const paymentMethods = ['va', 'gopay', 'qris'];
@@ -18,6 +18,7 @@ function stripHtml(value) {
 
 export default function DetailPembelianHybridInstansi({
     course = null,
+    transaction = null,   // Prop dari controller — dibutuhkan untuk nomor_transaksi
     badge = 'Kursus Populer',
     title = 'Manajemen Investasi Aman untuk Pensiunan',
     description = 'Mulai bangun portofolio rendah risiko yang stabil untuk masa tua yang tenang.',
@@ -26,9 +27,14 @@ export default function DetailPembelianHybridInstansi({
     quantity = 5,
     orderId = 'IND-0001-2025',
     backHref = '/beli-pelatihan',
+    snapToken = null,
+    midtransClientKey = null,
 }) {
     const [qty, setQty] = useState(Math.max(1, Number(quantity) || 1));
     const courseTitle = course?.title || title;
+    const badgeLabel = course?.category?.nama ?? badge;
+    const badgeBg = course?.category?.warna_bg_icon ?? '#006B32';
+    const badgeTextColor = course?.category?.warna_teks_icon ?? '#FFFFFF';
     const courseDescription = stripHtml(course?.description) || description;
     const coursePrice = course?.price ?? 199000;
     const subtotal = coursePrice * qty;
@@ -37,6 +43,33 @@ export default function DetailPembelianHybridInstansi({
     const thumbnail = course?.thumbnail
         ? `/storage/${String(course.thumbnail).replace(/^public\//, '')}`
         : null;
+
+    // Load Midtrans Snap script
+    useEffect(() => {
+        const scriptId = 'midtrans-snap-script';
+        if (!document.getElementById(scriptId)) {
+            const script = document.createElement('script');
+            script.id = scriptId;
+            script.src = "https://app.sandbox.midtrans.com/snap/snap.js";
+            script.setAttribute('data-client-key', midtransClientKey || '');
+            document.body.appendChild(script);
+
+            script.onload = () => {
+                console.log('Midtrans Snap script loaded.');
+            };
+            script.onerror = () => {
+                console.error('Failed to load Midtrans Snap script.');
+            };
+        }
+
+        // Cleanup script on unmount
+        return () => {
+            const script = document.getElementById(scriptId);
+            if (script) {
+                // script.remove(); // Be cautious with removing scripts if other components rely on it
+            }
+        };
+    }, [midtransClientKey]);
 
     const summaryRows = [
         {
@@ -53,8 +86,84 @@ export default function DetailPembelianHybridInstansi({
         },
     ];
 
-    const decrement = () => setQty((prev) => (prev > 1 ? prev - 1 : 1));
-    const increment = () => setQty((prev) => prev + 1);
+    const decrement = async () => {
+        const newQty = qty > 1 ? qty - 1 : 1;
+        setQty(newQty);
+        await updateSnapToken(newQty);
+    };
+
+    const increment = async () => {
+        const newQty = qty + 1;
+        setQty(newQty);
+        await updateSnapToken(newQty);
+    };
+
+    const updateSnapToken = async (newQty) => {
+        try {
+            const courseSlug = course?.slug || window.location.pathname.split('/')[3];
+            const response = await fetch(
+                `/korporat/pelatihan-hybrid/${courseSlug}/snap-token`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content,
+                    },
+                    body: JSON.stringify({ qty: newQty }),
+                }
+            );
+
+            if (!response.ok) {
+                console.error('Failed to update snap token:', response.status);
+                return;
+            }
+
+            const data = await response.json();
+            window.snapToken = data.snapToken;
+            window.transaction = data.transaction;
+        } catch (error) {
+            console.error('Error updating snap token:', error);
+        }
+    };
+
+    const handlePayment = () => {
+        const currentSnapToken = window.snapToken || snapToken;
+        if (!window.snap) {
+            console.error('Midtrans Snap is not available. Script might not be loaded.');
+            alert('Midtrans belum siap. Silakan coba lagi nanti atau periksa koneksi Anda.');
+            return;
+        }
+        if (!currentSnapToken) {
+            console.error('Snap token is missing.');
+            alert('Token pembayaran tidak ditemukan. Silakan coba lagi.');
+            return;
+        }
+
+        const currentTransaction = window.transaction || transaction;
+        window.snap.pay(currentSnapToken, {
+            // onSuccess: verifikasi ke server (jalan di lokal TANPA ngrok)
+            onSuccess: function () {
+                const nomorTransaksi = currentTransaction?.nomor_transaksi;
+                if (nomorTransaksi) {
+                    router.visit(`/pembayaran/${nomorTransaksi}/cek`);
+                } else {
+                    router.visit(backHref);
+                }
+            },
+            onPending: function () {
+                alert('Pembayaran sedang diproses. Voucher akan tersedia setelah konfirmasi bank.');
+                router.visit(backHref);
+            },
+            onError: function () {
+                // Hanya alert — JANGAN redirect ke route yang tidak ada
+                alert('Pembayaran gagal. Silakan coba lagi atau hubungi support.');
+            },
+            onClose: function () {
+                // User menutup popup — tidak perlu redirect (akan bikin 404)
+                console.log('Pembayaran dibatalkan oleh user.');
+            },
+        });
+    };
 
     return (
         <InstansiLayout showSidebar={false} title={`${courseTitle} - Detail Pembelian`} activeNav="dashboard">
@@ -98,9 +207,14 @@ export default function DetailPembelianHybridInstansi({
                                         )}
                                     </div>
                                     <div className="min-w-0">
-                                        <span className="inline-block rounded-full bg-[#006B32] px-3 py-1 text-xs font-bold text-white">
-                                            {course?.category?.nama || badge}
-                                        </span>
+                                        {badgeLabel && (
+                                            <span
+                                                className="inline-block rounded-full px-3 py-1 text-xs font-bold"
+                                                style={{ backgroundColor: badgeBg, color: badgeTextColor }}
+                                            >
+                                                {badgeLabel}
+                                            </span>
+                                        )}
                                         <h2 className="mt-3 text-2xl font-bold text-[#1B1C1C]">
                                             {courseTitle}
                                         </h2>
@@ -248,6 +362,7 @@ export default function DetailPembelianHybridInstansi({
 
                                 <button
                                     type="button"
+                                    onClick={handlePayment} // Added onClick handler
                                     className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF8928] px-6 py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"
                                 >
                                     <svg
@@ -277,7 +392,6 @@ export default function DetailPembelianHybridInstansi({
                     </div>
                 </div>
             </main>
-
-            </InstansiLayout>
+        </InstansiLayout>
     );
 }

@@ -76,9 +76,6 @@ unset($__defined_vars, $__key, $__value); ?>
         fn (\Filament\Actions\Action $suffixAction): bool => $suffixAction->isVisible(),
     );
 
-    $hasPrefix = count($prefixActions) || $prefixIcon || filled($prefix);
-    $hasSuffix = count($suffixActions) || $suffixIcon || filled($suffix);
-
     $hasAlpineDisabledClasses = filled($alpineDisabled);
     $hasAlpineValidClasses = filled($alpineValid);
     $hasAlpineClasses = $hasAlpineDisabledClasses || $hasAlpineValidClasses;
@@ -91,9 +88,30 @@ unset($__defined_vars, $__key, $__value); ?>
         $loadingIndicatorTarget = html_entity_decode($wireTarget, ENT_QUOTES);
     }
 
+    $prefixIconHtml = ($prefixIcon || $prefixIconAlias)
+        ? \Filament\Support\generate_icon_html($prefixIcon, $prefixIconAlias, (new ComponentAttributeBag)
+            ->merge([
+                'wire:loading.remove.delay.' . config('filament.livewire_loading_delay', 'default') => $hasLoadingIndicator,
+                'wire:target' => $hasLoadingIndicator ? $loadingIndicatorTarget : false,
+            ], escape: false)
+            ->color(IconComponent::class, $prefixIconColor))
+        : null;
+
+    $suffixIconHtml = ($suffixIcon || $suffixIconAlias)
+        ? \Filament\Support\generate_icon_html($suffixIcon, $suffixIconAlias, (new ComponentAttributeBag)
+            ->merge([
+                'wire:loading.remove.delay.' . config('filament.livewire_loading_delay', 'default') => $hasLoadingIndicator,
+                'wire:target' => $hasLoadingIndicator ? $loadingIndicatorTarget : false,
+            ], escape: false)
+            ->color(IconComponent::class, $suffixIconColor))
+        : null;
+
+    $hasPrefix = count($prefixActions) || ($prefixIconHtml !== null) || filled($prefix);
+    $hasSuffix = count($suffixActions) || ($suffixIconHtml !== null) || filled($suffix);
+
     $hasFocusInputListener = $attributes->has('x-on:focus-input.stop');
-    $canClickPrefixAffix = $hasFocusInputListener && ($prefixIcon || filled($prefix));
-    $canClickSuffixAffix = $hasFocusInputListener && ($suffixIcon || filled($suffix));
+    $canClickPrefixAffix = $hasFocusInputListener && (($prefixIconHtml !== null) || filled($prefix));
+    $canClickSuffixAffix = $hasFocusInputListener && (($suffixIconHtml !== null) || filled($suffix));
 ?>
 
 <div
@@ -143,12 +161,7 @@ unset($__defined_vars, $__key, $__value); ?>
                 </div>
             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-            <?php echo e(\Filament\Support\generate_icon_html($prefixIcon, $prefixIconAlias, (new \Illuminate\View\ComponentAttributeBag)
-                    ->merge([
-                        'wire:loading.remove.delay.' . config('filament.livewire_loading_delay', 'default') => $hasLoadingIndicator,
-                        'wire:target' => $hasLoadingIndicator ? $loadingIndicatorTarget : false,
-                    ], escape: false)
-                    ->color(IconComponent::class, $prefixIconColor))); ?>
+            <?php echo e($prefixIconHtml); ?>
 
 
             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($hasLoadingIndicator): ?>
@@ -203,12 +216,7 @@ unset($__defined_vars, $__key, $__value); ?>
                 </span>
             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-            <?php echo e(\Filament\Support\generate_icon_html($suffixIcon, $suffixIconAlias, (new \Illuminate\View\ComponentAttributeBag)
-                    ->merge([
-                        'wire:loading.remove.delay.' . config('filament.livewire_loading_delay', 'default') => $hasLoadingIndicator,
-                        'wire:target' => $hasLoadingIndicator ? $loadingIndicatorTarget : false,
-                    ], escape: false)
-                    ->color(IconComponent::class, $suffixIconColor))); ?>
+            <?php echo e($suffixIconHtml); ?>
 
 
             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(count($suffixActions)): ?>

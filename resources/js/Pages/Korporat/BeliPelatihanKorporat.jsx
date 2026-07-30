@@ -1,9 +1,23 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import KorporatLayout from '@/Layouts/KorporatLayout';
 
 // --- HELPER UTAMA ---
 const getClassType = (type) => String(type || '').trim().toLowerCase();
+
+const scrollContainerBy = (containerRef, direction) => {
+    const container = containerRef.current;
+    if (!container || !container.children[0]) return;
+    const scrollAmount = container.children[0].offsetWidth + 24;
+    container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+};
+
+// Strip HTML tags dan batasi panjang teks
+const stripHtml = (html, maxLength = 80) => {
+    if (!html) return '';
+    const plain = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+    return plain.length > maxLength ? plain.slice(0, maxLength).trimEnd() + '...' : plain;
+};
 
 const formatPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
@@ -16,14 +30,14 @@ const formatPrice = (price) => {
 // --- HELPER URL (DINAMIS DARI DATABASE) ---
 function buildScheduleHref(course, qty) {
     const params = new URLSearchParams();
-    params.set('course_id', course.id);
     params.set('qty', qty);
 
     // Tambahan data jika tersedia dari database
     if (course.location) params.set('location', course.location);
     if (course.time) params.set('time', course.time);
 
-    return `/korporat/pilih-jadwal?${params.toString()}`;
+    // Menggunakan slug di path, dan query params untuk data lainnya
+    return `/korporat/pilih-jadwal/${course.slug || course.id}?${params.toString()}`;
 }
 
 function buildOnlinePurchaseHref(course, qty) {
@@ -121,7 +135,9 @@ function CourseCard({ course }) {
             {/* KONTEN DETAIL */}
             <div className="flex flex-1 flex-col p-5">
                 <h3 className="font-bold text-[#1B1C1C] line-clamp-2">{course.title}</h3>
-                <p className="mt-1 text-sm text-[#3D4A3E] line-clamp-2">{course.description || 'Deskripsi pelatihan belum tersedia.'}</p>
+                <p className="mt-1 text-sm text-[#3D4A3E]">
+                    {stripHtml(course.description) || 'Deskripsi pelatihan belum tersedia.'}
+                </p>
 
                 {/* INFO LOKASI JIKA ADA */}
                 {course.location && (
@@ -151,10 +167,26 @@ function CourseCard({ course }) {
                         {totalPrice === 0 ? 'Gratis' : formatPrice(totalPrice)}
                     </span>
                     <span className="flex items-center gap-1 text-sm font-semibold text-[#A8632A]">
-                        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2l3 6.5 7 .6-5.3 4.6 1.6 6.8L12 17l-6.9 3.5 1.6-6.8L1.4 9.1l7-.6L12 2z" />
-                        </svg>
-                        {course.rating || '4.9'} ({course.reviews || '120'})
+                        <div className="flex items-center gap-1 text-[#FF8928]">
+                            {[...Array(5)].map((_, index) => {
+                                const starFill = index < Math.round(Number(course.rating_average) || 0) ? "currentColor" : "none";
+                                const strokeClass = index < Math.round(Number(course.rating_average) || 0) ? "" : "text-[#6D7B6D]/30";
+                                return (
+                                    <svg
+                                        key={index}
+                                        className={`w-3 h-3 ${strokeClass}`}
+                                        fill={starFill}
+                                        stroke="currentColor"
+                                        strokeWidth={index < Math.round(course.rating_average || 0) ? 0 : 1.5}
+                                        viewBox="0 0 20 20"
+                                    >
+                                        <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.36 4.18a1 1 0 00.95.69h4.4c.97 0 1.37 1.24.59 1.81l-3.56 2.59a1 1 0 00-.36 1.12l1.36 4.18c.3.92-.75 1.69-1.54 1.12l-3.56-2.59a1 1 0 00-1.18 0l-3.56 2.59c-.79.57-1.84-.2-1.54-1.12l1.36-4.18a1 1 0 00-.36-1.12L1.4 9.6c-.78-.57-.38-1.81.59-1.81h4.4a1 1 0 00.95-.69l1.36-4.18z" />
+                                    </svg>
+                                );
+                            })}
+                        </div>
+                        <span className="font-bold">{course.rating_average ? course.rating_average.toFixed(1) : '0.0'}</span>
+                        <span className="text-[#6B7280]">({course.total_reviewer || 0})</span>
                     </span>
                 </div>
 
@@ -216,6 +248,36 @@ function CourseCard({ course }) {
 
 // --- HALAMAN UTAMA ---
 export default function BeliPelatihanKorporat({ banners = [], courses = [] }) {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [touchStart, setTouchStart] = useState(null);
+    const [touchEnd, setTouchEnd] = useState(null);
+
+    useEffect(() => {
+        if (!banners || banners.length <= 1) return;
+        const interval = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % banners.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [banners]);
+
+    const handleTouchStart = (e) => {
+        setTouchStart(e.targetTouches[0].clientX);
+        setTouchEnd(null);
+    };
+
+    const handleTouchMove = (e) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        if (distance > 50) {
+            setCurrentIndex((prev) => (prev + 1) % banners.length);
+        } else if (distance < -50) {
+            setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
+        }
+    };
 
     // PEMISAHAN KURSUS BERDASARKAN TIPE KELAS DINAMIS
     const onlineCourses = courses.filter(c => getClassType(c.tipe_kelas) === 'online');
@@ -251,44 +313,71 @@ export default function BeliPelatihanKorporat({ banners = [], courses = [] }) {
         <KorporatLayout title="Beli Pelatihan - Pensiun Mudah" activeNav="beli">
             <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10">
 
-                {/* BANNER DINAMIS */}
-                {banners.length > 0 ? (
-                    banners.map((banner) => (
-                        <section
-                            key={banner.id}
-                            className="relative overflow-hidden rounded-2xl px-6 py-10 text-white sm:px-10 sm:py-14 mb-6 bg-cover bg-center"
-                            style={banner.image_path ? { backgroundImage: `url(/storage/${banner.image_path})` } : { backgroundImage: 'linear-gradient(to right, #1B5036, #10251B)' }}
-                        >
-                            <div className="absolute inset-0 bg-black/40"></div>
-                            <div className="relative z-10">
-                                <h2 className="text-3xl font-extrabold sm:text-4xl">
-                                    {banner.title || 'Spesial Kelas MPP'}
-                                </h2>
-                                <p className="mt-2 max-w-md text-white/90">
-                                    {banner.description || 'Voucher Potongan 200rb khusus untuk pendaftaran bulan ini.'}
-                                </p>
-                                <Link
-                                    href={banner.link_url || "#"}
-                                    className="mt-6 inline-flex rounded-full bg-[#FF8928] px-6 py-3 font-bold text-white transition-colors hover:bg-[#F57F1E]"
-                                >
-                                    Gunakan Kode
-                                </Link>
+                {/* BANNER SPESIAL KELAS MPP DINAMIS */}
+                <div
+                    className="relative w-full max-w-none h-[280px] md:h-[320px] rounded-3xl overflow-hidden flex items-center bg-[#008740] shadow-lg mb-6 select-none"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
+                    {banners && banners.length > 0 ? (
+                        banners.map((banner, index) => (
+                            <div
+                                key={banner.id}
+                                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center ${index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                            >
+                                <div
+                                    className="absolute inset-0 bg-cover bg-center"
+                                    style={{
+                                        backgroundImage: banner.image_path
+                                            ? `url('/storage/${banner.image_path.replace(/^public\//, '')}')`
+                                            : "url('/images/banner-mpp.jpg')",
+                                    }}
+                                />
+                                <div className="absolute inset-0 bg-[#008740]/80" />
+
+                                <div className="relative z-20 px-8 py-10 lg:px-16 flex flex-col justify-center items-start text-white">
+                                    {banner.promo_badge && (
+                                        <span className="bg-[#FF8928] text-white text-[10px] font-bold px-2 py-1 rounded w-fit mb-4">
+                                            {banner.promo_badge}
+                                        </span>
+                                    )}
+                                    <h1 className="text-3xl md:text-[42px] font-bold leading-tight mb-4 tracking-tight font-['Public_Sans']">
+                                        {banner.title}
+                                    </h1>
+                                    <p className="max-w-md text-base md:text-lg leading-relaxed text-white/90 mb-8 line-clamp-2 font-['Atkinson_Hyperlegible']">
+                                        {banner.description}
+                                    </p>
+                                    {banner.button_text && (
+                                        <Link href={banner.target_url || banner.link_url || '#'} className="w-max rounded-xl bg-[#FF8928] px-8 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-[#e67a22] active:scale-95 font-['Public_Sans']">
+                                            {banner.button_text}
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
-                        </section>
-                    ))
-                ) : (
-                    <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1B5036] to-[#10251B] px-6 py-10 text-white sm:px-10 sm:py-14 mb-6">
-                        <h2 className="text-3xl font-extrabold sm:text-4xl">
-                            Spesial Kelas MPP
-                        </h2>
-                        <p className="mt-2 max-w-md text-white/90">
-                            Voucher Potongan 200rb khusus untuk pendaftaran bulan ini.
-                        </p>
-                        <button type="button" className="mt-6 rounded-full bg-[#FF8928] px-6 py-3 font-bold text-white transition-colors hover:bg-[#F57F1E]">
-                            Gunakan Kode
-                        </button>
-                    </section>
-                )}
+                        ))
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-white z-10 px-10">
+                            <p className="font-bold">Belum ada banner aktif.</p>
+                        </div>
+                    )}
+
+                    {/* Banner Indicators */}
+                    {banners && banners.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-30 items-center">
+                            {banners.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setCurrentIndex(index)}
+                                    className={`transition-all duration-300 rounded-full ${index === currentIndex
+                                        ? 'w-8 h-1.5 bg-white'
+                                        : 'w-2 h-2 bg-white/40 hover:bg-white/80'
+                                        }`}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 <div className="mt-8">
                     <h1 className="text-2xl font-bold text-[#1B1C1C] sm:text-3xl">

@@ -171,6 +171,44 @@ http://127.0.0.1:8000
 
 ---
 
+## ⚙️ Queue & Scheduler
+
+Untuk memastikan email konfirmasi dan pengingat terkirim, Anda perlu menjalankan worker queue dan scheduler.
+
+### Menjalankan Queue Worker
+
+```bash
+php artisan queue:work
+```
+
+Anda dapat menggunakan supervisor atau systemd untuk menjaga worker queue tetap berjalan di produksi.
+
+### Menjalankan Scheduler
+
+Pastikan cron job server Anda dikonfigurasi untuk menjalankan scheduler Laravel setiap menit:
+
+```bash
+* * * * * cd /path-to-your-project && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Ganti `/path-to-your-project` dengan path absolut ke direktori proyek Anda.
+
+---
+
+## 🧪 Testing Email Reminders
+
+Untuk menguji fungsionalitas pengingat email:
+
+1.  Pastikan queue worker (`php artisan queue:work`) sedang berjalan.
+2.  Daftarkan diri Anda ke sebuah event. Anda akan menerima email konfirmasi.
+3.  Untuk menguji pengingat, Anda bisa memanipulasi waktu event di database atau secara manual menjalankan command:
+    ```bash
+    php artisan event:kirim-reminder
+    ```
+    Command ini akan mencari event yang akan dimulai dalam 1 jam ke depan dan mengirim pengingat ke peserta yang belum menerima pengingat.
+
+---
+
 ## 🔌 API Example
 
 ### Mark Learning Material as Completed

@@ -90,8 +90,13 @@ export default function DashboardHeader({ sidebarOpen, onToggleSidebar, onToggle
                                 {memberLabel}
                             </p>
                         </div>
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#006B32] border-2 border-[#006B32]/20 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                            {getInitials(user.name)}
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#006B32] border-2 border-[#006B32]/20 flex items-center justify-center overflow-hidden">
+                            <img
+                                src={user.profile_photo_url || '/images/avatar.png'}
+                                alt={user.name}
+                                className="h-full w-full object-cover"
+                                onError={(e) => { e.currentTarget.src = '/images/avatar.png'; }}
+                            />
                         </div>
                     </div>
                 </div>

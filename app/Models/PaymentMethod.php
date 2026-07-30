@@ -8,6 +8,10 @@ class PaymentMethod extends Model
 {
     // WAJIB ADA INI BIAR DATA DARI FORM BISA MASUK DATABASE
     protected $fillable = [
-        'method_name',
+        'nama',
+        'tipe',
+        'logo',
+        'instruksi',
+        'is_active',
     ];
 }

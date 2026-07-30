@@ -37,28 +37,23 @@ const formatJam = (jam) => {
     return `${jam.substring(0, 5)} WIB`;
 };
 
-export default function DetailEvent({ event, relatedEvents }) {
-    const ev = event || {};
+export default function DetailEvent({ event, relatedEvents, sudahDaftar, daftarHref }) {
+    const ev = event;
     const related = relatedEvents || [];
-    const topics = ev.topics || [];
-    const description = ev.description || '';
-    const descriptionHtml = /<\/?[a-z][\s\S]*>/i.test(description)
-        ? description
-        : description
-              .split(/\n{2,}/)
-              .filter(Boolean)
-              .map((paragraph) => `<p>${paragraph}</p>`)
-              .join('');
+    const description = ev.deskripsi || '';
+    const descriptionHtml = description
+        .split(/\n{2,}/)
+        .filter(Boolean)
+        .map((paragraph) => `<p>${paragraph}</p>`)
+        .join('');
 
-    // Nilai turunan buat kartu info
-    const lokasi = ev.location
-        ? `${ev.location}${ev.platform ? ` (${ev.platform})` : ''}`
-        : ev.platform || '-';
-    const waktu = ev.start_time ? `${formatJam(ev.start_time)} - Selesai` : '-';
+    const waktu = ev.jam ? `${formatJam(ev.jam)} - Selesai` : '-';
+    const lokasiLabel = ev.jenis_event === 'Online' ? 'Platform / Link' : 'Lokasi';
+    const lokasi = ev.lokasi_link || '-';
 
     return (
         <div className="min-h-screen flex flex-col bg-[#FBF9F8]">
-            <Head title={ev.title} />
+            <Head title={ev.judul} />
 
             <PaymentHeader />
 
@@ -91,20 +86,20 @@ export default function DetailEvent({ event, relatedEvents }) {
                         <div className="lg:col-span-7">
                             {/* HERO */}
                             <EventHero
-                                thumbnail={ev.thumbnail}
-                                status={ev.status}
+                                thumbnail={ev.image_url}
+                                status={ev.status_label}
                             />
 
                             {/* JUDUL */}
                             <h1 className="mt-6 text-3xl lg:text-4xl font-bold text-[#1B1C1C] leading-tight">
-                                {ev.title}
+                                {ev.judul}
                             </h1>
 
                             {/* GRID INFO 4 KARTU */}
                             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <EventInfoCard
                                     label="Tanggal"
-                                    value={formatTanggal(ev.start_date)}
+                                    value={formatTanggal(ev.tanggal)}
                                     icon={
                                         <svg
                                             className="w-5 h-5"
@@ -142,7 +137,7 @@ export default function DetailEvent({ event, relatedEvents }) {
                                     }
                                 />
                                 <EventInfoCard
-                                    label="Lokasi"
+                                    label={lokasiLabel}
                                     value={lokasi}
                                     icon={
                                         <svg
@@ -163,7 +158,7 @@ export default function DetailEvent({ event, relatedEvents }) {
                                 />
                                 <EventInfoCard
                                     label="Pembicara"
-                                    value={ev.speaker_name}
+                                    value={ev.narasumber}
                                     icon={
                                         <svg
                                             className="w-5 h-5"
@@ -201,27 +196,6 @@ export default function DetailEvent({ event, relatedEvents }) {
                                 />
                             </div>
 
-                            {/* TOPIK UTAMA */}
-                            {topics.length > 0 && (
-                                <div className="mt-6">
-                                    <p className="font-bold text-[#1B1C1C]">
-                                        Topik Utama:
-                                    </p>
-                                    <ul className="mt-3 divide-y divide-[#E4E2E1] border-y border-[#E4E2E1]">
-                                        {topics.map((topik, index) => (
-                                            <li
-                                                key={index}
-                                                className="flex items-start gap-3 py-3 text-[#1B1C1C]"
-                                            >
-                                                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#008740]"></span>
-                                                <span className="leading-relaxed">
-                                                    {topik}
-                                                </span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
 
                             {/* EVENT TERKAIT */}
                             {related.length > 0 && (
@@ -245,19 +219,12 @@ export default function DetailEvent({ event, relatedEvents }) {
                         <div className="lg:col-span-3">
                             <div className="lg:sticky lg:top-8 space-y-6">
                                 <RegistrationCard
-                                    slug={ev.slug}
-                                    capacity={ev.capacity}
-                                    registeredCount={ev.registered_count}
-                                    benefits={ev.benefits}
-                                    registrationDeadline={
-                                        ev.registration_deadline
-                                    }
+                                    event={ev}
+                                    sudahDaftar={sudahDaftar}
+                                    daftarHref={daftarHref}
                                 />
                                 <SpeakerCard
-                                    name={ev.speaker_name}
-                                    title={ev.speaker_title}
-                                    photo={ev.speaker_photo}
-                                    quote={ev.speaker_quote}
+                                    name={ev.narasumber}
                                 />
                             </div>
                         </div>

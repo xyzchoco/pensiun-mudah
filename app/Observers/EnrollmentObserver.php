@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Enrollment;
+use App\Models\Notification;
 
 class EnrollmentObserver
 {

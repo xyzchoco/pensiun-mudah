@@ -9,6 +9,7 @@ use App\Filament\Resources\CourseCategories\Schemas\CourseCategoryForm;
 use App\Filament\Resources\CourseCategories\Tables\CourseCategoriesTable;
 use App\Models\CourseCategory;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -19,6 +20,7 @@ class CourseCategoryResource extends Resource
     protected static ?string $model = CourseCategory::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static UnitEnum|string|null $navigationGroup = 'Master Data';
 
     // INI YANG BERUBAH: Ganti jadi 'nama'
     protected static ?string $recordTitleAttribute = 'nama';

@@ -10,7 +10,6 @@ export default function Register() {
     const { data, setData, post, processing, errors } = useForm({
         name: google_name || '',
         email: google_email || '',
-        whatsapp: '',
         password: '',
         password_confirmation: '',
     });
@@ -73,21 +72,6 @@ export default function Register() {
                         {errors.email && <span className="text-red-500 text-sm font-semibold mt-1">{errors.email}</span>}
                     </div>
 
-                    {/* WhatsApp */}
-                    <div className="flex flex-col gap-2">
-                        <label className="font-['Atkinson_Hyperlegible'] font-bold text-lg">Nomor WhatsApp</label>
-                        <div className="flex">
-                            <div className={`bg-[#F0EDED] border border-r-0 px-4 flex items-center rounded-l-lg font-bold text-[#3D4A3E] ${errors.whatsapp ? 'border-red-500' : 'border-[#6D7B6D]'}`}>+62</div>
-                            <input
-                                className={`w-full p-4 border rounded-r-lg outline-none transition-all ${errors.whatsapp ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-[#6D7B6D] focus:ring-2 focus:ring-[#006B32]'}`}
-                                placeholder="8123456789"
-                                value={data.whatsapp}
-                                onChange={(e) => setData('whatsapp', e.target.value)}
-                            />
-                        </div>
-                        {errors.whatsapp && <span className="text-red-500 text-sm font-semibold mt-1">{errors.whatsapp}</span>}
-                    </div>
-
                     {/* Password */}
                     <div className="flex flex-col gap-2">
                         <label className="font-['Atkinson_Hyperlegible'] font-bold text-lg">Kata Sandi</label>
@@ -119,6 +103,11 @@ export default function Register() {
                     >
                         {processing ? 'Memproses...' : 'Daftar Sekarang'}
                     </button>
+
+                    {/* Notifikasi cek spam */}
+                    <div className="mt-4 p-3 bg-[#FFF8E1] border border-[#FFE082] rounded-lg text-sm text-[#795548] leading-relaxed">
+                        Kode verifikasi akan dikirim ke email Anda. Jika tidak muncul di kotak masuk, periksa folder <strong>Spam</strong> atau <strong>Promosi</strong>.
+                    </div>
                 </form>
 
                 {/* Login Link */}

@@ -4,12 +4,16 @@ import PurchaseCard from '@/Components/Pelatihan/PurchaseCard';
 import BenefitCard from '@/Components/Pelatihan/BenefitCard';
 import TestimonialCard from '@/Components/Pelatihan/TestimonialCard';
 import PelatihanFooter from '@/Components/Pelatihan/PelatihanFooter';
+import JadwalTatapMuka from '@/Components/Course/JadwalTatapMuka';
 
-export default function DetailPelatihan({ course, backUrl = '/beli-pelatihan' }) {
+export default function DetailPelatihan({ course, sesiSeminar, backUrl = '/beli-pelatihan', reviews = [], ratingAverage = 0, totalReviews = 0 }) {
     // Data kursus (anggap dari backend, kasih default biar aman dirender)
     const data = course || {};
 
     if (!data) return <div>Loading...</div>;
+
+    const displayRating = ratingAverage ? ratingAverage : (data.rating_average || 0);
+    const displayReviewCount = totalReviews || data.total_reviews || 0;
 
     const previewLesson = data.lessons && data.lessons.length > 0 ? data.lessons[0] : null;
 
@@ -117,24 +121,23 @@ export default function DetailPelatihan({ course, backUrl = '/beli-pelatihan' })
         },
     ];
 
-    // Testimoni peserta
-    const testimonials = [
-        {
-            name: 'Bambang Wijaya',
-            profession: 'Pensiunan BUMN',
-            text: 'Materinya sangat membuka mata. Sekarang saya jauh lebih tenang mengatur dana pensiun dan tahu ke mana harus mengalokasikannya.',
-        },
-        {
-            name: 'Siti Rahayu',
-            profession: 'Mantan Manajer Bank',
-            text: 'Penjelasannya runtut dan mudah dipahami untuk usia kami. Grup WA-nya juga aktif dan sangat membantu.',
-        },
-        {
-            name: 'Hendra Gunawan',
-            profession: 'Wiraswasta',
-            text: 'Investasi terbaik di usia 55. Saya jadi paham cara melindungi aset sekaligus menyiapkan warisan untuk anak-anak.',
-        },
-    ];
+    // Testimoni peserta - pakai data asli dari database, fallback ke dummy
+    const testimonials = reviews.length > 0
+        ? reviews
+        : [
+            {
+                name: 'Bambang Wijaya',
+                text: 'Materinya sangat membuka mata. Sekarang saya jauh lebih tenang mengatur dana pensiun dan tahu ke mana harus mengalokasikannya.',
+            },
+            {
+                name: 'Siti Rahayu',
+                text: 'Penjelasannya runtut dan mudah dipahami untuk usia kami. Grup WA-nya juga aktif dan sangat membantu.',
+            },
+            {
+                name: 'Hendra Gunawan',
+                text: 'Investasi terbaik di usia 55. Saya jadi paham cara melindungi aset sekaligus menyiapkan warisan untuk anak-anak.',
+            },
+        ];
 
     return (
         <div className="min-h-screen flex flex-col bg-[#FBF9F8]">
@@ -159,41 +162,12 @@ export default function DetailPelatihan({ course, backUrl = '/beli-pelatihan' })
                             {data.title}
                         </h1>
                         <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
-                            <div className="flex items-center gap-2">
-                                <span className="inline-flex items-center gap-1 rounded-lg bg-[#FF8928] px-2.5 py-1 text-sm font-bold text-white">
-                                    <svg
-                                        className="w-4 h-4"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
-                                    >
-                                        <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.36 4.18a1 1 0 00.95.69h4.4c.97 0 1.37 1.24.59 1.81l-3.56 2.59a1 1 0 00-.36 1.12l1.36 4.18c.3.92-.75 1.69-1.54 1.12l-3.56-2.59a1 1 0 00-1.18 0l-3.56 2.59c-.79.57-1.84-.2-1.54-1.12l1.36-4.18a1 1 0 00-.36-1.12L1.4 9.6c-.78-.57-.38-1.81.59-1.81h4.4a1 1 0 00.95-.69l1.36-4.18z" />
-                                    </svg>
-                                    {data.rating_average}
-                                </span>
-                                <span className="text-sm text-[#6B7280]">
-                                    ({data.total_reviews} Review)
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-[#6B7280]">
-                                <svg
-                                    className="w-4 h-4 text-[#008740]"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.8"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <circle cx="12" cy="12" r="9" />
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M12 7v5l3 2"
-                                    />
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FCE9D8] px-3 py-1 text-sm font-bold text-[#1B1C1C]">
+                                <svg className="h-4 w-4 text-[#FF8928]" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15.9 4.7 17.6l1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
                                 </svg>
-                                Total Durasi:{' '}
-                                <span className="font-semibold text-[#1B1C1C]">
-                                    {data.duration}
-                                </span>
-                            </div>
+                                {displayRating} ({displayReviewCount} Review)
+                            </span>
                         </div>
                     </div>
 
@@ -240,7 +214,14 @@ export default function DetailPelatihan({ course, backUrl = '/beli-pelatihan' })
                         </div>
                     </div>
 
-                    {/* --- 5. TESTIMONI --- */}
+                    {/* --- 5. JADWAL TATAP MUKA (Hanya untuk Hybrid/Offline) --- */}
+                    {(data.tipe_kelas === 'Hybrid' || data.tipe_kelas === 'Offline') && (
+                        <div className="mt-10">
+                            <JadwalTatapMuka sesiSeminar={sesiSeminar} />
+                        </div>
+                    )}
+
+                    {/* --- 6. TESTIMONI --- */}
                     <div className="mt-10">
                         <h2 className="text-2xl font-bold text-[#1B1C1C] text-center">
                             Apa Kata Mereka?
@@ -250,8 +231,8 @@ export default function DetailPelatihan({ course, backUrl = '/beli-pelatihan' })
                                 <TestimonialCard
                                     key={index}
                                     name={testimonial.name}
-                                    profession={testimonial.profession}
                                     text={testimonial.text}
+                                    avatar={testimonial.avatar}
                                 />
                             ))}
                         </div>

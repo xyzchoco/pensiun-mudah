@@ -4,27 +4,45 @@ import PaymentHeader from "@/Components/Payment/PaymentHeader";
 import PaymentFooter from "@/Components/Payment/PaymentFooter";
 import OrderSummaryCard from "@/Components/Payment/OrderSummaryCard";
 
-export default function DetailPembelian({ course, transaction, snapToken, midtransClientKey }) {
-  const slug = course?.slug || course?.id || "manajemen-investasi-aman";
+export default function DetailPembelian({
+  course,
+  transaction,
+  snapToken,
+  midtransClientKey,
+  isProduction = false, // dikirim dari controller: config('midtrans.is_production')
+}) {
+  // Tombol kembali: arahkan ke detail kursusnya kalau slug ada, fallback ke daftar beli
+  const backHref = course?.slug
+    ? `/pelatihan/${course.slug}`
+    : "/beli-pelatihan";
 
-  // Karena ini bisa diakses dari korporat, tombol kembalinya kita buat aman (bisa disesuaikan nanti)
-  const backHref = "/beli-pelatihan";
+  // URL Snap dinamis (sandbox vs production)
+  const snapUrl = isProduction
+    ? "https://app.midtrans.com/snap/snap.js"
+    : "https://app.sandbox.midtrans.com/snap/snap.js";
 
   // ========================================================
-  // TARIK DATA DINAMIS DARI TRANSAKSI (BUKAN CUMA DARI COURSE)
+  // DATA TRANSAKSI (SUMBER KEBENARAN DARI DB, BUKAN FRONTEND)
   // ========================================================
   const qty = transaction?.jumlah_peserta || 1;
   const hargaSatuan = transaction?.harga_per_peserta || course?.price || 0;
-  const totalHargaKursus = transaction?.nominal || (hargaSatuan * qty);
-
-  const courseUI = {
-    badge: course?.category?.nama || "Kursus Populer",
-    title: course?.title || "Judul Pelatihan",
-    description: course?.description ? course.description.replace(/<[^>]*>?/gm, '') : "Deskripsi kursus.",
-    image: course?.thumbnail ? `/storage/${course.thumbnail.replace(/^public\//, '')}` : "/images/course-preview.png",
-  };
-
+  const totalHargaKursus = transaction?.nominal || hargaSatuan * qty;
   const serviceFee = 0;
+  const totalBayar = totalHargaKursus + serviceFee;
+
+  // ========================================================
+  // DATA TAMPILAN KURSUS (fallback netral, tanpa dummy)
+  // ========================================================
+  const courseUI = {
+    badge: course?.category?.nama || null, // null => badge tidak dirender
+    title: course?.title || "Judul Pelatihan",
+    description: course?.description
+      ? course.description.replace(/<[^>]*>?/gm, "")
+      : "",
+    image: course?.thumbnail
+      ? `/storage/${course.thumbnail.replace(/^public\//, "")}`
+      : "/images/course-preview.png",
+  };
 
   const formatRupiah = (angka) => {
     if (!angka || angka === 0) return "Gratis";
@@ -35,46 +53,52 @@ export default function DetailPembelian({ course, transaction, snapToken, midtra
     }).format(angka);
   };
 
-  // TOTAL BAYAR SEKARANG MENGGUNAKAN NOMINAL DARI DATABASE
-  const totalBayar = totalHargaKursus + serviceFee;
-
-  // Load Midtrans Snap
+  // Load script Midtrans Snap (dinamis sesuai environment)
   useEffect(() => {
-    if (!document.querySelector('script[src="https://app.sandbox.midtrans.com/snap/snap.js"]')) {
-      const script = document.createElement('script');
-      script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
-      script.setAttribute('data-client-key', midtransClientKey);
+    if (!midtransClientKey) return;
+    if (!document.querySelector(`script[src="${snapUrl}"]`)) {
+      const script = document.createElement("script");
+      script.src = snapUrl;
+      script.setAttribute("data-client-key", midtransClientKey);
       script.async = true;
       document.body.appendChild(script);
     }
-  }, [midtransClientKey]);
+  }, [midtransClientKey, snapUrl]);
 
   // Handle klik Bayar
   const handlePayNow = () => {
-    if (snapToken) {
-      window.snap.pay(snapToken, {
-        onSuccess: function (result) {
-          // KITA SUNTIK &flag=success DI SINI BOS, BIAR BACKEND TAU INI 100% VALID SUKSES
-          router.get(`/payment/finish?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}&flag=success`);
-        },
-        onPending: function (result) {
-          router.get(`/payment/finish?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}`);
-        },
-        onError: function (result) {
-          alert('Pembayaran gagal, silakan coba metode lain.');
-        },
-        onClose: function () {
-          console.log('Pop-up ditutup oleh user');
-        }
-      });
-    } else {
-      alert('Token Midtrans tidak ditemukan, coba refresh halaman!');
+    if (!snapToken) {
+      alert("Token Midtrans tidak ditemukan, coba refresh halaman!");
+      return;
     }
+    if (!window.snap) {
+      alert("Modul pembayaran belum siap, tunggu sebentar lalu coba lagi.");
+      return;
+    }
+
+    window.snap.pay(snapToken, {
+      onSuccess: function (result) {
+        // flag=success sebagai penanda callback client valid.
+        // CATATAN: finalisasi asli (lunas + generate voucher) TETAP lewat webhook, bukan ini.
+        router.get(
+          `/payment/finish?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}&flag=success`
+        );
+      },
+      onPending: function (result) {
+        router.get(
+          `/payment/finish?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}`
+        );
+      },
+      onError: function () {
+        alert("Pembayaran gagal, silakan coba metode lain.");
+      },
+      onClose: function () {
+        console.log("Pop-up ditutup oleh user");
+      },
+    });
   };
 
-  // ========================================================
-  // RINGKASAN PESANAN DIBUAT DINAMIS MENAMPILKAN QUANTITY
-  // ========================================================
+  // Ringkasan pesanan (dinamis)
   const summaryItems = [
     { label: `Harga Kursus (x${qty})`, value: totalHargaKursus },
     {
@@ -105,7 +129,11 @@ export default function DetailPembelian({ course, transaction, snapToken, midtra
       <button
         type="button"
         onClick={handlePayNow}
-        className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF8928] py-4 font-bold text-white hover:bg-[#F57F1E] transition-colors"
+        disabled={!snapToken}
+        className={`mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl py-4 font-bold text-white transition-colors ${snapToken
+            ? "bg-[#FF8928] hover:bg-[#F57F1E]"
+            : "bg-gray-400 cursor-not-allowed"
+          }`}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M7 10V8a5 5 0 0110 0v2" />
@@ -132,24 +160,32 @@ export default function DetailPembelian({ course, transaction, snapToken, midtra
             </svg>
             Kembali ke Detail Pelatihan
           </Link>
+
           <h1 className="mt-4 text-3xl font-bold text-[#1B1C1C]">Detail Pembelian</h1>
 
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-7 space-y-6">
               <div className="flex flex-col sm:flex-row gap-5 rounded-2xl border border-[#E4E2E1] bg-white p-4">
-                <img src={courseUI.image} alt={courseUI.title} className="w-full sm:w-44 h-32 object-cover rounded-xl" />
+                <img
+                  src={courseUI.image}
+                  alt={courseUI.title}
+                  className="w-full sm:w-44 h-32 object-cover rounded-xl"
+                />
                 <div className="flex-1">
-                  <span className="inline-block bg-[#008740] text-white text-xs font-bold px-3 py-1 rounded-full">
-                    {courseUI.badge}
-                  </span>
+                  {courseUI.badge && (
+                    <span className="inline-block bg-[#008740] text-white text-xs font-bold px-3 py-1 rounded-full">
+                      {courseUI.badge}
+                    </span>
+                  )}
                   <h2 className="mt-3 text-xl font-bold text-[#1B1C1C] leading-snug line-clamp-2">
                     {courseUI.title}
                   </h2>
-                  <p className="mt-2 text-sm text-[#6B7280] leading-relaxed line-clamp-2">
-                    {courseUI.description}
-                  </p>
+                  {courseUI.description && (
+                    <p className="mt-2 text-sm text-[#6B7280] leading-relaxed line-clamp-2">
+                      {courseUI.description}
+                    </p>
+                  )}
 
-                  {/* Harga di kiri dimodif dikit biar keliatan breakdown-nya */}
                   <div className="mt-3 flex items-baseline gap-2">
                     <p className="text-lg font-bold text-[#008740]">
                       {formatRupiah(totalHargaKursus)}
@@ -163,7 +199,6 @@ export default function DetailPembelian({ course, transaction, snapToken, midtra
                 </div>
               </div>
 
-              {/* Kotak Info Pembayaran (Pengganti Radio Button yang Ribet) */}
               <div className="rounded-2xl border border-[#E4E2E1] bg-white p-6">
                 <div className="flex items-start gap-4">
                   <span className="flex items-center justify-center w-12 h-12 rounded-full bg-[#E5F0E9] text-[#008740] shrink-0">
@@ -176,14 +211,11 @@ export default function DetailPembelian({ course, transaction, snapToken, midtra
                       Pembayaran Diproses oleh Midtrans
                     </h3>
                     <p className="text-sm text-[#6B7280] leading-relaxed">
-                      Silakan klik tombol <strong>"Lanjutkan ke Pembayaran"</strong> di sebelah kanan. Anda dapat memilih metode pembayaran (Virtual Account semua bank, GoPay, QRIS, atau Kartu Kredit) pada jendela aman yang akan muncul berikutnya.
+                      Silakan klik tombol <strong>"Lanjutkan ke Pembayaran"</strong> di
+                      sebelah kanan. Anda dapat memilih metode pembayaran (Virtual
+                      Account semua bank, GoPay, QRIS, atau Kartu Kredit) pada jendela
+                      aman yang akan muncul berikutnya.
                     </p>
-                    <div className="mt-4 flex gap-2 opacity-70 grayscale">
-                      {/* Logo kosmetik aja biar keliatan trust */}
-                      <div className="h-6 w-10 bg-gray-200 rounded"></div>
-                      <div className="h-6 w-10 bg-gray-200 rounded"></div>
-                      <div className="h-6 w-10 bg-gray-200 rounded"></div>
-                    </div>
                   </div>
                 </div>
               </div>

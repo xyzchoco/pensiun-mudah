@@ -17,6 +17,10 @@ export default function DetailModulKaryawan({
     totalMembers = 0,
     employees = { data: [], links: [], from: 0, to: 0, total: 0 },
     backHref = '/korporat/dashboard',
+    isHybrid = false,
+    canOpenHybrid = false,
+    courseSlug = '',
+    hybridSessionStatus = null,
 }) {
     return (
         <KorporatLayout
@@ -48,6 +52,7 @@ export default function DetailModulKaryawan({
                         <p className="mt-2 text-sm text-white/90">
                             Daftar progres pelatihan karyawan untuk modul {moduleName}
                         </p>
+                        {/* [DATA] Jumlah anggota — nilai memberCount dari backend (scoped corporate_user_id) */}
                         <div className="mt-6 inline-flex items-center gap-2 rounded-lg bg-white/20 px-4 py-2.5 text-sm font-bold backdrop-blur-sm">
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-1a4 4 0 00-4-4M9 20H4v-1a4 4 0 014-4h2m6-4a3 3 0 11-6 0 3 3 0 016 0zm6 1a2.5 2.5 0 10-3-2.45" />
@@ -72,6 +77,7 @@ export default function DetailModulKaryawan({
                     </div>
 
                     {/* Table Body */}
+                    {/* [DATA] Sumber daftar karyawan berasal dari voucher_redemptions (scoped corporate_user_id) */}
                     <div className="divide-y divide-[#E4E2E1]">
                         {employees.data.length > 0 ? (
                             employees.data.map((employee) => {
@@ -83,6 +89,7 @@ export default function DetailModulKaryawan({
                                 return (
                                     <div key={employee.id} className="grid grid-cols-1 gap-6 px-8 py-5 sm:grid-cols-3 sm:items-center transition-colors hover:bg-[#FBF9F8]">
                                         {/* Kolom Nama & Email */}
+                                        {/* [DATA] Foto profil karyawan — src dari prop employee.photo (URL penuh dari backend, fallback inisial) */}
                                         <div className="flex items-center gap-4">
                                             {employee.photo ? (
                                                 <img src={employee.photo} alt={employee.name} className="h-12 w-12 shrink-0 rounded-full object-cover" />
@@ -102,6 +109,7 @@ export default function DetailModulKaryawan({
                                             {employee.jabatan || 'Anggota'}
                                         </div>
 
+                                        {/* [DATA] Progres belajar — nilai employee.progress (0-100) */}
                                         {/* Kolom Progres */}
                                         <div className="flex items-center gap-4">
                                             <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[#E4E2E1]">
@@ -124,7 +132,7 @@ export default function DetailModulKaryawan({
                         )}
                     </div>
 
-                    {/* Pagination Footer */}
+                    {/* [PAGINATION] Link paginasi dari Laravel paginator */}
                     {employees.total > 0 && (
                         <div className="flex flex-col items-center justify-between gap-4 border-t border-[#E4E2E1] bg-[#F9F9F9] px-8 py-4 sm:flex-row">
                             <p className="text-sm font-bold text-[#6B7280]">
@@ -164,25 +172,84 @@ export default function DetailModulKaryawan({
                 </div>
 
                 {/* Section Baru: Jadwal Hybrid */}
-                <div className="mt-10 flex flex-col items-center justify-center text-center">
-                    <Link href="/korporat/pilih-jadwal-hybrid" className="flex items-center gap-2 rounded-lg bg-[#FF8928] px-8 py-3.5 font-bold text-white shadow-sm transition-all hover:bg-[#F57F1E] hover:shadow-md">
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
-                        Buka Jadwal Hybrid
-                    </Link>
-                    <p className="mt-4 flex items-center justify-center gap-2 text-sm font-bold text-[#6B7280]">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="12" y1="16" x2="12" y2="12" />
-                            <line x1="12" y1="8" x2="12.01" y2="8" />
-                        </svg>
-                        <span className="font-semibold">Semua Anggota mencapai 80%</span> Tentukan Jadwal Hybrid Anda Sekarang
-                    </p>
-                </div>
+                {isHybrid && (
+                    <div className="mt-10 flex flex-col items-center justify-center text-center">
+                        {hybridSessionStatus === 'pending' ? (
+                            <>
+                                <button
+                                    disabled
+                                    className="flex items-center gap-2 rounded-lg bg-yellow-100 text-yellow-700 font-bold px-8 py-3.5 cursor-not-allowed shadow-sm border border-yellow-300"
+                                >
+                                    <svg className="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <polyline points="12 6 12 12 16 14" />
+                                    </svg>
+                                    Usulan Jadwal Menunggu Persetujuan
+                                </button>
+                                <p className="mt-4 flex items-center justify-center gap-2 text-sm font-bold text-yellow-700">
+                                    <span>Usulan jadwal hybrid Anda sedang dalam proses peninjauan oleh Admin.</span>
+                                </p>
+                            </>
+                        ) : hybridSessionStatus === 'disetujui' ? (
+                            <>
+                                <button
+                                    disabled
+                                    className="flex items-center gap-2 rounded-lg bg-green-100 text-green-700 font-bold px-8 py-3.5 cursor-not-allowed shadow-sm border border-green-300"
+                                >
+                                    <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Jadwal Hybrid Telah Dikonfirmasi
+                                </button>
+                                <p className="mt-4 flex items-center justify-center gap-2 text-sm font-bold text-green-700">
+                                    <span>Jadwal hybrid Anda telah dikonfirmasi dan dirilis oleh Admin.</span>
+                                </p>
+                            </>
+                        ) : canOpenHybrid ? (
+                            <>
+                                <Link
+                                    href={`/korporat/pilih-jadwal-hybrid/${courseSlug}`}
+                                    className="flex items-center gap-2 rounded-lg bg-[#FF8928] px-8 py-3.5 font-bold text-white shadow-sm transition-all hover:bg-[#F57F1E] hover:shadow-md"
+                                >
+                                    <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                        <line x1="16" y1="2" x2="16" y2="6" />
+                                        <line x1="8" y1="2" x2="8" y2="6" />
+                                        <line x1="3" y1="10" x2="21" y2="10" />
+                                    </svg>
+                                    Buka Jadwal Hybrid
+                                </Link>
+                                <p className="mt-4 flex items-center justify-center gap-2 text-sm font-bold text-[#006B32]">
+                                    <svg className="h-4 w-4 text-[#006B32]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Seluruh anggota mencapai progres belajar &gt;= 80%. Silakan tentukan jadwal Anda sekarang!</span>
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    disabled
+                                    className="flex items-center gap-2 rounded-lg bg-gray-200 text-gray-400 font-bold px-8 py-3.5 cursor-not-allowed shadow-sm"
+                                >
+                                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                        <path d="M7 11V7a5 5 0 0110 0v4" />
+                                    </svg>
+                                    Buka Jadwal Hybrid (Terkunci)
+                                </button>
+                                <p className="mt-4 flex items-center justify-center gap-2 text-sm font-bold text-[#A8632A]">
+                                    <svg className="h-4 w-4 text-[#A8632A]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <line x1="12" y1="16" x2="12" y2="12" />
+                                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                                    </svg>
+                                    <span>Tombol penjadwalan aktif setelah seluruh anggota mencapai progres belajar minimal 80%.</span>
+                                </p>
+                            </>
+                        )}
+                    </div>
+                )}
 
             </div>
         </KorporatLayout>

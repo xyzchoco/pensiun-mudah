@@ -1,0 +1,326 @@
+/* =====================================================
+   FILAMENT AUTH - COMPONENTS
+===================================================== */
+
+.auth-glass-card {
+  width: 100%;
+  max-width: 460px;
+  border-radius: 28px;
+  padding: 44px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  background: var(--color-surface);
+  backdrop-filter: blur(var(--blur-intensity));
+  -webkit-backdrop-filter: blur(var(--blur-intensity));
+
+  border: 1px solid var(--color-border-glass);
+  border-top-color: var(--color-border-glass-top);
+
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, .35),
+    0 18px 40px rgba(0, 0, 0, .30),
+    0 40px 80px rgba(0, 0, 0, .22);
+
+  transition: transform .2s ease-out, backdrop-filter 0.3s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+  box-sizing: border-box;
+
+  opacity: .25s;
+}
+
+/* Loading / Authenticating Glass Blur & Background Dim */
+.auth-glass-card.is-authenticating {
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  pointer-events: none;
+}
+
+.auth-layer-bg.is-authenticating {
+  opacity: 0.7;
+  transition: opacity 0.4s ease;
+}
+
+@media (max-width:768px) {
+  .auth-glass-card {
+    max-width: 100%;
+    padding: 32px 24px;
+  }
+}
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.auth-card-header {
+  width: 100%;
+  text-align: center;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  margin-bottom: 34px;
+}
+
+.auth-icon-container {
+  width: 64px;
+  height: 64px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 20px;
+
+  border-radius: 9999px;
+
+  background: var(--color-surface-icon);
+
+  border: 1px solid var(--color-border);
+}
+
+.auth-icon-symbol {
+  width: 32px;
+  height: 32px;
+  color: var(--color-primary-glow);
+}
+
+.auth-title-brand {
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+
+  color: var(--color-primary-glow);
+
+  margin-bottom: 14px;
+}
+
+.auth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 6px 14px;
+
+  margin-bottom: 28px;
+
+  border-radius: 999px;
+
+  background: var(--color-surface-badge);
+
+  border: 1px solid var(--color-border);
+}
+
+.auth-badge-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 999px;
+
+  background: var(--color-primary-glow);
+}
+
+.auth-badge-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+
+  text-transform: uppercase;
+  letter-spacing: .08em;
+
+  color: var(--color-text-secondary);
+}
+
+.auth-card-heading {
+  font-size: 26px;
+  font-weight: 700;
+
+  color: var(--color-text-primary);
+
+  margin-bottom: 8px;
+}
+
+.auth-card-subheading {
+  color: var(--color-text-secondary);
+
+  font-size: 15px;
+
+  line-height: 1.6;
+}
+
+/* =====================================================
+   FILAMENT FORM & INPUT MICRO-INTERACTIONS
+===================================================== */
+
+.auth-glass-card form {
+  width: 100%;
+}
+
+.auth-glass-card .fi-sc {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.auth-glass-card .fi-fo-field-label {
+  margin-bottom: 8px;
+}
+
+/* Eliminate Layout Shift: Reserved space for field validation error message */
+.auth-glass-card .fi-fo-field,
+.auth-glass-card .fi-fo-field-wrp {
+  position: relative;
+}
+
+.auth-glass-card .fi-fo-field-content-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-glass-card .fi-fo-field-helper-text,
+.auth-glass-card [class*="error"] {
+
+  min-height: 20px;
+
+  margin-top: 6px;
+
+  opacity: 0;
+
+  transform: translateY(-4px);
+
+  transition:
+    opacity .22s ease,
+    transform .22s ease;
+
+}
+
+.auth-glass-card .fi-fo-field-helper-text:not(:empty),
+.auth-glass-card [class*="error"]:not(:empty) {
+
+  opacity: 1;
+
+  transform: translateY(0);
+
+}
+
+/* Premium Input Wrapper Transitions */
+.auth-glass-card .fi-input-wrp {
+  border-radius: 14px;
+  background-color: var(--color-surface-icon);
+  border: 1px solid var(--color-border);
+  transition: border-color 240ms ease, box-shadow 240ms ease, background-color 240ms ease;
+}
+
+.auth-glass-card .fi-input-wrp:hover {
+
+  background: rgba(255, 255, 255, .035);
+  border-color: #4f5b60;
+
+}
+
+.auth-glass-card .fi-input-wrp:focus-within {
+  border-color: var(--color-primary-glow) !important;
+  box-shadow: 0 0 0 3px rgba(79, 219, 200, 0.2), 0 0 0 2px rgba(79, 219, 200, .15),
+    0 0 8px rgba(79, 219, 200, .08) !important;
+}
+
+/* Invalid Field Error Highlighting */
+.auth-glass-card .fi-fo-field.auth-invalid .fi-input-wrp,
+.auth-glass-card .fi-fo-field-wrp.auth-invalid .fi-input-wrp {
+  border-color: #dc5c66;
+
+  box-shadow:
+
+    0 0 0 2px rgba(220, 92, 102, .14),
+    0 0 0 2px rgba(79, 219, 200, .18);
+}
+
+.auth-glass-card .fi-input {
+  min-height: 48px;
+  color: var(--color-text-primary);
+}
+
+/* Browser Autofill Fix (Dark Theme) */
+.auth-glass-card input:-webkit-autofill,
+.auth-glass-card input:-webkit-autofill:hover,
+.auth-glass-card input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-text-primary) !important;
+  transition: background-color 50000s ease-in-out 0s !important;
+  box-shadow: 0 0 0px 1000px #201f21 inset !important;
+}
+
+/* Remember me */
+.auth-glass-card .fi-grid-col:last-child {
+  margin-top: 4px;
+}
+
+.auth-glass-card input[type="checkbox"] {
+  border-radius: 6px;
+  transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.auth-glass-card input[type="checkbox"]:focus {
+  box-shadow: 0 0 0 2px rgba(79, 219, 200, 0.3);
+}
+
+.auth-glass-card input[type=checkbox]:checked {
+
+  box-shadow:
+
+    0 0 12px rgba(79, 219, 200, .25);
+
+}
+
+.auth-glass-card input[type="checkbox"] {
+
+  cursor: pointer;
+
+}
+
+/* Eye Icon Password Button */
+.auth-glass-card .fi-input-wrp button,
+.auth-glass-card .fi-input-wrp .fi-icon-btn {
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.auth-glass-card .fi-input-wrp button:hover {
+  transform: scale(1.08) rotate(5deg);
+}
+
+.auth-glass-card {
+
+  will-change: transform;
+
+  overflow: hidden;
+
+}
+
+/* LOGIN BUTTON WRAPPER */
+.auth-glass-card .fi-ac {
+  margin-top: 30px !important;
+}
+
+.auth-glass-card .fi-btn {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 14px;
+  transition: transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+}
+
+.auth-glass-card .fi-btn:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 8px 22px rgba(17, 208, 193, .18);
+}
+
+.auth-glass-card .fi-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.auth-glass-card .fi-btn:disabled {
+
+  opacity: .72;
+
+  cursor: wait;
+
+}

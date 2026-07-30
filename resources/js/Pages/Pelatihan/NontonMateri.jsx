@@ -47,9 +47,19 @@ export default function NontonMateri({ learning }) {
     ? `/pelatihan/${course.id}/belajar?lesson=${prevMaterial.id}`
     : `/pelatihan/${course.id}/kelas`;
 
-  const nextHref = nextMaterial
-    ? `/pelatihan/${course.id}/belajar?lesson=${nextMaterial.id}`
-    : `/pelatihan/${course.id}/kuis`;
+  // Cari next step dari array steps yang dikirim controller
+  const currentStepIndex = learning.steps.findIndex(s => s.type === 'material' && s.id === activeMaterial?.id);
+  const nextStep = learning.steps[currentStepIndex + 1] || null;
+
+  const nextHref = nextStep
+    ? (nextStep.type === 'material'
+      ? `/pelatihan/${course.id}/belajar?lesson=${nextStep.id}`
+      : `/pelatihan/${course.id}/kuis?module=${nextStep.moduleId}`)
+    : null;
+
+  const nextLabel = nextStep
+    ? (nextStep.type === 'quiz' ? 'Selesai & Kerjakan Kuis' : 'Selesai & Lanjut')
+    : 'Selesai';
 
   const getYouTubeEmbedUrl = (url) => {
     if (!url) return null;
@@ -100,9 +110,8 @@ export default function NontonMateri({ learning }) {
       showHeaderBack
       alignHeaderContentLeft
       backHref="/pelatihan"
-      footerWrapperClassName={`transition-[padding] duration-300 ${
-        sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[320px]"
-      }`}
+      footerWrapperClassName={`transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[320px]"
+        }`}
     >
       <Head title={`${activeMaterial?.title || "Materi"} - Pensiun Mudah`} />
 
@@ -201,12 +210,12 @@ export default function NontonMateri({ learning }) {
               {/* 4. GANTI LINK "MATERI SELANJUTNYA" JADI TOMBOL PEMICU */}
               <button
                 onClick={handleSelesaiDanLanjut}
-                disabled={isCompleting}
-                className={`inline-flex min-w-[240px] items-center justify-center gap-3 rounded-lg px-6 py-4 font-extrabold text-white transition-colors ${isCompleting ? 'bg-[#CC7500] cursor-not-allowed' : 'bg-[#FF9200] hover:bg-[#E58300]'
+                disabled={isCompleting || !nextHref}
+                className={`inline-flex min-w-[240px] items-center justify-center gap-3 rounded-lg px-6 py-4 font-extrabold text-white transition-colors ${isCompleting ? 'bg-[#CC7500] cursor-not-allowed' : (nextHref ? 'bg-[#FF9200] hover:bg-[#E58300]' : 'bg-gray-400 cursor-not-allowed')
                   }`}
               >
-                {isCompleting ? 'Menyimpan...' : 'Selesai & Lanjut'}
-                <ArrowRight className="h-5 w-5" />
+                {isCompleting ? 'Menyimpan...' : nextLabel}
+                {nextHref && <ArrowRight className="h-5 w-5" />}
               </button>
             </div>
           </article>

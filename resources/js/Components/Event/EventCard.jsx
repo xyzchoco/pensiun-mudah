@@ -53,15 +53,11 @@ const renderLinkedText = (text) => {
     );
 };
 
-export default function EventCard({ event }) {
+export default function EventCard({ event, is_registered = false }) {
     // Normalisasi field: dukung struktur baru (English) & data Webinar lama (Indonesia)
     const slug = event.slug || event.id;
-    const detailHref =
-        typeof route === 'function' ? route('event.detail', slug) : `/event/${slug}`;
-    const registerHref =
-        typeof route === 'function'
-            ? route('event.daftar', slug)
-            : `/event/${slug}/daftar`;
+    const detailHref = route('event.detail', event);
+    const registerHref = route('event.daftar', event);
     const title = event.title || event.judul || 'Tanpa Judul';
     const description = event.description || event.deskripsi || '';
     const type =
@@ -69,8 +65,8 @@ export default function EventCard({ event }) {
         (event.jenis_event === 'Online'
             ? 'Seminar Online'
             : event.jenis_event === 'Offline'
-              ? 'Workshop Offline'
-              : event.jenis_event) ||
+                ? 'Workshop Offline'
+                : event.jenis_event) ||
         'Seminar Online';
     const thumbnail =
         event.thumbnail ||
@@ -79,7 +75,7 @@ export default function EventCard({ event }) {
             : '/images/event-placeholder.svg');
     const speaker = event.speaker || event.narasumber || '-';
     const capacity = event.capacity ?? event.kapasitas;
-    const availableSlots = event.available_slots ?? event.sisa;
+    const availableSlots = event.available_slots ?? event.sisa_kuota;
     const startDate = event.start_date || event.tanggal;
     const startTime = event.start_time || event.jam;
     const isOnline = event.is_online ?? event.jenis_event === 'Online';
@@ -88,6 +84,10 @@ export default function EventCard({ event }) {
         event.location ||
         event.lokasi ||
         (isOnline ? 'Online' : 'Lokasi menyusul');
+
+    const isPenuh = event.is_penuh;
+    const sudahLewat = event.sudah_lewat;
+    const isAvailable = !isPenuh && !sudahLewat;
 
     return (
         <div className="flex flex-col overflow-hidden rounded-2xl border border-[#E4E2E1] bg-white shadow-sm hover:shadow-md transition-all">
@@ -179,7 +179,7 @@ export default function EventCard({ event }) {
                         }
                     >
                         Kapasitas: {capacity ?? '-'} • Sisa:{' '}
-                        {availableSlots ?? '-'}
+                        {availableSlots}
                     </EventMeta>
 
                     <EventMeta
@@ -235,12 +235,30 @@ export default function EventCard({ event }) {
                     >
                         Lihat Detail
                     </Link>
-                    <Link
-                        href={registerHref}
-                        className="relative z-10 block w-full cursor-pointer rounded-xl bg-[#FF8928] py-2.5 text-center font-bold text-white transition-colors hover:bg-[#F57F1E] pointer-events-auto"
-                    >
-                        Daftar Sekarang
-                    </Link>
+                    {is_registered ? (
+                        <Link
+                            href={detailHref}
+                            className="relative z-10 block w-full cursor-pointer rounded-xl bg-[#008740] py-2.5 text-center font-bold text-white transition-colors hover:bg-[#006B32] pointer-events-auto"
+                        >
+                            Sudah Terdaftar
+                        </Link>
+                    ) : (
+                        <Link
+                            href={registerHref}
+                            className={`relative z-10 block w-full cursor-pointer rounded-xl py-2.5 text-center font-bold text-white transition-colors ${isAvailable
+                                ? 'bg-[#FF8928] hover:bg-[#F57F1E] pointer-events-auto'
+                                : 'bg-gray-400 cursor-not-allowed'
+                                }`}
+                            aria-disabled={!isAvailable}
+                            tabIndex={isAvailable ? 0 : -1}
+                        >
+                            {sudahLewat
+                                ? 'Event Selesai'
+                                : isPenuh
+                                    ? 'Kuota Penuh'
+                                    : 'Daftar Sekarang'}
+                        </Link>
+                    )}
                 </div>
             </div>
         </div>

@@ -18,12 +18,26 @@ class CourseController extends Controller
         $kategoriUser = $user ? trim(strtolower($user->kategori_pensiun)) : null;
 
         // 2. QUERY JITU: Cari kursus berdasarkan ID/Slug dengan teknik eager loading yang efisien
-        $course = Course::with(['modules' => function ($query) {
+        $courseQuery = Course::with(['modules' => function ($query) {
             $query->orderBy('urutan', 'asc')
                   ->with(['materials' => function ($q) {
                       $q->orderBy('urutan', 'asc');
                   }, 'quizzes']);
-        }])
+        }]);
+
+        // Eager load sesiSeminar dan status absensi jika tipe kelas Hybrid/Offline
+        if ($user && in_array($courseQuery->first()?->tipe_kelas, ['Hybrid', 'Offline'])) {
+            $courseQuery->with(['sesiSeminar' => function ($query) use ($user) {
+                $query->where('sesi_seminar.status', 'disetujui')
+                ->leftJoin('absensi_seminar', function ($join) use ($user) {
+                    $join->on('sesi_seminar.id', '=', 'absensi_seminar.sesi_seminar_id')
+                         ->where('absensi_seminar.user_id', '=', $user->user_id);
+                })
+                ->select('sesi_seminar.*', 'absensi_seminar.status as absensi_status', 'absensi_seminar.waktu_absen');
+            }]);
+        }
+
+        $course = $courseQuery
         ->where(function ($query) use ($id) {
             if (is_numeric($id)) {
                 $query->where('id', $id)->orWhere('slug', $id);
@@ -31,17 +45,15 @@ class CourseController extends Controller
                 $query->where('slug', $id);
             }
         })
-        /* 
-         | KUNCI UTAMA ANTI-BOCOR:
-         | Memastikan kolom 'kategori_pensiun' di tabel courses sama dengan milik user aktif.
-         | NOTE: Pastikan data di DB tabel courses juga menggunakan string 'asn' (bukan 'asn polri')
-         | agar lolos perbandingan string strict ini.
-         */
-        ->where('is_visible_' . $kategoriUser, true) 
+        ->visibleFor($user) // Terapkan scope visibilitas
         ->first();
 
         // 3. PROTEKSI: Jika user mencoba bypass URL kelas aktor lain, langsung gagalkan secara anggun
         if (!$course) {
+            if ($kategoriUser === 'publik') {
+                // Redirect publik jika mencoba akses kelas offline/hybrid
+                return redirect()->route('courses.index')->with('error', 'Kelas ini tidak tersedia untuk akun Anda.');
+            }
             if ($request->is('api/*')) {
                 return response()->json([
                     'meta' => ['code' => 404, 'status' => 'error', 'message' => 'Kursus tidak ditemukan atau Anda tidak memiliki hak akses.'],
@@ -59,7 +71,8 @@ class CourseController extends Controller
         }
 
         return Inertia::render('DetailPelatihan', [
-            'course' => $course
+            'course' => $course,
+            'sesiSeminar' => $course->tipe_kelas === 'Online' ? [] : $course->sesiSeminar,
         ]);
     }
 

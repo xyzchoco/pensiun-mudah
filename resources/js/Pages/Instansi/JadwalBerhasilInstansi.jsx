@@ -10,7 +10,6 @@ function getInitials(name) {
         .toUpperCase();
 }
 
-const currentUser = { name: 'Budi Santoso', role: 'PREMIUM MEMBER' };
 
 const details = [
     { icon: 'calendar', label: 'TANGGAL', value: '24 Oktober 2024' },
@@ -73,7 +72,18 @@ function DetailIcon({ name }) {
     );
 }
 
-export default function JadwalBerhasilInstansi() {
+export default function JadwalBerhasilInstansi({
+    auth = {},
+    tanggal = '24 Oktober 2024',
+    jam = '08:00 - 12:00 WIB',
+    lokasi = 'Hotel Santika, Jakarta',
+}) {
+    const details = [
+        { icon: 'calendar', label: 'TANGGAL', value: tanggal },
+        { icon: 'clock', label: 'WAKTU', value: jam },
+        { icon: 'location', label: 'LOKASI', value: lokasi },
+    ];
+
     return (
         <InstansiLayout showSidebar={false} title="Jadwal Berhasil Dikonfirmasi - Pensiun Mudah" activeNav="dashboard">
             {/* Header */}
@@ -220,7 +230,7 @@ export default function JadwalBerhasilInstansi() {
                                         d="M3 5l4-1 2 5-2 1a12 12 0 005 5l1-2 5 2-1 4a16 16 0 01-14-14z"
                                     />
                                 </svg>
-                                +62 21 1234 5678
+                                +62 8519 6449 699
                             </li>
                             <li className="flex items-center gap-2">
                                 <svg

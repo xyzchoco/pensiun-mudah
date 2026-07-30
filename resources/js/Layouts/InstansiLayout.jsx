@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
+import { Toaster } from 'react-hot-toast';
 import Footer from '@/Components/Footer';
+import useFlashToast from '../Hooks/useFlashToast';
+import SearchDropdown from '@/Components/SearchDropdown';
 
 const navItems = [
     {
@@ -121,23 +124,14 @@ export default function InstansiLayout({
     searchPlaceholder = 'Cari kursus, konsultan, webinar...',
     children,
 }) {
-    const { auth, flash } = usePage().props; // ✅
+    useFlashToast();
+    const { auth } = usePage().props;
     const user = auth?.user ?? {};
     const corporateProfile = user?.corporate_profile ?? {};
     const companyName =
         corporateProfile.nama_perusahaan || user.name || 'Instansi';
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [showToast, setShowToast] = useState(false);
     const { unreadNotifCount = 0 } = usePage().props;
-
-    // Munculkan toast setiap kali ada flash.success dari Laravel
-    useEffect(() => {
-        if (flash?.success) {
-            setShowToast(true);
-            const timer = setTimeout(() => setShowToast(false), 4000);
-            return () => clearTimeout(timer);
-        }
-    }, [flash]);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     // Tampilkan sidebar otomatis di layar besar
     useEffect(() => {
@@ -281,25 +275,8 @@ export default function InstansiLayout({
                             </div>
 
                             <div className="flex items-center gap-3 sm:gap-6 shrink-0">
-                                <div className="relative w-48 sm:w-72 lg:w-96 max-w-[384px] hidden md:block">
-                                    <svg
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#3D4A3E]/60"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                        />
-                                    </svg>
-                                    <input
-                                        type="text"
-                                        placeholder={searchPlaceholder}
-                                        className="w-full pl-10 pr-4 py-2 bg-[#F0EDED] rounded-lg text-sm font-['Atkinson_Hyperlegible'] text-[#6B7280] outline-none focus:ring-2 focus:ring-[#006B32]/30"
-                                    />
+                                <div className="hidden md:block">
+                                    <SearchDropdown placeholder={searchPlaceholder} />
                                 </div>
 
                                 <div className="flex items-center gap-2 sm:gap-4">
@@ -348,48 +325,14 @@ export default function InstansiLayout({
                         </header>
                     ) : null}
 
-                    {/* TOAST NOTIFIKASI HIJAU */}
-                    {showToast && flash?.success && (
-                        <div className="fixed top-5 right-5 z-[9999] flex items-center gap-3 rounded-xl border border-[#006B32] bg-[#E5F0E9] p-4 shadow-lg max-w-sm animate-[fadeInDown_0.3s_ease]">
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-white">
-                                <svg
-                                    className="h-4 w-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="3"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M5 13l4 4L19 7"
-                                    />
-                                </svg>
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-sm font-bold text-[#1B1C1C]">
-                                    Berhasil!
-                                </p>
-                                <p className="mt-0.5 text-xs text-[#3D4A3E]">
-                                    {flash.success}
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setShowToast(false)}
-                                className="ml-2 text-sm font-bold text-[#3D4A3E] hover:text-black"
-                                aria-label="Tutup notifikasi"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    )}
-
                     <main className="flex-1 overflow-y-auto">
                         {children}
                         <Footer />
                     </main>
                 </div>
             </div>
+            {/* Toast Notifications */}
+            <Toaster position="top-right" />
         </div>
     );
 }

@@ -54,107 +54,22 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['onboarding'])->group(function () {
 
-        Route::get('/instansi/dashboard', function () {
-            $user = auth()->user();
-
-            // Ambil 3 data voucher/kelas terakhir yang dibeli oleh korporat ini
-            $purchasedCourses = \App\Models\CorporateVoucher::with('course.category')
-                ->where('corporate_user_id', $user->user_id)
-                ->latest()
-                ->take(3) // Kita batasi 3 karena ada tombol "Lihat Semua"
-                ->get()
-                ->map(function ($voucher) {
-                    return [
-                        'id' => $voucher->course->id,
-                        'slug' => $voucher->course->slug,
-                        'title' => $voucher->course->title,
-                        // Hilangkan tag HTML dari deskripsi
-                        'desc' => \Illuminate\Support\Str::limit(strip_tags($voucher->course->description), 80),
-                        'thumbnail' => $voucher->course->thumbnail,
-                        'max_uses' => $voucher->max_uses,
-                        'used_count' => $voucher->used_count,
-                        'category_color' => $voucher->course->category->warna_bg_icon ?? '#006B32',
-                    ];
-                });
-
-            // AMBIL DATA AKTIVITAS TERBARU DARI TABEL VOUCHER REDEMPTION
-            // Cari id voucher apa aja yang dimiliki perusahaan ini
-            $voucherIds = \App\Models\CorporateVoucher::where('corporate_user_id', $user->user_id)->pluck('id');
-
-            // Tarik 5 riwayat klaim terakhir berdasarkan voucher tersebut
-            $recentActivities = \App\Models\VoucherRedemption::with(['user', 'voucher.course'])
-                ->whereIn('corporate_voucher_id', $voucherIds)
-                ->latest('redeemed_at')
-                ->take(5)
-                ->get()
-                ->map(function ($redemption) {
-                    // Gunakan Carbon untuk bikin teks "5 menit yang lalu" otomatis!
-                    \Carbon\Carbon::setLocale('id'); // Pastikan bahasa Indonesia
-                    $timeAgo = \Carbon\Carbon::parse($redemption->redeemed_at)->diffForHumans();
-
-                    return [
-                        'variant' => 'join',
-                        'text'    => $redemption->user->name . ' bergabung ke ' . $redemption->voucher->course->title,
-                        'time'    => $timeAgo,
-                    ];
-                });
-
-            // AMBIL DATA PROGRES BELAJAR KARYAWAN
-            $memberProgressData = \App\Models\VoucherRedemption::with(['user', 'voucher.course'])
-                ->whereIn('corporate_voucher_id', $voucherIds)
-                ->latest('redeemed_at')
-                ->take(5) // Ambil 5 progres terbaru
-                ->get()
-                ->map(function ($redemption) {
-                    // Cari data progres di tabel enrollment
-                    $enrollment = \App\Models\Enrollment::where('user_id', $redemption->user_id)
-                        ->where('course_id', $redemption->voucher->course_id)
-                        ->first();
-
-                    $progress = $enrollment ? $enrollment->progress_persen : 0;
-                    $name = $redemption->user->name;
-
-                    // Bikin inisial nama (misal: Agus Setiawan -> AS)
-                    $initials = collect(explode(' ', $name))
-                        ->map(fn($p) => substr($p, 0, 1))
-                        ->take(2)
-                        ->implode('');
-
-                    // Tentukan warna bar otomatis berdasarkan persentase
-                    $colorClass     = $progress >= 80 ? 'bg-[#00A553]'   : ($progress >= 40 ? 'bg-[#FF8928]'   : 'bg-[#A8632A]');
-                    $textColorClass = $progress >= 80 ? 'text-[#00A553]' : ($progress >= 40 ? 'text-[#FF8928]' : 'text-[#A8632A]');
-
-                    return [
-                        'initials'     => strtoupper($initials),
-                        'name'         => $name,
-                        'course'       => $redemption->voucher->course->title,
-                        'percent'      => $progress,
-                        'barColor'     => $colorClass,
-                        'percentColor' => $textColorClass,
-                    ];
-                });
-
-            return Inertia::render('Instansi/DashboardInstansi', [
-                'banners'            => \App\Models\DashboardBanner::where('is_active', true)->latest()->get(),
-                'events'             => \App\Models\Webinar::where('is_published', true)->latest()->take(3)->get(),
-                'purchasedCourses'   => $purchasedCourses,
-                'recentActivities'   => $recentActivities,
-                'memberProgressData' => $memberProgressData, // Lempar ke React
-            ]);
-        })->name('instansi.dashboard');
+        Route::get('/instansi/dashboard', [\App\Http\Controllers\InstansiDashboardController::class, 'index'])->name('instansi.dashboard');
 
                 Route::get('/instansi/beli-pelatihan', function () {
                     return Inertia::render('Instansi/BeliPelatihanInstansi', [
                         'banners' => DashboardBanner::where('is_active', true)->latest()->get(),
                         'courses' => Course::with('category')
+                            ->withAvg('reviews', 'rating')
+                            ->withCount('reviews')
                             ->where('status', 'published')
-                            ->where('is_visible_asn', true) 
+                            ->where('is_visible_asn', true)
                             ->latest()
                             ->get(),
                     ]);
                 })->name('instansi.beli-pelatihan');
 
-                Route::get('/instansi/anggota', fn () => Inertia::render('Instansi/AnggotaInstansi'))->name('instansi.anggota');
+                Route::get('/instansi/anggota', [\App\Http\Controllers\CorporateMemberController::class, 'index'])->name('instansi.anggota');
                 Route::get('/instansi/profil-perusahaan', fn () => Inertia::render('Instansi/ProfilPerusahaanInstansi'))->name('instansi.profil-perusahaan');
                 Route::post('/instansi/profil-perusahaan/update', function (Request $request) {
                     $data = $request->validate([
@@ -172,36 +87,46 @@ Route::middleware(['auth'])->group(function () {
 
                 Route::put('/instansi/profil-perusahaan/update', [\App\Http\Controllers\CorporateProfileController::class, 'update'])->name('instansi.profil.update');
 
-                Route::get('/instansi/pelatihan-dibeli', function () {
-                    $user = auth()->user();
-
-                    // Ambil SEMUA data voucher/kelas yang dibeli oleh korporat ini
-                    $purchasedCourses = \App\Models\CorporateVoucher::with('course')
-                        ->where('corporate_user_id', $user->user_id)
-                        ->latest()
-                        ->get()
-                        ->map(function ($voucher) {
-                            return [
-                                'id' => $voucher->course->id,
-                                'title' => $voucher->course->title,
-                                'slug' => $voucher->course->slug,
-                                'thumbnail' => $voucher->course->thumbnail,
-                                'used_count' => $voucher->used_count,
-                                'max_uses' => $voucher->max_uses,
-                            ];
-                        });
-
-                    return Inertia::render('Instansi/PelatihanDibeliInstansi', [
-                        'purchasedCourses' => $purchasedCourses
-                    ]);
-                })->name('instansi.pelatihan-dibeli');
+                Route::get('/instansi/pelatihan-dibeli', [\App\Http\Controllers\InstansiPelatihanDibeliController::class, 'index'])->name('instansi.pelatihan-dibeli');
 
                 Route::get('/instansi/profil-perusahaan/edit', fn () => Inertia::render('Instansi/EditProfilPerusahaanInstansi', ['profile' => auth()->user()->corporateProfile]))->name('instansi.profil-perusahaan.edit');
                 Route::get('/instansi/pelatihan/{slug}/detail', function ($slug) {
-                    $course = Course::with(['category', 'lessons'])->where('slug', $slug)->firstOrFail();
+                    $course = Course::with(['category', 'lessons'])
+                        ->withAvg('reviews', 'rating')
+                        ->withCount('reviews')
+                        ->where('slug', $slug)->firstOrFail();
+
+                    $reviews = \App\Models\Review::with('user')
+                        ->where('course_id', $course->id)
+                        ->latest()
+                        ->get()
+                        ->map(function ($review) {
+                            return [
+                                'name'       => $review->user->name ?? 'Peserta',
+                                'profession' => $review->user->kategori_pensiun === 'asn'
+                                    ? 'ASN/TNI/Polri'
+                                    : ($review->user->kategori_pensiun === 'korporat'
+                                        ? 'Karyawan Korporat'
+                                        : 'Peserta Publik'),
+                                'text'       => $review->comment ?? '',
+                                'rating'     => $review->rating,
+                                'avatar'     => $review->user->profile_photo_path
+                                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($review->user->profile_photo_path)
+                                    : null,
+                            ];
+                        });
+
+                    $totalReviews = $reviews->count();
+                    $ratingAverage = $totalReviews > 0
+                        ? round($reviews->avg('rating'), 1)
+                        : 0;
+
                     return Inertia::render('Instansi/DetailKelasInstansi', [
                         'course' => $course,
                         'backHref' => route('instansi.beli-pelatihan'),
+                        'reviews' => $reviews,
+                        'ratingAverage' => $ratingAverage,
+                        'totalReviews' => $totalReviews,
                     ]);
                 })->name('instansi.pelatihan.detail-kelas');
                 Route::get(
@@ -210,7 +135,10 @@ Route::middleware(['auth'])->group(function () {
                 )->name('instansi.pelatihan.pembelian-online');
 
                 Route::get('/instansi/pelatihan-offline/{slug}', function ($slug, Request $request) {
-                    $course = Course::with('category')->where('slug', $slug)->firstOrFail();
+                    $course = Course::with('category')
+                        ->withAvg('reviews', 'rating')
+                        ->withCount('reviews')
+                        ->where('slug', $slug)->firstOrFail();
                     $qty = max(1, (int) $request->query('qty', 1));
 
                     $eventDate = $course->tanggal_default
@@ -238,7 +166,10 @@ Route::middleware(['auth'])->group(function () {
                 })->name('instansi.pelatihan-offline.detail');
 
                 Route::get('/instansi/pelatihan-hybrid/{slug}/pembelian', function ($slug, Request $request) {
-                    $course = Course::with('category')->where('slug', $slug)->first();
+                    $course = Course::with('category')
+                        ->withAvg('reviews', 'rating')
+                        ->withCount('reviews')
+                        ->where('slug', $slug)->first();
                     $quantity = max(1, (int) $request->query('qty', 1));
                     $price = $course?->price ?? (int) $request->query('price', 0);
                     $title = $course?->title ?? $request->query('title', 'Kelas Hybrid Instansi');
@@ -259,9 +190,12 @@ Route::middleware(['auth'])->group(function () {
                     ]);
                 })->name('instansi.pelatihan-hybrid.pembelian');
                 Route::get('/instansi/pelatihan-hybrid/{slug}', function ($slug, Request $request) {
-                    $course = Course::with('category')->where('slug', $slug)->first();
+                    $course = Course::with(['category', 'lessons'])
+                        ->withAvg('reviews', 'rating')
+                        ->withCount('reviews')
+                        ->where('slug', $slug)->first();
                     $price = $course?->price ?? (int) $request->query('price', 0);
-                    $title = $course?->title ?? $request->query('title', 'Kelas Hybrid Instansi');
+                    $title = $course?->title ?? 'Kelas Hybrid Instansi';
                     $description = strip_tags($course?->description ?? $request->query('description', ''));
                     $purchaseParams = http_build_query([
                         'qty' => max(1, (int) $request->query('qty', 5)),
@@ -271,7 +205,28 @@ Route::middleware(['auth'])->group(function () {
                         'back' => $request->fullUrl(),
                     ]);
 
+                    $reviews = \App\Models\Review::with('user')
+                        ->where('course_id', $course?->id)
+                        ->latest()
+                        ->get()
+                        ->map(function ($review) {
+                            return [
+                                'name'       => $review->user->name ?? 'Peserta',
+                                'text'       => $review->comment ?? '',
+                                'rating'     => $review->rating,
+                                'avatar'     => $review->user->profile_photo_path
+                                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($review->user->profile_photo_path)
+                                    : null,
+                            ];
+                        });
+
+                    $totalReviews = $reviews->count();
+                    $ratingAverage = $totalReviews > 0
+                        ? round($reviews->avg('rating'), 1)
+                        : 0;
+
                     return Inertia::render('Instansi/DetailPelatihanHybridInstansi', [
+                        'course' => $course,
                         'title' => $title,
                         'about' => $description,
                         'duration' => $course?->durasi ?? $request->query('time', 'Jadwal akan dikonfirmasi'),
@@ -279,6 +234,9 @@ Route::middleware(['auth'])->group(function () {
                         'price' => $price > 0 ? 'Rp ' . number_format($price, 0, ',', '.') : 'Gratis',
                         'backHref' => route('instansi.beli-pelatihan'),
                         'purchaseHref' => route('instansi.pelatihan-hybrid.pembelian', $slug) . '?' . $purchaseParams,
+                        'reviews' => $reviews,
+                        'ratingAverage' => $ratingAverage,
+                        'totalReviews' => $totalReviews,
                     ]);
                 })->name('instansi.pelatihan-hybrid.detail');
                 Route::get('/instansi/pelatihan/{slug}', [PelatihanController::class, 'show'])->name('instansi.pelatihan.detail');
@@ -291,8 +249,18 @@ Route::middleware(['auth'])->group(function () {
                 Route::post('/instansi/pembayaran/{trainingRequest}/finalize', [PembayaranController::class, 'finalizeOfflinePayment'])->name('instansi.pembayaran.finalize');
                 Route::get('/instansi/request-ditinjau/{trainingRequest}', [TrainingRequestController::class, 'statusRequest'])->name('instansi.request-ditinjau');
 
+                // Tambahkan rute baru untuk snapTokenOffline
+                Route::post('/instansi/pembayaran/snap-token/{trainingRequest}', [TrainingRequestController::class, 'snapTokenOffline'])->name('instansi.pembayaran.snap-token');
+
                 Route::get('/instansi/modul/{slug}', [PelatihanController::class, 'detailModul'])->name('instansi.modul.detail');
-                Route::get('/instansi/pilih-jadwal-hybrid', fn () => Inertia::render('Instansi/PilihJadwalHybridInstansi'))->name('instansi.pilih-jadwal-hybrid');
-                Route::get('/instansi/jadwal-berhasil', fn () => Inertia::render('Instansi/JadwalBerhasilInstansi'))->name('instansi.jadwal-berhasil');
+                Route::get('/instansi/pilih-jadwal-hybrid/{course:slug}', [\App\Http\Controllers\TrainingRequestController::class, 'pilihJadwalHybrid'])->name('instansi.pilih-jadwal-hybrid');
+                Route::post('/instansi/request-jadwal-hybrid', [\App\Http\Controllers\TrainingRequestController::class, 'storeJadwalHybrid'])->name('instansi.request-jadwal-hybrid');
+                Route::get('/instansi/jadwal-berhasil', function (\Illuminate\Http\Request $request) {
+                    return Inertia::render('Instansi/JadwalBerhasilInstansi', [
+                        'tanggal' => $request->query('tanggal'),
+                        'jam' => $request->query('jam'),
+                        'lokasi' => $request->query('lokasi'),
+                    ]);
+                })->name('instansi.jadwal-berhasil');
     });
 });

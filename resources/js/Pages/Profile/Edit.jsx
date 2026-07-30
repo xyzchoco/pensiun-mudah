@@ -1,12 +1,26 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Head, usePage, Link } from '@inertiajs/react';
-import { useRef } from 'react';
+import { Head, usePage, Link, router } from '@inertiajs/react';
+import { useRef, useState } from 'react';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 
-export default function Edit({ mustVerifyEmail, status }) {
+export default function Edit({ mustVerifyEmail, status, completedCoursesCount = 0 }) {
     const profileFormRef = useRef();
     const passwordFormRef = useRef();
+    const fileInputRef = useRef();
+    const [uploading, setUploading] = useState(false);
+
+    const handlePhotoChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setUploading(true);
+            router.post(route('profile.photo'), { photo: e.target.files[0] }, {
+                forceFormData: true,
+                preserveScroll: true,
+                onFinish: () => setUploading(false),
+                onError: (errors) => console.log('Upload error:', errors),
+            });
+        }
+    };
 
     const handleSaveAll = () => {
         profileFormRef.current?.submit();
@@ -16,14 +30,12 @@ export default function Edit({ mustVerifyEmail, status }) {
 
     const memberSince = user.created_at
         ? new Date(user.created_at).toLocaleDateString('id-ID', {
-              month: 'long',
-              year: 'numeric',
-          })
+            month: 'long',
+            year: 'numeric',
+        })
         : '-';
 
-    const completedCourses = user.enrollments
-        ? user.enrollments.filter((enrollment) => enrollment.is_completed).length
-        : 0;
+    const completedCourses = completedCoursesCount;
 
     return (
         <DashboardLayout title="Profile" showSearch={false}>
@@ -45,22 +57,34 @@ export default function Edit({ mustVerifyEmail, status }) {
                             Logout
                         </Link>
                     </div>
-                    
+
                     {/* Bagian Atas: Sidebar (Kiri) dan Informasi Pribadi (Kanan) */}
                     <div className="grid grid-cols-[320px_minmax(520px,720px)] gap-6 items-stretch">
-                        
+
                         {/* Sidebar Profil */}
                         <aside className="h-full rounded-xl border border-[#DDE6DF] bg-white p-8 shadow-sm">
                             <div className="flex flex-col items-center text-center">
                                 <div className="relative mb-5">
                                     <div className="relative inline-flex h-[130px] w-[130px] items-center justify-center rounded-full border-[3px] border-[#006B32] p-1">
                                         <img
-                                            src={user.profile_photo_url ?? '/images/avatar.png'}
+                                            src={user.profile_photo_url ?? '/images/iconprofile.png'}
                                             alt={user.name}
                                             className="h-full w-full rounded-full object-cover"
                                         />
                                     </div>
-                                    <button type="button" className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[#FF8928] text-white shadow-sm hover:bg-[#e07720]">
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handlePhotoChange}
+                                    />
+                                    <button
+                                        type="button"
+                                        disabled={uploading}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[#FF8928] text-white shadow-sm hover:bg-[#e07720] disabled:opacity-50"
+                                    >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                             <path d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 0011.586 3H8.414a1 1 0 00-.707.293L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" />
                                         </svg>
@@ -77,7 +101,7 @@ export default function Edit({ mustVerifyEmail, status }) {
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="font-semibold text-[#4B5563]">Kursus Selesai</span>
-                                        <span className="font-bold text-[#1B1C1C]">{completedCourses} Materi</span>
+                                        <span className="font-bold text-[#1B1C1C]">{completedCourses} Kursus</span>
                                     </div>
                                 </div>
                             </div>

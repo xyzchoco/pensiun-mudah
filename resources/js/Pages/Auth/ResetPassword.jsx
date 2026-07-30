@@ -1,8 +1,3 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
 
 export default function ResetPassword({ token, email }) {
@@ -22,73 +17,73 @@ export default function ResetPassword({ token, email }) {
     };
 
     return (
-        <GuestLayout>
-            <Head title="Reset Password" />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#F6F3F2] to-[#FFFFFF] p-6">
+            <Head title="Atur Ulang Kata Sandi" />
 
-            <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="email" value="Email" />
+            <div className="w-full max-w-[520px] bg-white border border-[#E4E2E1] shadow-[0_4px_12px_rgba(0,0,0,0.05)] rounded-[12px] p-14">
 
-                    <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
-                        onChange={(e) => setData('email', e.target.value)}
-                    />
-
-                    <InputError message={errors.email} className="mt-2" />
+                {/* Logo Section */}
+                <div className="flex justify-center mb-8">
+                    <img src="/images/logo.png" alt="Pensiun Mudah Logo" className="h-[56px] w-auto" />
                 </div>
 
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        isFocused={true}
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
+                {/* Heading */}
+                <div className="text-center mb-10">
+                    <h2 className="font-['Public_Sans'] font-semibold text-2xl text-[#1B1C1C] mb-2">Atur Ulang Kata Sandi</h2>
+                    <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-base">Silakan tentukan kata sandi baru Anda</p>
                 </div>
 
-                <div className="mt-4">
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Confirm Password"
-                    />
+                <form onSubmit={submit} className="flex flex-col gap-6">
+                    {/* Email Field */}
+                    <div className="flex flex-col gap-2">
+                        <label className="font-['Atkinson_Hyperlegible'] font-bold text-lg text-[#1B1C1C]">Alamat Email</label>
+                        <input
+                            type="email"
+                            className="w-full p-4 bg-[#E4E2E1]/20 border border-[#E4E2E1] rounded-lg outline-none cursor-not-allowed"
+                            value={data.email}
+                            readOnly
+                            required
+                        />
+                        {errors.email && <span className="text-red-500 text-sm">{errors.email}</span>}
+                    </div>
 
-                    <TextInput
-                        type="password"
-                        id="password_confirmation"
-                        name="password_confirmation"
-                        value={data.password_confirmation}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        onChange={(e) =>
-                            setData('password_confirmation', e.target.value)
-                        }
-                    />
+                    {/* Password Field */}
+                    <div className="flex flex-col gap-2">
+                        <label className="font-['Atkinson_Hyperlegible'] font-bold text-lg text-[#1B1C1C]">Kata Sandi Baru</label>
+                        <input
+                            type="password"
+                            className="w-full p-4 bg-[#FBF9F8] border border-[#E4E2E1] rounded-lg focus:ring-2 focus:ring-[#006B32] outline-none"
+                            placeholder="Masukkan kata sandi baru"
+                            value={data.password}
+                            onChange={(e) => setData('password', e.target.value)}
+                            required
+                        />
+                        {errors.password && <span className="text-red-500 text-sm">{errors.password}</span>}
+                    </div>
 
-                    <InputError
-                        message={errors.password_confirmation}
-                        className="mt-2"
-                    />
-                </div>
+                    {/* Password Confirmation Field */}
+                    <div className="flex flex-col gap-2">
+                        <label className="font-['Atkinson_Hyperlegible'] font-bold text-lg text-[#1B1C1C]">Konfirmasi Kata Sandi Baru</label>
+                        <input
+                            type="password"
+                            className="w-full p-4 bg-[#FBF9F8] border border-[#E4E2E1] rounded-lg focus:ring-2 focus:ring-[#006B32] outline-none"
+                            placeholder="Ulangi kata sandi baru"
+                            value={data.password_confirmation}
+                            onChange={(e) => setData('password_confirmation', e.target.value)}
+                            required
+                        />
+                        {errors.password_confirmation && <span className="text-red-500 text-sm">{errors.password_confirmation}</span>}
+                    </div>
 
-                <div className="mt-4 flex items-center justify-end">
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Reset Password
-                    </PrimaryButton>
-                </div>
-            </form>
-        </GuestLayout>
+                    {/* Submit Button */}
+                    <button
+                        disabled={processing}
+                        className="w-full bg-[#FF8928] hover:bg-[#e67a22] text-white font-['Atkinson_Hyperlegible'] font-bold text-lg py-4 rounded-lg transition-all"
+                    >
+                        {processing ? 'Memproses...' : 'Atur Ulang Kata Sandi'}
+                    </button>
+                </form>
+            </div>
+        </div>
     );
 }

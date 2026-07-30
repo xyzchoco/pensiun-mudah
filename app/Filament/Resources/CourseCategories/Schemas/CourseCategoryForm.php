@@ -14,11 +14,19 @@ class CourseCategoryForm
     {
         return $schema
             ->components([
+                TextInput::make('icon')
+                    ->label('Nama Kategori')
+                    ->nullable()
+                    ->maxLength(50),
+
                 TextInput::make('nama')
+                    ->label('Label Kategori')
+                    ->placeholder('Contoh: Populer, Terbaru, Bisnis')
                     ->required()
                     ->maxLength(255),
                     
                 Textarea::make('deskripsi')
+                    ->label('Deskripsi Kategori')
                     ->nullable()
                     ->columnSpanFull(),
 
@@ -28,12 +36,6 @@ class CourseCategoryForm
                     ->disk('public') // Wajib public biar bisa diakses React
                     ->directory('kategori-images') // Masuk ke folder khusus
                     ->columnSpanFull(),
-                    
-                TextInput::make('icon')
-                    ->label('Teks Label/Badge')
-                    ->nullable()
-                    ->placeholder('Contoh: Populer, Terbaru, Bisnis')
-                    ->maxLength(50),
                     
                 ColorPicker::make('warna_bg_icon')
                     ->label('Warna Background Icon')

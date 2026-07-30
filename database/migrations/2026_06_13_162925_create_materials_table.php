@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('judul');
             $table->enum('tipe', ['video', 'pdf', 'artikel']); // TipeMateri
             $table->string('url_video')->nullable();
+            $table->longText('konten')->nullable(); 
             $table->string('url_pdf')->nullable();
             $table->integer('durasi_menit');
             $table->integer('urutan');

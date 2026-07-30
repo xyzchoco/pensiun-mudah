@@ -14,7 +14,7 @@ export default function DetailSertifikat({ certificate }) {
         issue_date: '12 Oktober 2023',
         description:
             'Selamat! Anda telah berhasil menyelesaikan pelatihan Literasi Keuangan Pensiun. Sertifikat ini merupakan bukti kompetensi Anda dalam mengelola aset untuk masa purnabakti yang sejahtera.',
-        pdf_url: '#',
+        download_url: '#', // Menggunakan download_url dari backend
     };
 
     // State buat buka/tutup modal sukses unduh
@@ -22,20 +22,15 @@ export default function DetailSertifikat({ certificate }) {
 
     // Pas tombol unduh diklik: mulai download lalu munculin modal
     const handleDownload = () => {
-        if (data.pdf_url && data.pdf_url !== '#') {
-            const link = document.createElement('a');
-            link.href = data.pdf_url;
-            link.download = `${data.title}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        if (data.download_url && data.download_url !== '#') {
+            window.open(data.download_url, '_blank'); // Buka di tab baru untuk download
         }
         setShowSuccess(true);
     };
 
-    // Buka file PDF di tab baru
+    // Buka file PDF di tab baru (sekarang sama dengan handleDownload)
     const handleOpenFile = () => {
-        if (data.pdf_url) window.open(data.pdf_url, '_blank');
+        if (data.download_url) window.open(data.download_url, '_blank');
         setShowSuccess(false);
     };
 

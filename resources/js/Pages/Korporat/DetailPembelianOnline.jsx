@@ -30,12 +30,17 @@ export default function DetailPembelianOnline({
     quantity = 5,
     orderId = 'IND-0001-2025',
     backHref = '/korporat/beli-pelatihan',
+    reviews = [],
+    ratingAverage = 0,
+    totalReviews = 0,
 }) {
     const [qty, setQty] = useState(transaction?.jumlah_peserta || Math.max(1, Number(quantity) || 1));
     const activeToken = snapToken || transaction?.snap_token;
 
     useEffect(() => {
-        if (!midtransClientKey || !activeToken) return;
+        if (!midtransClientKey || !activeToken) {
+            return;
+        }
 
         const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
         let script = document.querySelector(`script[src="${snapScript}"]`);
@@ -98,7 +103,7 @@ export default function DetailPembelianOnline({
                     alert("Pembayaran gagal.");
                 },
                 onClose() {
-                    console.log("Popup ditutup");
+                    // Popup ditutup
                 },
             });
         } else {
@@ -164,6 +169,20 @@ export default function DetailPembelianOnline({
                                         <h2 className="mt-3 text-2xl font-bold text-[#1B1C1C]">
                                             {courseTitle}
                                         </h2>
+                                        {/* BINTANG RATING */}
+                                        <div className="mt-2 flex items-center gap-1">
+                                            {[...Array(5)].map((_, index) => {
+                                                const starFill = index < Math.round(Number(ratingAverage) || 0) ? "currentColor" : "none";
+                                                const strokeClass = index < Math.round(Number(ratingAverage) || 0) ? "" : "text-[#6D7B6D]/30";
+                                                return (
+                                                    <svg key={index} className={`h-4 w-4 text-[#FF8928] ${strokeClass}`} fill={starFill} stroke="currentColor" strokeWidth={index < Math.round(ratingAverage || 0) ? 0 : 1.5} viewBox="0 0 20 20">
+                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                    </svg>
+                                                );
+                                            })}
+                                            <span className="ml-1 font-bold text-sm">{parseFloat(ratingAverage).toFixed(1)}</span>
+                                            <span className="text-xs text-[#6B7280]">({totalReviews})</span>
+                                        </div>
                                         <p className="mt-2 text-[#3D4A3E]">
                                             {courseDescription}
                                         </p>
@@ -198,7 +217,7 @@ export default function DetailPembelianOnline({
                                 </div>
                             </div>
                         </div>
-
+                        {/* KOLOM KANAN: Ringkasan Pesanan */}
                         <div className="lg:col-span-1">
                             <div className="rounded-2xl border border-[#E4E2E1] bg-[#F6F3F2] p-6">
                                 <h2 className="text-xl font-bold text-[#1B1C1C]">

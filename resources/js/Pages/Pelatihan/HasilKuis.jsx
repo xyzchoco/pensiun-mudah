@@ -1,20 +1,23 @@
-import { Head, Link } from "@inertiajs/react";
+import { useState } from "react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import {
   ArrowLeft,
   ArrowRight,
+  Award,
   BadgeCheck,
   Check,
   CheckCircle2,
   ChevronRight,
   CircleHelp,
   RotateCcw,
+  Star,
   Timer,
   XCircle,
 } from "lucide-react";
 import LearningLayout from "@/Components/Pelatihan/LearningLayout";
 import { normalizeLearning } from "./learningContent";
 
-export default function HasilKuis({ learning, quizResult }) {
+export default function HasilKuis({ learning, quizResult, existingReview }) {
   const { course } = normalizeLearning(learning);
 
   const score = quizResult?.score ?? 0;
@@ -24,22 +27,33 @@ export default function HasilKuis({ learning, quizResult }) {
   const correctCount = quizResult?.correct_count ?? 0;
   const timeTaken = quizResult?.time_taken_minutes ?? 0;
 
-  // FIX BUG #5: wrong_questions sekarang bisa diisi dari DB (tidak lagi selalu kosong)
+  // wrong_questions dari DB (bisa kosong)
   const wrongQuestionsArray = quizResult?.wrong_questions ?? [];
   const wrongNumbers = new Set(wrongQuestionsArray);
 
   const isPassed = score >= passingScore;
+
   const performance = Array.from({ length: totalQuestions }, (_, i) => i + 1);
 
   const firstLessonHref = course.firstLessonId
     ? `/pelatihan/${course.id}/belajar?lesson=${encodeURIComponent(course.firstLessonId)}`
     : `/pelatihan/${course.id}/belajar`;
 
-  // FIX BUG #1: "Lanjut ke Modul Berikutnya" harus mengarah ke modul/lesson berikutnya,
-  // bukan firstLesson. Gunakan nextLessonId jika tersedia dari backend.
-  const nextLessonHref = course.nextLessonId
-    ? `/pelatihan/${course.id}/belajar?lesson=${encodeURIComponent(course.nextLessonId)}`
-    : firstLessonHref; // fallback jika tidak ada modul lanjutan
+  // Link ke halaman sertifikat (dijaga server: hanya kalau sudah selesai & punya kursus)
+  const sertifikatHref = `/sertifikat/${course.id}`;
+
+  // --- Cari next step dari array steps yang dikirim controller (aman kalau undefined) ---
+  const steps = Array.isArray(learning?.steps) ? learning.steps : [];
+  const currentStepIndex = steps.findIndex(
+    (s) => s.type === "quiz" && s.id === quizResult?.quiz_id
+  );
+  const nextStep =
+    currentStepIndex !== -1 ? steps[currentStepIndex + 1] ?? null : null;
+  const nextLessonHref = nextStep
+    ? nextStep.type === "material"
+      ? `/pelatihan/${course.id}/belajar?lesson=${nextStep.id}`
+      : `/pelatihan/${course.id}/kuis?module=${nextStep.moduleId}`
+    : `/pelatihan/${course.id}/kelas`;
 
   return (
     <LearningLayout>
@@ -77,8 +91,8 @@ export default function HasilKuis({ learning, quizResult }) {
               {/* Lingkaran Skor */}
               <div
                 className={`flex h-[192px] w-[192px] items-center justify-center rounded-full border-4 transition-colors ${isPassed
-                    ? "border-[#CDE8D8] bg-[#F4FFF0]"
-                    : "border-[#FACDCD] bg-[#FFEDEC]"
+                  ? "border-[#CDE8D8] bg-[#F4FFF0]"
+                  : "border-[#FACDCD] bg-[#FFEDEC]"
                   }`}
               >
                 <div>
@@ -148,8 +162,8 @@ export default function HasilKuis({ learning, quizResult }) {
                     <span
                       key={number}
                       className={`flex h-11 w-11 items-center justify-center rounded-lg border-2 text-base font-extrabold transition-all shadow-2xs ${isWrong
-                          ? "border-[#D12B2B] bg-[#FFEDEC] text-[#B51212]"
-                          : "border-[#007A3D] bg-[#008740] text-white"
+                        ? "border-[#D12B2B] bg-[#FFEDEC] text-[#B51212]"
+                        : "border-[#007A3D] bg-[#008740] text-white"
                         }`}
                     >
                       {number}
@@ -161,8 +175,17 @@ export default function HasilKuis({ learning, quizResult }) {
 
             {/* Tombol Navigasi Bawah */}
             <div className="mt-16 flex flex-wrap items-center gap-4">
-              {isPassed ? (
-                // FIX BUG #1: Gunakan nextLessonHref, bukan firstLessonHref
+              {isFinal && isPassed ? (
+                // KUIS FINAL LULUS → Lihat Sertifikat
+                <Link
+                  href={sertifikatHref}
+                  className="inline-flex h-14 flex-1 min-w-[240px] items-center justify-center gap-2 rounded-xl bg-[#007A3D] px-6 text-base font-extrabold text-white shadow-sm transition-colors hover:bg-[#006122]"
+                >
+                  <Award className="h-5 w-5" />
+                  Lihat Sertifikat
+                </Link>
+              ) : isPassed ? (
+                // Modul biasa lulus → Lanjut
                 <Link
                   href={nextLessonHref}
                   className="inline-flex h-14 flex-1 min-w-[240px] items-center justify-center gap-2 rounded-xl bg-[#FF8928] px-6 text-base font-extrabold text-[#261504] shadow-sm transition-colors hover:bg-[#E0761F]"
@@ -171,8 +194,10 @@ export default function HasilKuis({ learning, quizResult }) {
                   <ArrowRight className="h-5 w-5" />
                 </Link>
               ) : (
+                // Belum lulus → Coba lagi
                 <Link
-                  href={`/pelatihan/${course.id}/kuis`}
+                  href={`/pelatihan/${course.id}/kuis${isFinal ? `?module=${quizResult?.module_id ?? ""}` : ""
+                    }`}
                   preserveState={false}
                   className="inline-flex h-14 flex-1 min-w-[240px] items-center justify-center gap-2 rounded-xl bg-[#D12B2B] px-6 text-base font-extrabold text-white shadow-sm transition-colors hover:bg-[#B51212]"
                 >
@@ -205,6 +230,7 @@ export default function HasilKuis({ learning, quizResult }) {
                   </div>
                 )}
               </div>
+
               {/* Tampilan Kondisional Sertifikat */}
               {isFinal && isPassed ? (
                 <>
@@ -216,18 +242,19 @@ export default function HasilKuis({ learning, quizResult }) {
                     <Check className="h-5 w-5 text-[#007A3D]" />
                   </div>
                   <Link
-                    href={`/pelatihan/${course.id}/sertifikat/unduh`}
-                    className="mt-4 flex h-14 items-center justify-center rounded-xl bg-[#007A3D] text-base font-extrabold text-white shadow-sm transition-colors hover:bg-[#006122]"
+                    href={sertifikatHref}
+                    className="mt-4 flex h-14 items-center justify-center gap-2 rounded-xl bg-[#007A3D] text-base font-extrabold text-white shadow-sm transition-colors hover:bg-[#006122]"
                   >
-                    Unduh Sertifikat Resmi
+                    <Award className="h-5 w-5" />
+                    Lihat Sertifikat
                   </Link>
                 </>
               ) : isFinal && !isPassed ? (
                 <div className="mt-4 flex items-start gap-2 rounded-lg border border-[#D12B2B] bg-[#FFEDEC] p-3 text-xs font-semibold text-[#B51212]">
                   <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
                   <span>
-                    Sertifikat dikunci. Raih nilai kelulusan {passingScore}{" "}
-                    untuk klaim sertifikat kelas.
+                    Sertifikat dikunci. Raih nilai kelulusan {passingScore} untuk
+                    klaim sertifikat kelas.
                   </span>
                 </div>
               ) : (
@@ -246,3 +273,4 @@ export default function HasilKuis({ learning, quizResult }) {
     </LearningLayout>
   );
 }
+

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\OtpMail;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -11,9 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,41 +32,43 @@ class RegisteredUserController extends Controller
     }
 
     /**
-     * Handle an incoming registration request (KIRIM OTP)
+     * Handle an incoming registration request (KIRIM OTP VIA EMAIL)
      */
     public function store(Request $request): RedirectResponse
     {
-        // 1. FORMAT NOMOR WA DULUAN SEBELUM DIVALIDASI!
-        // Biar kalau user ngetik 08..., langsung diubah jadi 628... di dalam Request
-        if ($request->filled('whatsapp')) {
-            $request->merge([
-                'whatsapp' => $this->formatNomorWa($request->whatsapp)
-            ]);
-        }
-
-        // 2. BARU LAKUKAN VALIDASI
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'whatsapp' => 'required|string|max:20|unique:'.User::class, // Ini sekarang ngecek yang 628...
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $phone = $request->whatsapp; // Ini otomatis udah 628...
+        $email = $request->email;
         
-        // 3. SET OTP STATIS UNTUK BYPASS
-        $otpCode = 123456; 
+        // 1. Generate OTP 6 digit random
+        $otpCode = rand(100000, 999999);
 
-        Cache::put('register_otp_' . $phone, [
+        // 2. Simpan data registrasi sementara di Cache (key by email)
+        Cache::put('register_otp_' . $email, [
             'otp' => $otpCode,
             'name' => $request->name,
-            'email' => $request->email,
-            'whatsapp' => $phone,
+            'email' => $email,
             'password' => Hash::make($request->password),
         ], now()->addMinutes(5));
 
-        // 4. LANGSUNG ANGGAP SUKSES & LEMPAR KE HALAMAN OTP
-        session(['whatsapp_verification' => $phone]);
+        // 3. Kirim OTP via Email
+        try {
+            Mail::to($email)->send(new OtpMail($otpCode, $request->name));
+        } catch (\Exception $e) {
+            // Hapus cache karena email gagal dikirim
+            Cache::forget('register_otp_' . $email);
+            logger()->error('Gagal kirim email OTP: ' . $e->getMessage());
+            return back()->withErrors([
+                'email' => 'Gagal mengirim email verifikasi. Silakan coba lagi atau gunakan alamat email lain.',
+            ]);
+        }
+
+        // 4. Simpan email di session & redirect ke halaman verifikasi OTP
+        session(['email_verification' => $email]);
         return redirect()->route('verify-otp.show');
     }
 
@@ -75,15 +77,14 @@ class RegisteredUserController extends Controller
      */
     public function showVerifyOtp(): Response|RedirectResponse
     {
-        // Ambil dari session yang diset di method store
-        $whatsapp = session('whatsapp_verification');
+        $email = session('email_verification');
 
-        if (!$whatsapp) {
-            return redirect()->route('register'); // Redirect pakai route name yang benar
+        if (!$email) {
+            return redirect()->route('register');
         }
 
         return Inertia::render('Auth/VerifyOtp', [
-            'whatsapp' => $whatsapp
+            'email' => $email,
         ]);
     }
 
@@ -93,19 +94,18 @@ class RegisteredUserController extends Controller
     public function verifyOtp(Request $request): RedirectResponse
     {
         $request->validate([
-            'whatsapp' => 'required|string',
+            'email' => 'required|string|email',
             'otp' => 'required|numeric',
         ]);
 
-
-        $phone = $request->whatsapp;
+        $email = $request->email;
         $inputOtp = $request->otp;
 
         // Tarik data sementara dari Cache
-        $cachedData = Cache::get('register_otp_' . $phone);
+        $cachedData = Cache::get('register_otp_' . $email);
 
         // Kalau OTP expired atau salah
-        if (!$cachedData || $cachedData['otp'] != $inputOtp) {
+        if (!$cachedData || (int) $cachedData['otp'] !== (int) $inputOtp) {
             return back()->withErrors(['otp' => 'Kode OTP salah atau sudah kedaluwarsa.']);
         }
 
@@ -115,20 +115,20 @@ class RegisteredUserController extends Controller
         $user = User::create([
             'name' => $cachedData['name'],
             'email' => $cachedData['email'],
-            'whatsapp' => $cachedData['whatsapp'],
             'password' => $cachedData['password'],
             'role_id' => $userRole->id,
+            'email_verified_at' => now(),
         ]);
 
         // Bersihkan memori Cache & Session
-        Cache::forget('register_otp_' . $phone);
-        session()->forget('whatsapp_verification');
+        Cache::forget('register_otp_' . $email);
+        session()->forget('email_verification');
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect()->route('onboarding.kategori'); // Sesuaikan dengan route yang ada
+        return redirect()->route('onboarding.kategori');
     }
 
     /**
@@ -136,14 +136,13 @@ class RegisteredUserController extends Controller
      */
     public function resendOtp(Request $request): RedirectResponse
     {
-        $phone = $request->whatsapp;
+        $email = $request->email;
 
         // Cek apakah data user masih ada di Cache
-        $cachedData = Cache::get('register_otp_' . $phone);
+        $cachedData = Cache::get('register_otp_' . $email);
 
         if (!$cachedData) {
-            // Kalau udah bener-bener hangus dari memori, suruh daftar dari awal
-            return redirect()->route('register')->withErrors(['whatsapp' => 'Sesi pendaftaran kedaluwarsa. Silakan daftar ulang.']);
+            return redirect()->route('register')->withErrors(['email' => 'Sesi pendaftaran kedaluwarsa. Silakan daftar ulang.']);
         }
 
         // Bikin OTP baru
@@ -151,30 +150,18 @@ class RegisteredUserController extends Controller
 
         // Update Cache dengan OTP baru, perpanjang umur 5 menit lagi
         $cachedData['otp'] = $newOtpCode;
-        Cache::put('register_otp_' . $phone, $cachedData, now()->addMinutes(5));
+        Cache::put('register_otp_' . $email, $cachedData, now()->addMinutes(5));
 
-        // Tembak ulang API Fonnte (dengan asForm dan tanpa countryCode)
-        Http::withHeaders([
-            'Authorization' => env('FONNTE_TOKEN')
-        ])->asForm()->post('https://api.fonnte.com/send', [
-            'target' => $phone,
-            'message' => "*KIRIM ULANG OTP*\n\nKode OTP baru Anda adalah: *$newOtpCode*.\n\nKode ini berlaku selama 5 menit. Jangan berikan kode ini kepada siapapun."
-        ]);
-
-        return back(); // Inertia onSuccess di React bakal jalan, reset timer ke 120 detik otomatis
-    }
-
-    /**
-     * Bantuan untuk merapikan nomor HP (ubah 08... jadi 628...)
-     */
-    private function formatNomorWa($nomor)
-    {
-        $nomor = preg_replace('/[^0-9]/', '', $nomor);
-        if (substr($nomor, 0, 1) === '0') {
-            return '62' . substr($nomor, 1);
-        } elseif (substr($nomor, 0, 1) === '8') {
-            return '62' . $nomor;
+        // Kirim ulang via Email
+        try {
+            Mail::to($email)->send(new OtpMail($newOtpCode, $cachedData['name']));
+        } catch (\Exception $e) {
+            logger()->error('Gagal kirim ulang email OTP: ' . $e->getMessage());
+            return back()->withErrors([
+                'otp' => 'Gagal mengirim ulang email. Silakan coba beberapa saat lagi.',
+            ]);
         }
-        return $nomor;
+
+        return back();
     }
 }

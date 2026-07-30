@@ -2,20 +2,56 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link } from '@inertiajs/react';
 import { useRef, useState, useEffect } from 'react';
 
+// Strip HTML tags dan batasi panjang teks
+const stripHtml = (html, maxLength = 80) => {
+    if (!html) return '';
+    const plain = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+    return plain.length > maxLength ? plain.slice(0, maxLength).trimEnd() + '...' : plain;
+};
+
 export default function BeliPelatihan({ banners, categories, courses }) {
     const courseScrollRef = useRef(null);
-    const bannerScrollRef = useRef(null);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [touchStart, setTouchStart] = useState(null);
+    const [touchEnd, setTouchEnd] = useState(null);
+
+    useEffect(() => {
+        if (!banners || banners.length <= 1) return;
+        const interval = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % banners.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [banners]);
+
+    const handleTouchStart = (e) => {
+        setTouchStart(e.targetTouches[0].clientX);
+        setTouchEnd(null);
+    };
+
+    const handleTouchMove = (e) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        if (distance > 50) {
+            setCurrentIndex((prev) => (prev + 1) % banners.length);
+        } else if (distance < -50) {
+            setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
+        }
+    };
 
     // State buat filter kategori
     const [activeCategory, setActiveCategory] = useState('Semua Modul');
 
     // Gabungin 'Semua Modul' sama data kategori dari database
-    const categoryList = ['Semua Modul', ...(categories ? categories.map(c => c.nama) : [])];
+    const categoryList = ['Semua Modul', ...(categories ? categories.map(c => c.icon) : [])];
 
     // Filter kursus berdasarkan kategori yang lagi diklik
     const filteredCourses = courses ? courses.filter(course => {
         if (activeCategory === 'Semua Modul') return true;
-        return course.category && course.category.nama === activeCategory;
+        return course.category && (course.category.icon === activeCategory || course.category.nama === activeCategory);
     }) : [];
 
     // Fungsi gampang buat format harga ke Rupiah
@@ -38,55 +74,74 @@ export default function BeliPelatihan({ banners, categories, courses }) {
             <div className="flex flex-col gap-8 pb-10">
 
                 {/* --- 1. BANNER SPESIAL KELAS MPP DINAMIS --- */}
-                <div className="relative group">
-                    <div ref={bannerScrollRef} className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] rounded-[24px]">
-                        {banners && banners.length > 0 ? (
-                            banners.map((banner) => (
-                                <div key={banner.id} className="min-w-full shrink-0 snap-center relative h-[280px] md:h-[320px] overflow-hidden">
-                                    <img
-                                        src={banner.image_path ? `/storage/${banner.image_path.replace(/^public\//, '')}` : "/images/banner-mpp.jpg"}
-                                        alt={banner.title}
-                                        className="absolute inset-0 w-full h-full object-cover"
-                                    />
-                                    <div className="absolute inset-0 bg-[#008740]/80"></div>
+                <div
+                    className="relative w-full max-w-none h-[280px] md:h-[320px] rounded-3xl overflow-hidden flex items-center bg-[#008740] shadow-lg select-none"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
+                    {banners && banners.length > 0 ? (
+                        banners.map((banner, index) => (
+                            <div
+                                key={banner.id}
+                                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center ${index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                            >
+                                <div
+                                    className="absolute inset-0 bg-cover bg-center"
+                                    style={{
+                                        backgroundImage: banner.image_path
+                                            ? `url('/storage/${banner.image_path.replace(/^public\//, '')}')`
+                                            : "url('/images/banner-mpp.jpg')",
+                                    }}
+                                />
+                                <div className="absolute inset-0 bg-[#008740]/80" />
 
-                                    <div className="absolute inset-0 px-8 py-10 lg:px-16 flex flex-col justify-center text-white">
-                                        {banner.promo_badge && (
-                                            <span className="bg-[#FF8928] text-white text-[10px] font-bold px-2 py-1 rounded w-fit mb-4">
-                                                {banner.promo_badge}
-                                            </span>
-                                        )}
-                                        <h1 className="text-3xl md:text-[42px] font-bold leading-tight mb-4 tracking-tight">
-                                            {banner.title}
-                                        </h1>
-                                        <p className="max-w-md text-base md:text-lg leading-relaxed text-white/90 mb-8 line-clamp-2">
-                                            {banner.description}
-                                        </p>
-                                        {banner.button_text && (
-                                            <Link href={banner.target_url || '#'} className="w-max rounded-xl bg-[#FF8928] px-8 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-[#e67a22] active:scale-95">
-                                                {banner.button_text}
-                                            </Link>
-                                        )}
-                                    </div>
+                                <div className="relative z-20 px-8 py-10 lg:px-16 flex flex-col justify-center items-start text-white">
+                                    {banner.promo_badge && (
+                                        <span className="bg-[#FF8928] text-white text-[10px] font-bold px-2 py-1 rounded w-fit mb-4">
+                                            {banner.promo_badge}
+                                        </span>
+                                    )}
+
+                                    <h2 className="text-3xl md:text-[42px] font-bold leading-tight mb-4 tracking-tight font-['Public_Sans']">
+                                        {banner.title}
+                                    </h2>
+
+                                    <p className="max-w-md text-base md:text-lg leading-relaxed text-white/90 mb-8 line-clamp-2 font-['Atkinson_Hyperlegible']">
+                                        {banner.description}
+                                    </p>
+
+                                    {banner.button_text && (
+                                        <Link
+                                            href={banner.target_url || '#'}
+                                            className="w-max rounded-xl bg-[#FF8928] px-8 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-[#e67a22] active:scale-95 font-['Public_Sans']"
+                                        >
+                                            {banner.button_text}
+                                        </Link>
+                                    )}
                                 </div>
-                            ))
-                        ) : (
-                            <div className="min-w-full shrink-0 relative h-[280px] md:h-[320px] bg-[#008740] flex items-center justify-center text-white rounded-[24px]">
-                                <p className="font-bold">Belum ada banner aktif.</p>
                             </div>
-                        )}
-                    </div>
+                        ))
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-white z-10 px-10">
+                            <p className="font-bold">Belum ada banner aktif.</p>
+                        </div>
+                    )}
 
-                    {/* Tombol geser banner manual */}
+                    {/* Banner Indicators */}
                     {banners && banners.length > 1 && (
-                        <>
-                            <button onClick={() => scrollContainerBy(bannerScrollRef, -1)} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-                                &lt;
-                            </button>
-                            <button onClick={() => scrollContainerBy(bannerScrollRef, 1)} className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-                                &gt;
-                            </button>
-                        </>
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-30 items-center">
+                            {banners.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setCurrentIndex(index)}
+                                    className={`transition-all duration-300 rounded-full ${index === currentIndex
+                                        ? 'w-8 h-1.5 bg-white'
+                                        : 'w-2 h-2 bg-white/40 hover:bg-white/80'
+                                        }`}
+                                />
+                            ))}
+                        </div>
                     )}
                 </div>
 
@@ -152,8 +207,8 @@ export default function BeliPelatihan({ banners, categories, courses }) {
                                         </h3>
 
                                         {/* Pakai description BUKAN deskripsi */}
-                                        <p className="text-sm text-[#6B7280] leading-relaxed mb-6 line-clamp-2">
-                                            {course.description ? course.description.replace(/<[^>]*>?/gm, '') : ''}
+                                        <p className="text-sm text-[#6B7280] leading-relaxed mb-6">
+                                            {stripHtml(course.description) || 'Deskripsi pelatihan belum tersedia.'}
                                         </p>
 
                                         <div className="mt-auto mb-6 flex items-center justify-between">
@@ -162,8 +217,25 @@ export default function BeliPelatihan({ banners, categories, courses }) {
                                                 {formatRupiah(course.price)}
                                             </p>
                                             <div className="flex items-center gap-1.5 text-xs text-[#1B1C1C]">
-                                                <span className="text-[#FF8928]">★</span>
-                                                <span className="font-bold">{course.rating_average || '0.0'}</span>
+                                                <div className="flex items-center gap-1 text-[#FF8928]">
+                                                    {[...Array(5)].map((_, index) => {
+                                                        const starFill = index < Math.round(Number(course.rating_average) || 0) ? "currentColor" : "none";
+                                                        const strokeClass = index < Math.round(Number(course.rating_average) || 0) ? "" : "text-[#6D7B6D]/30";
+                                                        return (
+                                                            <svg
+                                                                key={index}
+                                                                className={`w-3 h-3 ${strokeClass}`}
+                                                                fill={starFill}
+                                                                stroke="currentColor"
+                                                                strokeWidth={index < Math.round(course.rating_average || 0) ? 0 : 1.5}
+                                                                viewBox="0 0 20 20"
+                                                            >
+                                                                <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.36 4.18a1 1 0 00.95.69h4.4c.97 0 1.37 1.24.59 1.81l-3.56 2.59a1 1 0 00-.36 1.12l1.36 4.18c.3.92-.75 1.69-1.54 1.12l-3.56-2.59a1 1 0 00-1.18 0l-3.56 2.59c-.79.57-1.84-.2-1.54-1.12l1.36-4.18a1 1 0 00-.36-1.12L1.4 9.6c-.78-.57-.38-1.81.59-1.81h4.4a1 1 0 00.95-.69l1.36-4.18z" />
+                                                            </svg>
+                                                        );
+                                                    })}
+                                                </div>
+                                                <span className="font-bold">{course.rating_average ? course.rating_average.toFixed(1) : '0.0'}</span>
                                                 <span className="text-[#6B7280]">({course.total_reviewer || 0})</span>
                                             </div>
                                         </div>

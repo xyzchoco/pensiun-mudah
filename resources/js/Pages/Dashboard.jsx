@@ -13,6 +13,13 @@ export default function Dashboard({
     jamBelajarMingguIni = 0,
     totalSertifikat = 0,
     sertifikatProses = 0,
+    targetPensiun = {
+        overall: 0,
+        mental: 0,
+        keuangan: 0,
+        kesehatan: 0,
+        sosial: 0
+    }
 }) {
     // State untuk Carousel
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -37,6 +44,9 @@ export default function Dashboard({
     };
 
     // Auto-slide tiap 5 detik
+    const [touchStart, setTouchStart] = useState(null);
+    const [touchEnd, setTouchEnd] = useState(null);
+
     useEffect(() => {
         if (!banners || banners.length <= 1) return;
         const interval = setInterval(() => {
@@ -45,82 +55,72 @@ export default function Dashboard({
         return () => clearInterval(interval);
     }, [banners]);
 
+    const handleTouchStart = (e) => {
+        setTouchStart(e.targetTouches[0].clientX);
+        setTouchEnd(null);
+    };
+
+    const handleTouchMove = (e) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        if (distance > 50) {
+            setCurrentIndex((prev) => (prev + 1) % banners.length);
+        } else if (distance < -50) {
+            setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
+        }
+    };
+
     return (
         <DashboardLayout>
             <Head title="Dashboard" />
 
             <div className="flex flex-col gap-6 pb-10">
                 {/* 1. HERO BANNER */}
-                <div className="relative w-full max-w-none h-[320px] rounded-3xl overflow-hidden flex items-center
-                    bg-gradient-to-r from-[#006B32] to-[#008740]
-                    shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)]">
+                <div
+                    className="relative w-full max-w-none h-[280px] md:h-[320px] rounded-3xl overflow-hidden flex items-center bg-[#008740] shadow-lg select-none"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
                     {banners && banners.length > 0 ? (
                         banners.map((banner, index) => (
                             <div
                                 key={banner.id}
-                                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out
-                                flex items-center px-12 pr-64 py-12`}
+                                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center ${index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
                             >
-                                {/* PANGGIL image_path BUKAN gambar */}
                                 <div
-                                    className="absolute inset-0 bg-cover bg-center opacity-40"
+                                    className="absolute inset-0 bg-cover bg-center"
                                     style={{
                                         backgroundImage: banner.image_path
                                             ? `url('/storage/${banner.image_path.replace(/^public\//, '')}')`
-                                            : "url('/images/hero-dashboard-bg.png')",
+                                            : "url('/images/banner-mpp.jpg')",
                                     }}
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#006B32]/90 to-[#008740]/70" />
+                                <div className="absolute inset-0 bg-[#008740]/80" />
 
-                                <div className="relative z-20 max-w-[500px] flex flex-col items-start text-white">
-                                    {/* Nampilin Badge Promo (kalau diisi admin) */}
+                                <div className="relative z-20 px-8 py-10 lg:px-16 flex flex-col justify-center items-start text-white">
                                     {banner.promo_badge && (
-                                        <span className="bg-[#FF8928] text-white text-[10px] font-bold px-2 py-1 rounded w-fit mb-2">
+                                        <span className="bg-[#FF8928] text-white text-[10px] font-bold px-2 py-1 rounded w-fit mb-4">
                                             {banner.promo_badge}
                                         </span>
                                     )}
 
-                                    {/* PANGGIL title BUKAN judul */}
-                                    <h2 className="
-                                        font-['Public_Sans']
-                                        font-bold
-                                        text-[40px]
-                                        leading-[48px]
-                                        mb-3
-                                    ">
+                                    <h2 className="text-3xl md:text-[42px] font-bold leading-tight mb-4 tracking-tight font-['Public_Sans']">
                                         {banner.title}
                                     </h2>
 
-                                    {/* PANGGIL description BUKAN deskripsi */}
-                                    <p
-                                        className="
-                                        font-['Atkinson_Hyperlegible']
-                                        font-normal
-                                        text-base
-                                        leading-7
-                                        text-white/90
-                                        mb-8
-                                        max-w-[520px]
-                                    ">
+                                    <p className="max-w-md text-base md:text-lg leading-relaxed text-white/90 mb-8 line-clamp-2 font-['Atkinson_Hyperlegible']">
                                         {banner.description}
                                     </p>
 
-                                    {/* PANGGIL button_text BUKAN teks_tombol */}
                                     {banner.button_text && (
                                         <Link
                                             href={banner.target_url || '#'}
-                                            className="
-                                            bg-[#FF8928]
-                                            hover:bg-[#E67718]
-                                            text-white
-                                            px-7
-                                            py-3
-                                            rounded-xl
-                                            font-semibold
-                                            font-['Public_Sans']
-                                            transition
-                                            shadow-md
-                                            "
+                                            className="w-max rounded-xl bg-[#FF8928] px-8 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-[#e67a22] active:scale-95 font-['Public_Sans']"
                                         >
                                             {banner.button_text}
                                         </Link>
@@ -142,7 +142,7 @@ export default function Dashboard({
                                     key={index}
                                     onClick={() => setCurrentIndex(index)}
                                     className={`transition-all duration-300 rounded-full ${index === currentIndex
-                                        ? 'w-8 h-1.5 bg-[#006B32]'
+                                        ? 'w-8 h-1.5 bg-white'
                                         : 'w-2 h-2 bg-white/40 hover:bg-white/80'
                                         }`}
                                 />
@@ -248,7 +248,7 @@ export default function Dashboard({
                         <div className="bg-white border border-[#E4E2E1] p-6 rounded-2xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
                             <div className="flex-1">
                                 <h3 className="font-bold text-[#1B1C1C] mb-2 flex items-center gap-2">
-                                    <span>🏢</span> Gabung Pelatihan Korporat
+                                    <span>🏢</span> Gabung Pelatihan
                                 </h3>
                                 <p className="text-xs text-[#6B7280] max-w-[300px]">
                                     Masukkan kode akses dari perusahaan Anda untuk mulai belajar.
@@ -437,12 +437,12 @@ export default function Dashboard({
                                 className="w-[160px] h-[160px] rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner"
                                 style={{
                                     background:
-                                        'conic-gradient(#008740 68%, #F3F4F6 0)',
+                                        `conic-gradient(#008740 ${targetPensiun.overall}%, #F3F4F6 0)`,
                                 }}
                             >
                                 <div className="w-[136px] h-[136px] bg-white rounded-full flex flex-col items-center justify-center shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
                                     <p className="text-[32px] font-extrabold text-[#1B1C1C] leading-none mb-1">
-                                        68<span className="text-lg">%</span>
+                                        {targetPensiun.overall}<span className="text-lg">%</span>
                                     </p>
                                     <p className="text-[8px] font-bold text-[#6B7280] text-center px-4 leading-tight uppercase">
                                         Kesiapan Pensiun Anda
@@ -456,7 +456,7 @@ export default function Dashboard({
                                         Mental
                                     </span>
                                     <span className="text-lg font-extrabold text-[#16A34A]">
-                                        85%
+                                        {targetPensiun.mental}%
                                     </span>
                                 </div>
                                 <div className="bg-[#FFF7ED] p-3 rounded-xl flex flex-col items-center justify-center border border-[#FFEDD5]">
@@ -464,7 +464,7 @@ export default function Dashboard({
                                         Keuangan
                                     </span>
                                     <span className="text-lg font-extrabold text-[#EA580C]">
-                                        55%
+                                        {targetPensiun.keuangan}%
                                     </span>
                                 </div>
                                 <div className="bg-[#EFF6FF] p-3 rounded-xl flex flex-col items-center justify-center border border-[#DBEAFE]">
@@ -472,7 +472,7 @@ export default function Dashboard({
                                         Kesehatan
                                     </span>
                                     <span className="text-lg font-extrabold text-[#2563EB]">
-                                        70%
+                                        {targetPensiun.kesehatan}%
                                     </span>
                                 </div>
                                 <div className="bg-[#FEF2F2] p-3 rounded-xl flex flex-col items-center justify-center border border-[#FEE2E2]">
@@ -480,7 +480,7 @@ export default function Dashboard({
                                         Sosial
                                     </span>
                                     <span className="text-lg font-extrabold text-[#DC2626]">
-                                        60%
+                                        {targetPensiun.sosial}%
                                     </span>
                                 </div>
                             </div>

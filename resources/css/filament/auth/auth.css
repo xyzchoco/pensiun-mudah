@@ -1,0 +1,5 @@
+/* Filament Auth Main CSS Bundle */
+@import "./variables.css";
+@import "./layout.css";
+@import "./components.css";
+@import "./animations.css";

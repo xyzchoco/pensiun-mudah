@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 
 function getInitials(name) {
     return name
@@ -9,7 +9,6 @@ function getInitials(name) {
         .toUpperCase();
 }
 
-const currentUser = { name: 'Budi Santoso', role: 'PREMIUM MEMBER' };
 
 const details = [
     { icon: 'calendar', label: 'TANGGAL', value: '24 Oktober 2024' },
@@ -72,7 +71,24 @@ function DetailIcon({ name }) {
     );
 }
 
-export default function JadwalBerhasil() {
+export default function JadwalBerhasil({
+    auth = {},
+    tanggal = '24 Oktober 2024',
+    jam = '08:00 - 12:00 WIB',
+    lokasi = 'Hotel Santika, Jakarta',
+}) {
+    const { unreadNotifCount = 0 } = usePage().props;
+    const user = auth?.user ?? {};
+    const corporateProfile = user?.corporate_profile ?? {};
+    const companyName = corporateProfile.nama_perusahaan || user.name || 'Korporat';
+    const companyRole = 'Akun Korporat';
+
+    const details = [
+        { icon: 'calendar', label: 'TANGGAL', value: tanggal },
+        { icon: 'clock', label: 'WAKTU', value: jam },
+        { icon: 'location', label: 'LOKASI', value: lokasi },
+    ];
+
     return (
         <div className="flex min-h-screen flex-col bg-[#FBF9F8] font-['Atkinson_Hyperlegible']">
             <Head title="Jadwal Berhasil Dikonfirmasi - Pensiun Mudah" />
@@ -87,10 +103,10 @@ export default function JadwalBerhasil() {
                     />
                 </Link>
                 <div className="flex items-center gap-3 sm:gap-5">
-                    <button
-                        type="button"
+                    <Link
+                        href="/notifikasi"
                         className="relative rounded-full p-2 transition-colors hover:bg-[#F0EDED]"
-                        aria-label="Notifikasi"
+                        aria-label={`Notifikasi${unreadNotifCount > 0 ? `, ${unreadNotifCount} belum dibaca` : ''}`}
                     >
                         <svg
                             className="h-5 w-5 text-[#3D4A3E]/60"
@@ -99,20 +115,24 @@ export default function JadwalBerhasil() {
                         >
                             <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
                         </svg>
-                        <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-[#BA1A1A]" />
-                    </button>
+                        {unreadNotifCount > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#BA1A1A] border-2 border-white px-1 text-[10px] font-bold text-white">
+                                {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                            </span>
+                        )}
+                    </Link>
                     <div className="h-8 w-px bg-[#E4E2E1]" />
                     <div className="flex items-center gap-2 sm:gap-3">
                         <div className="hidden text-right sm:block">
                             <p className="text-sm font-bold text-[#1B1C1C]">
-                                {currentUser.name}
+                                {companyName}
                             </p>
                             <p className="text-[10px] font-semibold uppercase tracking-wider text-[#006B32]">
-                                {currentUser.role}
+                                {companyRole}
                             </p>
                         </div>
                         <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#006B32]/20 bg-[#006B32] text-sm font-bold text-white">
-                            {getInitials(currentUser.name)}
+                            {getInitials(companyName)}
                         </div>
                     </div>
                 </div>
@@ -261,7 +281,7 @@ export default function JadwalBerhasil() {
                                         d="M3 5l4-1 2 5-2 1a12 12 0 005 5l1-2 5 2-1 4a16 16 0 01-14-14z"
                                     />
                                 </svg>
-                                +62 21 1234 5678
+                                +62 8519 6449 699
                             </li>
                             <li className="flex items-center gap-2">
                                 <svg

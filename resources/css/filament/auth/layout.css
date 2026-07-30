@@ -1,0 +1,76 @@
+/* Filament Auth - Z-Index Architecture & Layout Utility Classes */
+
+.auth-page-root {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+  width: 100vw;
+  position: relative;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* Override Filament simple page default flex/margin offsets */
+.fi-simple-layout,
+.fi-simple-main,
+.fi-simple-page,
+.fi-simple,
+.fi-body main {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+  float: none !important;
+}
+
+/* Z-Index Layer Hierarchy */
+.auth-layer-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#interactive-bg-canvas {
+  width: 100vw;
+  height: 100vh;
+  display: block;
+}
+
+.auth-layer-interaction {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Pure Flexbox Viewport Centering */
+.auth-layer-content {
+  position: relative;
+  z-index: 30;
+  min-height: 100vh;
+  width: 100vw;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 auto !important;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .auth-layer-content {
+    padding: 2.5rem 1.5rem;
+  }
+}

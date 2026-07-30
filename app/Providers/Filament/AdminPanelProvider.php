@@ -2,10 +2,15 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\CustomLogin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use App\Filament\Widgets\RevenueChartWidget;
+use App\Filament\Widgets\StatsOverviewWidget;
+use App\Filament\Widgets\RecentTransactionsWidget;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -27,9 +32,17 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(CustomLogin::class)
+            ->brandName('Pensiun Mudah')
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Teal,
+            ])
+            ->navigationGroups([
+                NavigationGroup::make('Master Data'),
+                NavigationGroup::make('Konten'),
+                NavigationGroup::make('Transaksi'),
+                NavigationGroup::make('Website'),
+                NavigationGroup::make('Event Management'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -38,8 +51,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                AccountWidget::class,
-                FilamentInfoWidget::class,
+                StatsOverviewWidget::class,
+                RevenueChartWidget::class,
+                RecentTransactionsWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

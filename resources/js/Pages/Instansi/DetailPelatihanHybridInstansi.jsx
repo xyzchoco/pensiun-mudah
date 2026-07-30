@@ -1,4 +1,5 @@
-import { Link } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, Link } from '@inertiajs/react';
 import InstansiLayout from '@/Layouts/InstansiLayout';
 
 const hybridInfo = [
@@ -7,7 +8,7 @@ const hybridInfo = [
 ];
 
 const benefits = [
-    { icon: 'video', label: '24 Modul Video HD' },
+    { icon: 'video', label: 'Modul Video HD' },
     { icon: 'doc', label: 'E-Book Perencanaan Keuangan' },
     { icon: 'people', label: 'Sesi Workshop Tatap Muka' },
     { icon: 'badge', label: 'Sertifikat Kelulusan Resmi' },
@@ -36,27 +37,6 @@ const features = [
     },
 ];
 
-const testimonials = [
-    {
-        id: 1,
-        name: 'Ibu Sulastri',
-        role: 'Pensiunan Guru',
-        quote: 'Dahulu saya bingung bagaimana mengelola uang pesangon. Setelah ikut kursus ini, saya lebih tenang karena punya rencana yang matang.',
-    },
-    {
-        id: 2,
-        name: 'Bpk. Budi Santoso',
-        role: 'Mantan Manajer Bank',
-        quote: 'Meskipun saya latar belakang perbankan, strategi khusus masa pensiun di sini sangat relevan dengan kondisi ekonomi saat ini.',
-    },
-    {
-        id: 3,
-        name: 'Bpk. Gunawan',
-        role: 'Wirausaha Pensiunan',
-        quote: 'Materi perihal perencanaan waris sangat membantu keluarga kami dalam menyusun masa depan yang adil bagi anak-cucu.',
-    },
-];
-
 function getInitials(name) {
     return name
         .split(' ')
@@ -64,6 +44,40 @@ function getInitials(name) {
         .join('')
         .slice(0, 2)
         .toUpperCase();
+}
+
+function StarRating({ rating }) {
+    const fullStars = Math.floor(rating);
+    const hasHalf = rating - fullStars >= 0.5;
+    const stars = [];
+    for (let i = 0; i < 5; i++) {
+        if (i < fullStars) {
+            stars.push(
+                <svg key={i} className="h-4 w-4 text-[#FF8928]" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
+                </svg>
+            );
+        } else if (i === fullStars && hasHalf) {
+            stars.push(
+                <svg key={i} className="h-4 w-4 text-[#FF8928]" fill="currentColor" viewBox="0 0 20 20">
+                    <defs>
+                        <linearGradient id={`half-${i}`}>
+                            <stop offset="50%" stopColor="#FF8928" />
+                            <stop offset="50%" stopColor="#E4E2E1" />
+                        </linearGradient>
+                    </defs>
+                    <path fill={`url(#half-${i})`} d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
+                </svg>
+            );
+        } else {
+            stars.push(
+                <svg key={i} className="h-4 w-4 text-[#E4E2E1]" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
+                </svg>
+            );
+        }
+    }
+    return <div className="flex items-center gap-0.5">{stars}</div>;
 }
 
 function InfoIcon({ name }) {
@@ -251,6 +265,23 @@ function FeatureIcon({ name }) {
     );
 }
 
+function Avatar({ src, name }) {
+    if (src) {
+        return (
+            <img
+                src={src}
+                alt={name}
+                className="h-11 w-11 shrink-0 rounded-full object-cover"
+            />
+        );
+    }
+    return (
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-sm font-bold text-white">
+            {getInitials(name)}
+        </span>
+    );
+}
+
 export default function DetailPelatihanHybridInstansi({
     title = 'Manajemen Keuangan Masa Pensiun',
     rating = '4.8',
@@ -261,15 +292,91 @@ export default function DetailPelatihanHybridInstansi({
     videoCaption = 'Tonton Cuplikan Kursus: Strategi Alokasi Aset 2024',
     about = 'Masa pensiun bukanlah akhir dari produktivitas finansial, melainkan awal dari fase pengelolaan kekayaan yang baru. Kursus ini dirancang khusus untuk membantu Anda memahami cara menjaga nilai aset, mengelola pengeluaran pasca-pensiun, dan memastikan dana Anda cukup untuk gaya hidup impian selamanya.',
     price = 'Rp 249.000',
-    oldPrice = 'Rp 499.000',
     quantity = 5,
-    backHref = '/beli-pelatihan',
+    course = null,
+    backHref = '/instansi/beli-pelatihan',
     purchaseHref = '/instansi/beli-pelatihan',
+    reviews = [],
+    ratingAverage = 0,
+    totalReviews = 0,
 }) {
+    const [qty, setQty] = useState(Number(quantity) || 5);
+
+    // Fungsi konverter link YouTube menjadi embed
+    const getYouTubeEmbedUrl = (url) => {
+        if (!url) return null;
+        let videoId = '';
+        if (url.includes('youtu.be/')) {
+            videoId = url.split('youtu.be/')[1].split('?')[0];
+        } else if (url.includes('watch?v=')) {
+            videoId = url.split('watch?v=')[1].split('&')[0];
+        } else if (url.includes('embed/')) {
+            return url; // Sudah dalam format embed
+        }
+        return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
+    };
+
+    // Ambil video URL dari lessons (lesson pertama yang memiliki video)
+    const getFirstVideoLink = () => {
+        if (!course || !course.lessons || course.lessons.length === 0) {
+            return null;
+        }
+
+        for (const lesson of course.lessons) {
+            if (lesson.video_url) {
+                return lesson.video_url;
+            }
+        }
+        return null;
+    };
+
+    const rawVideoLink = getFirstVideoLink();
+    const videoLink = getYouTubeEmbedUrl(rawVideoLink);
+
+    // Parse harga dari string "Rp XXX.XXX" menjadi angka
+    const parsePrice = (priceStr) => {
+        return parseInt(priceStr.replace(/\D/g, ''), 10) || 0;
+    };
+
+    // Format angka ke format Rp
+    const formatPrice = (num) => {
+        return 'Rp ' + num.toLocaleString('id-ID');
+    };
+
+    const basePriceNum = parsePrice(price);
+    const totalPrice = basePriceNum * qty;
+
+    const handleDecrement = () => {
+        if (qty > 1) {
+            setQty(qty - 1);
+        }
+    };
+
+    const handleIncrement = () => {
+        setQty(qty + 1);
+    };
+
+    const getPurchaseUrl = () => {
+        try {
+            const url = new URL(purchaseHref, window.location.origin);
+            url.searchParams.set('qty', qty);
+            return url.pathname + url.search;
+        } catch (e) {
+            return `${purchaseHref}?qty=${qty}`;
+        }
+    };
+
+    // Gunakan rating dari server jika ada, fallback ke props
+    const displayRating = ratingAverage > 0 ? ratingAverage : rating;
+    const displayReviewCount = totalReviews > 0 ? totalReviews : reviewCount;
+
     return (
-        <InstansiLayout showSidebar={false} title={title + ' - Pensiun Mudah'} activeNav="dashboard">
-            <main className="flex-1">
-                <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex min-h-screen flex-col bg-[#FBF9F8] font-['Atkinson_Hyperlegible']">
+            <Head title={title + ' - Pensiun Mudah'} />
+            <InstansiLayout />
+
+            <main className="flex-1 px-4 pb-12 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-6xl">
                     <Link
                         href={backHref}
                         className="inline-flex items-center gap-2 font-bold text-[#006B32] transition-opacity hover:opacity-80"
@@ -353,7 +460,7 @@ export default function DetailPelatihanHybridInstansi({
                                     >
                                         <path d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
                                     </svg>
-                                    {rating} ({reviewCount} Review)
+                                    {displayRating} ({displayReviewCount} Review)
                                 </span>
                                 <span className="inline-flex items-center gap-2">
                                     <svg
@@ -375,20 +482,33 @@ export default function DetailPelatihanHybridInstansi({
                             </div>
 
                             <div className="relative mt-6 overflow-hidden rounded-2xl bg-gradient-to-br from-[#1B3326] to-[#0C1A12]">
-                                <div className="flex h-72 items-center justify-center sm:h-80">
-                                    <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#006B32] text-white shadow-lg">
-                                        <svg
-                                            className="h-7 w-7"
-                                            fill="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path d="M8 5v14l11-7z" />
-                                        </svg>
-                                    </span>
-                                </div>
-                                <p className="absolute bottom-4 left-4 font-bold text-white">
-                                    {videoCaption}
-                                </p>
+                                {videoLink ? (
+                                    <iframe
+                                        src={videoLink}
+                                        title="Video Pelatihan"
+                                        className="h-72 w-full sm:h-80"
+                                        frameBorder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    />
+                                ) : (
+                                    <>
+                                        <div className="flex h-72 items-center justify-center sm:h-80">
+                                            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#006B32] text-white shadow-lg">
+                                                <svg
+                                                    className="h-7 w-7"
+                                                    fill="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path d="M8 5v14l11-7z" />
+                                                </svg>
+                                            </span>
+                                        </div>
+                                        <p className="absolute bottom-4 left-4 font-bold text-white">
+                                            {videoCaption}
+                                        </p>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -398,10 +518,7 @@ export default function DetailPelatihanHybridInstansi({
                                     Investasi Ilmu:
                                 </p>
                                 <p className="mt-1 text-4xl font-bold text-[#006B32]">
-                                    {price}
-                                </p>
-                                <p className="text-lg font-bold text-[#BA1A1A] line-through">
-                                    {oldPrice}
+                                    {formatPrice(totalPrice)}
                                 </p>
 
                                 <div className="mt-5 space-y-4 border-t border-[#E4E2E1] pt-5">
@@ -423,7 +540,7 @@ export default function DetailPelatihanHybridInstansi({
                                 </div>
 
                                 <Link
-                                    href={purchaseHref}
+                                    href={getPurchaseUrl()}
                                     className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF8928] px-6 py-3.5 font-bold text-white transition-colors hover:bg-[#F57F1E]"
                                 >
                                     Beli Sekarang
@@ -447,16 +564,18 @@ export default function DetailPelatihanHybridInstansi({
                                 <div className="mt-4 flex items-center justify-center gap-3">
                                     <button
                                         type="button"
+                                        onClick={handleDecrement}
                                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#006B32] text-xl font-bold text-[#006B32] transition-colors hover:bg-[#F0EDED]"
                                         aria-label="Kurangi jumlah"
                                     >
                                         -
                                     </button>
                                     <span className="flex h-9 w-11 items-center justify-center rounded-lg bg-[#FF8928] text-lg font-bold text-white">
-                                        {quantity}
+                                        {qty}
                                     </span>
                                     <button
                                         type="button"
+                                        onClick={handleIncrement}
                                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#006B32] text-xl font-bold text-[#006B32] transition-colors hover:bg-[#F0EDED]"
                                         aria-label="Tambah jumlah"
                                     >
@@ -503,34 +622,38 @@ export default function DetailPelatihanHybridInstansi({
                             Apa Kata Mereka?
                         </h2>
                         <div className="mt-6 grid gap-6 md:grid-cols-3">
-                            {testimonials.map((testimonial) => (
-                                <div
-                                    key={testimonial.id}
-                                    className="rounded-2xl border border-[#E4E2E1] bg-white p-6 shadow-sm"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-sm font-bold text-white">
-                                            {getInitials(testimonial.name)}
-                                        </span>
-                                        <div>
-                                            <p className="font-bold text-[#1B1C1C]">
-                                                {testimonial.name}
-                                            </p>
-                                            <p className="text-sm text-[#6B7280]">
-                                                {testimonial.role}
-                                            </p>
+                            {reviews.length > 0 ? (
+                                reviews.map((review, index) => (
+                                    <div
+                                        key={index}
+                                        className="rounded-2xl border border-[#E4E2E1] bg-white p-6 shadow-sm"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Avatar
+                                                src={review.avatar}
+                                                name={review.name}
+                                            />
+                                            <div>
+                                                <p className="font-bold text-[#1B1C1C]">
+                                                    {review.name}
+                                                </p>
+                                                <StarRating rating={review.rating} />
+                                            </div>
                                         </div>
+                                        <p className="mt-4 leading-relaxed text-[#3D4A3E]">
+                                            &ldquo;{review.text}&rdquo;
+                                        </p>
                                     </div>
-                                    <p className="mt-4 italic leading-relaxed text-[#3D4A3E]">
-                                        "{testimonial.quote}"
-                                    </p>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                <p className="col-span-full text-center text-[#6B7280]">
+                                    Belum ada review untuk kursus ini.
+                                </p>
+                            )}
                         </div>
                     </section>
                 </div>
             </main>
-
-            </InstansiLayout>
+        </div>
     );
 }

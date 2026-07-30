@@ -17,14 +17,20 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use App\Models\Notification;
+use UnitEnum;
 
 class TrainingRequestResource extends Resource
 {
     protected static ?string $model = TrainingRequest::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static UnitEnum|string|null $navigationGroup = 'Transaksi';
+    protected static ?string $recordTitleAttribute = null;
 
-    protected static ?string $recordTitleAttribute = 'title';
+    public static function canCreate(): bool
+    {
+        return false;
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -95,16 +101,19 @@ class TrainingRequestResource extends Resource
                         $record->status === TrainingRequest::MENUNGGU_APPROVAL)
                     ->action(function (TrainingRequest $record) {
                         // Approve → lanjut ke tahap bayar
-                        $record->update(['status' => TrainingRequest::MENUNGGU_BAYAR]);
+                        $record->update([
+                            'status'         => TrainingRequest::MENUNGGU_BAYAR,
+                            'payment_due_at' => now()->addMinutes(90),
+                        ]);
 
                         // Notif ke instansi: silakan bayar (link ke halaman pembayaran)
                         Notification::send(
                             $record->user_id,
                             'Jadwal Disetujui 🎉',
-                            "Request jadwal untuk \"{$record->course->title}\" telah disetujui. Silakan lanjutkan pembayaran.",
+                            "Pengajuan disetujui. Klik untuk menyelesaikan pembayaran.",
                             'success',
                             'Bayar Sekarang',
-                            route('instansi.pembayaran', $record->request_id),
+                            route('instansi.pilih-jadwal', $record->course->slug),
                         );
 
                         \Filament\Notifications\Notification::make()

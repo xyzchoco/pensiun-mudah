@@ -14,7 +14,7 @@ const formatEventDate = (date) => {
 };
 
 // Pastikan props 'landing' masuk di sini
-export default function Beranda({ landing, events, categories }) {
+export default function Beranda({ landing, events, categories, reviews }) {
     const eventScrollRef = useRef(null);
     const kategoriScrollRef = useRef(null);
     const mppScrollRef = useRef(null);
@@ -421,7 +421,7 @@ export default function Beranda({ landing, events, categories }) {
                                                     </span>
                                                 </p>
                                                 <Link
-                                                    href={`/event-landing/${event.judul.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')}`}
+                                                    href={`/event-landing/${event.id}`}
                                                     className="block w-full bg-[#FF8928] hover:bg-[#e67a22] text-white font-bold py-2 rounded-lg text-sm text-center transition-colors"
                                                 >
                                                     Lihat Detail
@@ -564,98 +564,125 @@ export default function Beranda({ landing, events, categories }) {
                 </div>
             </section>
 
-            {/* --- KISAH SUKSES SECTION --- */}
+            {/* --- Penilaian Pengguna SECTION --- */}
             <section className="bg-white py-12">
                 <div className="max-w-[1200px] mx-auto px-6 md:px-10">
                     <div className="flex justify-between items-end mb-10">
                         <div>
                             <h2 className="font-['Public_Sans'] font-bold text-3xl text-[#1B1C1C] mb-2">
-                                Kisah Sukses
+                                Penilaian Pengguna
                             </h2>
                             <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E]">
                                 Apa kata mereka yang telah bergabung dengan
                                 Pensiun Mudah
                             </p>
                         </div>
-                        <div className="hidden md:flex gap-2">
-                            <button className="w-10 h-10 rounded-full border border-[#E4E2E1] flex items-center justify-center hover:bg-gray-50">
-                                &lt;
-                            </button>
-                            <button className="w-10 h-10 rounded-full border border-[#E4E2E1] flex items-center justify-center hover:bg-gray-50">
-                                &gt;
-                            </button>
-                        </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white border border-[#E4E2E1] p-8 rounded-xl shadow-sm">
-                            <div className="text-[#FF8928] text-sm mb-4">
-                                ⭐⭐⭐⭐⭐
-                            </div>
-                            <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-sm italic mb-8 min-h-[80px]">
-                                "Berkat Pensiun Mudah, saya sekarang mahir
-                                mengelola Keuangan Pensiun saya sendiri. Pensiun
-                                saya jadi lebih produktif dan menenangkan secara
-                                finansial."
-                            </p>
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gray-300 rounded-full overflow-hidden">
-                                    <img src="/images/user-1.png" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-[#1B1C1C] text-sm">
-                                        Budi Santoso
-                                    </h4>
-                                    <p className="text-xs text-[#3D4A3E]">
-                                        Mantan Manager Operasional
+                        {reviews && reviews.length > 0 ? (
+                            reviews.map((review, index) => (
+                                <div
+                                    key={index}
+                                    className="bg-white border border-[#E4E2E1] p-8 rounded-xl shadow-sm"
+                                >
+                                    <div className="flex items-center gap-0.5 mb-4">
+                                        {[...Array(5)].map((_, i) => (
+                                            <svg
+                                                key={i}
+                                                className={`h-4 w-4 ${i < Math.floor(review.rating) ? 'text-[#FF8928]' : 'text-[#E4E2E1]'}`}
+                                                fill="currentColor"
+                                                viewBox="0 0 20 20"
+                                            >
+                                                <path d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
+                                            </svg>
+                                        ))}
+                                    </div>
+                                    <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-sm mb-8 min-h-[80px]">
+                                        &ldquo;{review.text}&rdquo;
                                     </p>
+                                    <div className="flex items-center gap-3">
+                                        {review.avatar ? (
+                                            <img
+                                                src={review.avatar}
+                                                alt={review.name}
+                                                className="w-10 h-10 shrink-0 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-sm font-bold text-white">
+                                                {review.name
+                                                    .split(' ')
+                                                    .map((p) => p[0])
+                                                    .join('')
+                                                    .slice(0, 2)
+                                                    .toUpperCase()}
+                                            </span>
+                                        )}
+                                        <div>
+                                            <h4 className="font-bold text-[#1B1C1C] text-sm">
+                                                {review.name}
+                                            </h4>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div className="bg-white border border-[#E4E2E1] p-8 rounded-xl shadow-sm">
-                            <div className="text-[#FF8928] text-sm mb-4">
-                                ⭐⭐⭐⭐⭐
-                            </div>
-                            <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-sm italic mb-8 min-h-[80px]">
-                                "Membership di Pensiun Mudah sangat
-                                menguntungkan karena dapat pemahaman materi yang
-                                jelas dan mudah dimengerti."
-                            </p>
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gray-300 rounded-full overflow-hidden">
-                                    <img src="/images/user-2.png" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-[#1B1C1C] text-sm">
-                                        Susi Wijaya
-                                    </h4>
-                                    <p className="text-xs text-[#3D4A3E]">
-                                        Pensiunan Guru
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="bg-white border border-[#E4E2E1] p-8 rounded-xl shadow-sm">
-                            <div className="text-[#FF8928] text-sm mb-4">
-                                ⭐⭐⭐⭐⭐
-                            </div>
-                            <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-sm italic mb-8 min-h-[80px]">
-                                "Saya sangat senang ikut kursus di Pensiun
-                                Mudah."
-                            </p>
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gray-300 rounded-full overflow-hidden">
-                                    <img src="/images/user-3.png" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-[#1B1C1C] text-sm">
-                                        Hendrik Pratama
-                                    </h4>
-                                    <p className="text-xs text-[#3D4A3E]">
-                                        Wirausaha
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                            ))
+                        ) : (
+                            // Dummy cards when no reviews exist
+                            <>
+                                {[
+                                    {
+                                        name: 'Budi Santoso',
+                                        text: 'Berkat Pensiun Mudah, saya sekarang mahir mengelola Keuangan Pensiun saya sendiri. Pensiun saya jadi lebih produktif dan menenangkan secara finansial.',
+                                        rating: 5,
+                                    },
+                                    {
+                                        name: 'Susi Wijaya',
+                                        text: 'Membership di Pensiun Mudah sangat menguntungkan karena dapat pemahaman materi yang jelas dan mudah dimengerti.',
+                                        rating: 5,
+                                    },
+                                    {
+                                        name: 'Hendrik Pratama',
+                                        text: 'Saya sangat senang ikut kursus di Pensiun Mudah.',
+                                        rating: 5,
+                                    },
+                                ].map((dummy, index) => (
+                                    <div
+                                        key={index}
+                                        className="bg-white border border-[#E4E2E1] p-8 rounded-xl shadow-sm"
+                                    >
+                                        <div className="flex items-center gap-0.5 mb-4">
+                                            {[...Array(5)].map((_, i) => (
+                                                <svg
+                                                    key={i}
+                                                    className="h-4 w-4 text-[#FF8928]"
+                                                    fill="currentColor"
+                                                    viewBox="0 0 20 20"
+                                                >
+                                                    <path d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 15l-5.3 2.6 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
+                                                </svg>
+                                            ))}
+                                        </div>
+                                        <p className="font-['Atkinson_Hyperlegible'] text-[#3D4A3E] text-sm mb-8 min-h-[80px]">
+                                            &ldquo;{dummy.text}&rdquo;
+                                        </p>
+                                        <div className="flex items-center gap-3">
+                                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#006B32] text-sm font-bold text-white">
+                                                {dummy.name
+                                                    .split(' ')
+                                                    .map((p) => p[0])
+                                                    .join('')
+                                                    .slice(0, 2)
+                                                    .toUpperCase()}
+                                            </span>
+                                            <div>
+                                                <h4 className="font-bold text-[#1B1C1C] text-sm">
+                                                    {dummy.name}
+                                                </h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </>
+                        )}
                     </div>
                 </div>
             </section>

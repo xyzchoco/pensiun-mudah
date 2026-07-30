@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -26,7 +28,10 @@ class User extends Authenticatable implements FilamentUser
         'is_verified',
         'role_id',
         'membership_id',
+        'profile_photo_path',
     ];
+
+    protected $appends = ['profile_photo_url'];
 
     protected $hidden = [
         'password',
@@ -62,9 +67,9 @@ class User extends Authenticatable implements FilamentUser
         return $this->role?->role_name === 'Admin';
     }
 
-    public function corporateProfile()
+    public function corporateProfile() : HasOne
     {
-        return $this->hasOne(CorporateProfile::class, 'user_id');
+        return $this->hasOne(CorporateProfile::class, 'user_id', 'user_id');
     }
 
     public function getIdAttribute()
@@ -80,5 +85,22 @@ class User extends Authenticatable implements FilamentUser
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class, 'user_id', 'user_id');
+    }
+
+    public function voucherRedemptions()
+    {
+        return $this->hasMany(VoucherRedemption::class, 'user_id', 'user_id');
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'user_id', 'user_id');
+    }
+
+    public function getProfilePhotoUrlAttribute(): string
+    {
+        return $this->profile_photo_path
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->profile_photo_path)
+            : '/images/iconprofile.png';
     }
 }

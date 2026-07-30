@@ -47,7 +47,7 @@ export default function PaymentFooter() {
                     d="M3 5a2 2 0 012-2h2.28a1 1 0 01.95.68l1.2 3.6a1 1 0 01-.5 1.2l-1.7.85a11 11 0 005.5 5.5l.85-1.7a1 1 0 011.2-.5l3.6 1.2a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C8.6 21 3 15.4 3 8V5z"
                   />
                 </svg>
-                +62 21 1234 5678
+                +62 8519 6449 699
               </li>
               <li className="flex items-center gap-2">
                 <svg

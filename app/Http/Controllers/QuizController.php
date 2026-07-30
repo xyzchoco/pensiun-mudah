@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Services\LearningService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -77,17 +78,21 @@ class QuizController extends Controller
         $timeTakenMinutes = (int)$request->input('time_taken_minutes', 0);
 
         // Simpan/update ke tabel quiz_user
-        // FIX BUG #5: Simpan wrong_questions sebagai JSON ke DB agar tidak hilang saat refresh
-        DB::table('quiz_user')->updateOrInsert(
+        \App\Models\QuizUser::updateOrCreate(
             ['user_id' => $userId, 'quiz_id' => $quizId],
             [
-                'score'           => $finalScore,
-                'is_passed'       => $finalScore >= $passingScore,
-                'wrong_questions' => json_encode($wrongQuestions), // ← tambahkan kolom ini di migrasi
-                'time_taken'      => $timeTakenMinutes,
-                'updated_at'      => now(),
+                'score'              => $finalScore,
+                'is_passed'          => $finalScore >= $passingScore,
+                'correct_count'      => $correctCount,
+                'total_questions'    => $totalQuestions,
+                'time_taken_minutes' => $timeTakenMinutes,
+                'wrong_questions'    => $wrongQuestions,
+                'updated_at'         => now(),
             ]
         );
+
+        // Setelah menyimpan hasil kuis, recompute progress kursus
+        app(LearningService::class)->recomputeProgress($userId, $courseId);
 
         // Simpan rekap ke session
         session()->put('last_quiz_result', [
@@ -104,20 +109,21 @@ class QuizController extends Controller
         // FIX BUG DATA TIDAK TAMPIL:
         // Gunakan redirect() Laravel biasa agar session terjamin terflush
         // SEBELUM halaman hasil di-render — bukan JSON + client-side router.visit()
-        return redirect()->route('kuis.hasil', ['id' => $courseId]);
+        return redirect()->route('kuis.hasil', ['id' => $courseId, 'quiz' => $quizId]);
     }
 
     // --- 2. MENAMPILKAN HALAMAN HASIL KUIS ---
-    public function showQuizResult($courseId)
+    public function showQuizResult(Request $request, $courseId)
     {
         $course  = Course::findOrFail($courseId);
         $userId  = auth()->id();
+        $quizId  = $request->query('quiz'); // Ambil quiz_id dari query string
 
         $quizResult = session()->get('last_quiz_result');
 
         // Fallback: ambil dari DB jika session sudah kosong (misal setelah refresh)
-        if (!$quizResult) {
-            $latestUserQuiz = DB::table('quiz_user')
+        if (!$quizResult || ($quizId && $quizResult['quiz_id'] != $quizId)) {
+            $userQuizQuery = DB::table('quiz_user')
                 ->join('quizzes', 'quizzes.id', '=', 'quiz_user.quiz_id')
                 ->join('modules', 'modules.id', '=', 'quizzes.module_id')
                 ->where('modules.course_id', $courseId)
@@ -126,9 +132,13 @@ class QuizController extends Controller
                     'quiz_user.*',
                     'quizzes.nilai_lulus',
                     'quizzes.is_final'
-                )
-                ->latest('quiz_user.updated_at')
-                ->first();
+                );
+            
+            if ($quizId) {
+                $userQuizQuery->where('quiz_user.quiz_id', $quizId);
+            }
+
+            $latestUserQuiz = $userQuizQuery->latest('quiz_user.updated_at')->first();
 
             if ($latestUserQuiz) {
                 $dbTotalQuestions = DB::table('quiz_questions')
@@ -147,17 +157,19 @@ class QuizController extends Controller
                 }
 
                 $quizResult = [
+                    'quiz_id'            => (int)$latestUserQuiz->quiz_id, // Tambahkan quiz_id
                     'score'              => (int)$latestUserQuiz->score,
                     'passing_score'      => (int)$latestUserQuiz->nilai_lulus,
                     'is_final'           => (bool)$latestUserQuiz->is_final,
                     'total_questions'    => $dbTotalQuestions ?: 4,
                     'correct_count'      => $dbCorrectCount,
-                    'time_taken_minutes' => (int)($latestUserQuiz->time_taken ?? 0),
+                    'time_taken_minutes' => (int)($latestUserQuiz->time_taken_minutes ?? 0),
                     'wrong_questions'    => $dbWrongQuestions,
                 ];
             } else {
                 // Default kosong jika belum pernah mengerjakan kuis
                 $quizResult = [
+                    'quiz_id'            => (int)$quizId, // Gunakan quizId dari query string
                     'score'              => 0,
                     'passing_score'      => 70,
                     'is_final'           => false,
@@ -169,9 +181,46 @@ class QuizController extends Controller
             }
         }
 
+        // Hitung accumulated (rata-rata skor terbaik semua kuis modul di course ini)
+        $accumulated = DB::table('quiz_user')
+            ->join('quizzes', 'quizzes.id', '=', 'quiz_user.quiz_id')
+            ->join('modules', 'modules.id', '=', 'quizzes.module_id')
+            ->where('modules.course_id', $courseId)
+            ->where('quiz_user.user_id', $userId)
+            ->avg('quiz_user.score');
+        $accumulated = round($accumulated ?? 0);
+
+        // Ambil payload learning yang lengkap dari LearningService
+        $learningService = new LearningService();
+        $learningPayload = $learningService->buildLearningPayload($userId, $course);
+
+        // Siapkan riwayat kuis per modul
+        $quizHistory = DB::table('quiz_user')
+            ->join('quizzes', 'quizzes.id', '=', 'quiz_user.quiz_id')
+            ->join('modules', 'modules.id', '=', 'quizzes.module_id')
+            ->where('modules.course_id', $courseId)
+            ->where('quiz_user.user_id', $userId)
+            ->select(
+                'modules.judul as module_title',
+                'quiz_user.score',
+                'quiz_user.is_passed'
+            )
+            ->orderBy('modules.urutan')
+            ->get()
+            ->map(function ($item) {
+                $item->is_passed = (bool) $item->is_passed;
+                return $item;
+            })
+            ->all();
+
         return Inertia::render('Pelatihan/HasilKuis', [
-            'learning'   => ['course' => $course, 'modules' => []],
-            'quizResult' => $quizResult,
+            'learning'     => $learningPayload,
+            'quizResult'   => array_merge($quizResult, [
+                'accumulated' => $accumulated,
+                'history'     => $quizHistory,
+            ]),
+            // nextLessonId sudah ada di learningPayload['course']['nextLessonId']
+            // accumulated sudah digabung ke quizResult
         ]);
     }
 }

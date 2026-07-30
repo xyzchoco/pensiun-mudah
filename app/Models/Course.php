@@ -21,6 +21,7 @@ class Course extends Model
         'tipe_kelas',
         // Default offline/hybrid
         'tanggal_default',
+        'tanggal_selesai_default',
         'lokasi_default',
         'jadwal_default',
         'instruktur',
@@ -32,12 +33,25 @@ class Course extends Model
     ];
 
     protected $casts = [
-        'tanggal_default'     => 'date',
-        'price'               => 'decimal:2',
+        'tanggal_default'         => 'date',
+        'tanggal_selesai_default' => 'date',
+        'price'                   => 'decimal:2',
         'is_visible_publik'   => 'boolean',
         'is_visible_korporat' => 'boolean',
         'is_visible_asn'      => 'boolean',
     ];
+
+    protected $appends = ['rating_average', 'total_reviewer'];
+
+    public function getRatingAverageAttribute()
+    {
+        return (float) ($this->reviews_avg_rating ?? 0);
+    }
+
+    public function getTotalReviewerAttribute()
+    {
+        return (int) ($this->reviews_count ?? 0);
+    }
 
     public function category(): BelongsTo
     {
@@ -62,5 +76,30 @@ class Course extends Model
     public function modules(): HasMany
     {
         return $this->hasMany(Module::class)->orderBy('urutan');
+    }
+
+    public function sesiSeminar(): HasMany
+    {
+        return $this->hasMany(SesiSeminar::class, 'course_id')->orderBy('tanggal', 'asc');
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function bolehDibeliOleh(User $user): bool
+    {
+        if ($this->tipe_kelas === 'Online') return true;
+        return in_array($user->kategori_pensiun, ['asn', 'korporat']);
+    }
+
+    public function scopeVisibleFor($query, ?\App\Models\User $user)
+    {
+        if ($user?->kategori_pensiun === 'publik') {
+            $query->where('tipe_kelas', 'Online')
+                  ->where('is_visible_publik', true);
+        }
+        return $query;
     }
 }

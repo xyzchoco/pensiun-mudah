@@ -9,8 +9,18 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.jsx',
+                'resources/css/filament/auth/auth.css',
+                'resources/js/filament/auth/auth.js',
             ],
-            refresh: true,
+            refresh: [
+                {
+                    paths: [
+                        'resources/views/**',
+                        'routes/**',
+                    ],
+                    delay: 300,
+                },
+            ],
         }),
         react(),
         tailwindcss(),
@@ -23,11 +33,20 @@ export default defineConfig({
     },
 
     server: {
-        host: '0.0.0.0',
+        host: '127.0.0.1',
         port: 5173,
-
         hmr: {
-            host: process.env.VITE_HMR_HOST ?? 'localhost',
+            host: '127.0.0.1',
+        },
+        // Cegah Vite memantau folder yang berubah terus-menerus (logs, cache, sessions)
+        // sehingga @tailwindcss/vite tidak trigger rebuild CSS loop tak terbatas
+        watch: {
+            ignored: [
+                '**/storage/**',
+                '**/bootstrap/cache/**',
+                '**/vendor/**',
+                '**/.git/**',
+            ],
         },
     },
 });
