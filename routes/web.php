@@ -5,6 +5,7 @@ use App\Models\{LandingPage, Webinar, User, CourseCategory, Course, DashboardBan
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Route, Auth};
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Artisan;
 use Laravel\Socialite\Facades\Socialite;
 
 // ==========================================
@@ -431,6 +432,17 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/statistik-waktu', fn () => redirect()->route('statistik-waktu'));
         Route::get('/welcome', fn () => Inertia::render('Welcome'))->name('welcome');
     });
+});
+
+Route::get('/jalankan-migrasi', function () {
+    // Menjalankan migrasi database
+    Artisan::call('migrate', ['--force' => true]);
+    
+    // Opsional: jalankan fungsi lain yang lu butuhkan
+    Artisan::call('optimize:clear');
+    Artisan::call('storage:link');
+    
+    return 'Mantap Bos! Migrasi Database dan Setup Berhasil!';
 });
 
 require __DIR__.'/auth.php';
